@@ -1,4 +1,3 @@
-import { getServerLimits } from '@documenso/ee/server-only/limits/server';
 import { AppError, AppErrorCode } from '@documenso/lib/errors/app-error';
 import { createEnvelope } from '@documenso/lib/server-only/envelope/create-envelope';
 import { putNormalizedPdfFileServerSide } from '@documenso/lib/universal/upload/put-file.server';
@@ -39,25 +38,6 @@ export const createEnvelopeRoute = authenticatedProcedure
         folderId,
       },
     });
-
-    const { remaining, maximumEnvelopeItemCount } = await getServerLimits({
-      userId: user.id,
-      teamId,
-    });
-
-    if (remaining.documents <= 0) {
-      throw new AppError(AppErrorCode.LIMIT_EXCEEDED, {
-        message: 'You have reached your document limit for this month. Please upgrade your plan.',
-        statusCode: 400,
-      });
-    }
-
-    if (files.length > maximumEnvelopeItemCount) {
-      throw new AppError('ENVELOPE_ITEM_LIMIT_EXCEEDED', {
-        message: `You cannot upload more than ${maximumEnvelopeItemCount} envelope items per envelope`,
-        statusCode: 400,
-      });
-    }
 
     if (files.some((file) => !file.type.startsWith('application/pdf'))) {
       throw new AppError('INVALID_DOCUMENT_FILE', {

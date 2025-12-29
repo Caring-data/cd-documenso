@@ -202,3 +202,11 @@ export const ZStripeOrganisationCreateMetadataSchema = z.object({
 export type StripeOrganisationCreateMetadata = z.infer<
   typeof ZStripeOrganisationCreateMetadataSchema
 >;
+
+export const ZCreateSubscriptionClaimRequestSchema = z.object({
+  name: z.string(),
+  teamCount: z.number(),
+  memberCount: z.number(),
+  envelopeItemCount: z.number(),
+  flags: ZClaimFlagsSchema,
+});

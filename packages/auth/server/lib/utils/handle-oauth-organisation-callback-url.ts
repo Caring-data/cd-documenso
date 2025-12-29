@@ -1,6 +1,5 @@
 import type { Context } from 'hono';
 
-import { sendOrganisationAccountLinkConfirmationEmail } from '@documenso/ee/server-only/lib/send-organisation-account-link-confirmation-email';
 import { AppError } from '@documenso/lib/errors/app-error';
 import { onCreateUserHook } from '@documenso/lib/server-only/user/create-user';
 import { formatOrganisationLoginUrl } from '@documenso/lib/utils/organisation-authentication-portal';
@@ -82,18 +81,19 @@ export const handleOAuthOrganisationCallbackUrl = async (
     });
   }
 
-  await sendOrganisationAccountLinkConfirmationEmail({
-    type: userToLink.emailVerified ? 'link' : 'create',
-    userId: userToLink.id,
-    organisationId: organisation.id,
-    organisationName: organisation.name,
-    oauthConfig: {
+  // Link the account directly without email confirmation
+  await prisma.account.create({
+    data: {
+      provider: clientOptions.id,
+      providerAccountId: sub,
+      userId: userToLink.id,
       accessToken,
       idToken,
-      providerAccountId: sub,
       expiresAt: Math.floor(accessTokenExpiresAt.getTime() / 1000),
     },
   });
 
-  return c.redirect(`${formatOrganisationLoginUrl(orgUrl)}?action=verification-required`, 302);
+  await onAuthorize({ userId: userToLink.id }, c);
+
+  return c.redirect(`/o/${orgUrl}`, 302);
 };

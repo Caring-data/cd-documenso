@@ -13,7 +13,6 @@ import { GripVerticalIcon, HelpCircle, Plus, Trash } from 'lucide-react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { prop, sortBy } from 'remeda';
 
-import { useLimits } from '@documenso/ee/server-only/limits/provider/client';
 import { useAutoSave } from '@documenso/lib/client-only/hooks/use-autosave';
 import { useDebouncedValue } from '@documenso/lib/client-only/hooks/use-debounced-value';
 import { useCurrentOrganisation } from '@documenso/lib/client-only/providers/organisation';
@@ -80,7 +79,6 @@ export const AddSignersFormPartial = ({
 }: AddSignersFormProps) => {
   const { _ } = useLingui();
   const { toast } = useToast();
-  const { remaining } = useLimits();
   const { user } = useSession();
 
   const [recipientSearchQuery, setRecipientSearchQuery] = useState('');
@@ -936,7 +934,7 @@ export const AddSignersFormPartial = ({
               <Button
                 type="button"
                 className="flex-1"
-                disabled={isSubmitting || signers.length >= remaining.recipients}
+                disabled={isSubmitting}
                 onClick={() => onAddSigner()}
               >
                 <Plus className="-ml-1 mr-2 h-5 w-5" />

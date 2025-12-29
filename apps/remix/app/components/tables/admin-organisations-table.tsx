@@ -12,7 +12,6 @@ import {
 import { Link, useSearchParams } from 'react-router';
 
 import { useUpdateSearchParams } from '@documenso/lib/client-only/hooks/use-update-search-params';
-import { SUBSCRIPTION_STATUS_MAP } from '@documenso/lib/constants/billing';
 import { ZUrlSearchParamsSchema } from '@documenso/lib/types/search-params';
 import { trpc } from '@documenso/trpc/react';
 import { Badge } from '@documenso/ui/primitives/badge';
@@ -126,14 +125,9 @@ export const AdminOrganisationsTable = ({
         header: t`Subscription`,
         cell: ({ row }) =>
           row.original.subscription ? (
-            <Link
-              to={`https://dashboard.stripe.com/subscriptions/${row.original.subscription.planId}`}
-              target="_blank"
-              className="flex flex-row items-center gap-2"
-            >
-              {SUBSCRIPTION_STATUS_MAP[row.original.subscription.status]}
-              <ExternalLinkIcon className="h-4 w-4" />
-            </Link>
+            <Badge variant="neutral">
+              {row.original.subscription.status}
+            </Badge>
           ) : (
             <Trans>None</Trans>
           ),

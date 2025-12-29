@@ -15,7 +15,6 @@ import {
 import { Link, useRevalidator } from 'react-router';
 import { P, match } from 'ts-pattern';
 
-import { useLimits } from '@documenso/ee/server-only/limits/provider/client';
 import { useCopyToClipboard } from '@documenso/lib/client-only/hooks/use-copy-to-clipboard';
 import { useCurrentOrganisation } from '@documenso/lib/client-only/providers/organisation';
 import { DIRECT_TEMPLATE_RECIPIENT_EMAIL } from '@documenso/lib/constants/direct-templates';
@@ -65,7 +64,6 @@ export const TemplateDirectLinkDialog = ({
   trigger,
 }: TemplateDirectLinkDialogProps) => {
   const { toast } = useToast();
-  const { quota, remaining } = useLimits();
   const { _ } = useLingui();
   const { revalidate } = useRevalidator();
 
@@ -239,36 +237,11 @@ export const TemplateDirectLinkDialog = ({
                     ))}
                   </ul>
 
-                  {remaining.directTemplates === 0 && (
-                    <Alert variant="warning">
-                      <AlertTitle>
-                        <Trans>
-                          Direct template link usage exceeded ({quota.directTemplates}/
-                          {quota.directTemplates})
-                        </Trans>
-                      </AlertTitle>
-                      <AlertDescription>
-                        <Trans>
-                          You have reached the maximum limit of {quota.directTemplates} direct
-                          templates.{' '}
-                          <Link
-                            className="mt-1 block underline underline-offset-4"
-                            to={`/o/${organisation.url}/settings/billing`}
-                          >
-                            Upgrade your account to continue!
-                          </Link>
-                        </Trans>
-                      </AlertDescription>
-                    </Alert>
-                  )}
-
-                  {remaining.directTemplates !== 0 && (
-                    <DialogFooter className="mx-auto mt-4">
-                      <Button type="button" onClick={() => setCurrentStep('SELECT_RECIPIENT')}>
-                        <Trans>Enable direct link signing</Trans>
-                      </Button>
-                    </DialogFooter>
-                  )}
+                  <DialogFooter className="mx-auto mt-4">
+                    <Button type="button" onClick={() => setCurrentStep('SELECT_RECIPIENT')}>
+                      <Trans>Enable direct link signing</Trans>
+                    </Button>
+                  </DialogFooter>
                 </DialogContent>
               ))
               .with({ token: P.nullish, currentStep: 'SELECT_RECIPIENT' }, () => (

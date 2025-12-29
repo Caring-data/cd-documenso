@@ -14,7 +14,6 @@ import {
 import { Link, useNavigate, useParams } from 'react-router';
 import { match } from 'ts-pattern';
 
-import { useLimits } from '@documenso/ee/server-only/limits/provider/client';
 import { useAnalytics } from '@documenso/lib/client-only/hooks/use-analytics';
 import { useCurrentOrganisation } from '@documenso/lib/client-only/providers/organisation';
 import { useSession } from '@documenso/lib/client-only/providers/session';
@@ -58,11 +57,9 @@ export const EnvelopeDropZoneWrapper = ({
     TIME_ZONES.find((timezone) => timezone === Intl.DateTimeFormat().resolvedOptions().timeZone) ??
     DEFAULT_DOCUMENT_TIME_ZONE;
 
-  const { quota, remaining, refreshLimits, maximumEnvelopeItemCount } = useLimits();
-
   const { mutateAsync: createEnvelope } = trpc.envelope.create.useMutation();
 
-  const isUploadDisabled = remaining.documents === 0 || !user.emailVerified;
+  const isUploadDisabled = !user.emailVerified;
 
   const onFileDrop = async (files: File[]) => {
     if (isUploadDisabled && IS_BILLING_ENABLED()) {
@@ -91,8 +88,6 @@ export const EnvelopeDropZoneWrapper = ({
       }
 
       const { id } = await createEnvelope(formData);
-
-      void refreshLimits();
 
       toast({
         title: type === EnvelopeType.DOCUMENT ? t`Document uploaded` : t`Template uploaded`,
@@ -213,7 +208,6 @@ export const EnvelopeDropZoneWrapper = ({
     },
     multiple: true,
     maxSize: megabytesToBytes(APP_DOCUMENT_UPLOAD_SIZE_LIMIT),
-    maxFiles: maximumEnvelopeItemCount,
     onDrop: (files) => void onFileDrop(files),
     onDropRejected: onFileDropRejected,
     noClick: true,
@@ -240,25 +234,6 @@ export const EnvelopeDropZoneWrapper = ({
               <Trans>Drag and drop your PDF file here</Trans>
             </p>
 
-            {isUploadDisabled && IS_BILLING_ENABLED() && (
-              <Link
-                to={`/o/${organisation.url}/settings/billing`}
-                className="mt-4 text-sm text-amber-500 hover:underline dark:text-amber-400"
-              >
-                <Trans>Upgrade your plan to upload more documents</Trans>
-              </Link>
-            )}
-
-            {!isUploadDisabled &&
-              team?.id === undefined &&
-              remaining.documents > 0 &&
-              Number.isFinite(remaining.documents) && (
-                <p className="mt-4 text-sm text-muted-foreground/80">
-                  <Trans>
-                    {remaining.documents} of {quota.documents} documents remaining this month.
-                  </Trans>
-                </p>
-              )}
           </div>
         </div>
       )}

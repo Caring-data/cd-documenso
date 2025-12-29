@@ -10,7 +10,6 @@ import { Link, useNavigate } from 'react-router';
 import type { z } from 'zod';
 
 import { NEXT_PUBLIC_WEBAPP_URL } from '@documenso/lib/constants/app';
-import { SUBSCRIPTION_STATUS_MAP } from '@documenso/lib/constants/billing';
 import { AppError } from '@documenso/lib/errors/app-error';
 import { SUBSCRIPTION_CLAIM_FEATURE_FLAGS } from '@documenso/lib/types/subscription';
 import { trpc } from '@documenso/trpc/react';
@@ -53,24 +52,6 @@ export default function OrganisationGroupSettingsPage({ params }: Route.Componen
       organisationId,
     });
 
-  const { mutateAsync: createStripeCustomer, isPending: isCreatingStripeCustomer } =
-    trpc.admin.stripe.createCustomer.useMutation({
-      onSuccess: async () => {
-        await navigate(0);
-
-        toast({
-          title: t`Success`,
-          description: t`Stripe customer created successfully`,
-        });
-      },
-      onError: () => {
-        toast({
-          title: t`Error`,
-          description: t`We couldn't create a Stripe customer. Please try again.`,
-          variant: 'destructive',
-        });
-      },
-    });
 
   const teamsColumns = useMemo(() => {
     return [
@@ -171,73 +152,6 @@ export default function OrganisationGroupSettingsPage({ params }: Route.Componen
       </SettingsHeader>
 
       <GenericOrganisationAdminForm organisation={organisation} />
-
-      <SettingsHeader
-        title={t`Manage subscription`}
-        subtitle={t`Manage the ${organisation.name} organisation subscription`}
-        className="mt-16"
-      />
-
-      <Alert
-        className="my-6 flex flex-col justify-between p-6 sm:flex-row sm:items-center"
-        variant="neutral"
-      >
-        <div className="mb-4 sm:mb-0">
-          <AlertTitle>
-            <Trans>Subscription</Trans>
-          </AlertTitle>
-
-          <AlertDescription className="mr-2">
-            {organisation.subscription ? (
-              <span>
-                {SUBSCRIPTION_STATUS_MAP[organisation.subscription.status]} subscription found
-              </span>
-            ) : (
-              <span>No subscription found</span>
-            )}
-          </AlertDescription>
-        </div>
-
-        {!organisation.customerId && (
-          <div>
-            <Button
-              variant="outline"
-              loading={isCreatingStripeCustomer}
-              onClick={async () => createStripeCustomer({ organisationId })}
-            >
-              <Trans>Create Stripe customer</Trans>
-            </Button>
-          </div>
-        )}
-
-        {organisation.customerId && !organisation.subscription && (
-          <div>
-            <Button variant="outline" asChild>
-              <Link
-                target="_blank"
-                to={`https://dashboard.stripe.com/customers/${organisation.customerId}?create=subscription&subscription_default_customer=${organisation.customerId}`}
-              >
-                <Trans>Create subscription</Trans>
-                <ExternalLinkIcon className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
-        )}
-
-        {organisation.subscription && (
-          <div>
-            <Button variant="outline" asChild>
-              <Link
-                target="_blank"
-                to={`https://dashboard.stripe.com/subscriptions/${organisation.subscription.planId}`}
-              >
-                <Trans>Manage subscription</Trans>
-                <ExternalLinkIcon className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
-        )}
-      </Alert>
 
       <OrganisationAdminForm organisation={organisation} />
 

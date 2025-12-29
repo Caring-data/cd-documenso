@@ -10,7 +10,6 @@ import { X } from 'lucide-react';
 import { ErrorCode as DropzoneErrorCode, type FileRejection } from 'react-dropzone';
 import { Link } from 'react-router';
 
-import { useLimits } from '@documenso/ee/server-only/limits/provider/client';
 import {
   useCurrentEnvelopeEditor,
   useDebounceFunction,
@@ -50,7 +49,6 @@ export const EnvelopeEditorUploadPage = () => {
 
   const { t } = useLingui();
   const { envelope, setLocalEnvelope, relativePath, editorFields } = useCurrentEnvelopeEditor();
-  const { maximumEnvelopeItemCount, remaining } = useLimits();
   const { toast } = useToast();
 
   const [localFiles, setLocalFiles] = useState<LocalFile[]>(
@@ -221,41 +219,11 @@ export const EnvelopeEditorUploadPage = () => {
       return msg`Cannot upload items after the document has been sent`;
     }
 
-    if (organisation.subscription && remaining.documents === 0) {
-      return msg`Document upload disabled due to unpaid invoices`;
-    }
-
-    if (maximumEnvelopeItemCount <= localFiles.length) {
-      return msg({
-        message: plural(maximumEnvelopeItemCount, {
-          one: `You cannot upload more than # item per envelope.`,
-          other: `You cannot upload more than # items per envelope.`,
-        }),
-      });
-    }
-
     return null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [localFiles.length, maximumEnvelopeItemCount, remaining.documents]);
+  }, [canItemsBeModified]);
 
   const onFileDropRejected = (fileRejections: FileRejection[]) => {
-    const maxItemsReached = fileRejections.some((fileRejection) =>
-      fileRejection.errors.some((error) => error.code === DropzoneErrorCode.TooManyFiles),
-    );
-
-    if (maxItemsReached) {
-      toast({
-        title: plural(maximumEnvelopeItemCount, {
-          one: `You cannot upload more than # item per envelope.`,
-          other: `You cannot upload more than # items per envelope.`,
-        }),
-        duration: 5000,
-        variant: 'destructive',
-      });
-
-      return;
-    }
-
     toast({
       title: t`Upload failed`,
       description: t`File cannot be larger than ${APP_DOCUMENT_UPLOAD_SIZE_LIMIT}MB`,
@@ -284,7 +252,6 @@ export const EnvelopeEditorUploadPage = () => {
             disabled={dropzoneDisabledMessage !== null}
             disabledMessage={dropzoneDisabledMessage || undefined}
             disabledHeading={msg`Upload disabled`}
-            maxFiles={maximumEnvelopeItemCount - localFiles.length}
             onDropRejected={onFileDropRejected}
           />
 

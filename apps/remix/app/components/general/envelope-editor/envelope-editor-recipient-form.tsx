@@ -18,7 +18,6 @@ import { useRevalidator, useSearchParams } from 'react-router';
 import { isDeepEqual, prop, sortBy } from 'remeda';
 import { z } from 'zod';
 
-import { useLimits } from '@documenso/ee/server-only/limits/provider/client';
 import { useDebouncedValue } from '@documenso/lib/client-only/hooks/use-debounced-value';
 import { useCurrentEnvelopeEditor } from '@documenso/lib/client-only/providers/envelope-editor-provider';
 import { useCurrentOrganisation } from '@documenso/lib/client-only/providers/organisation';
@@ -93,7 +92,6 @@ export const EnvelopeEditorRecipientForm = () => {
 
   const { t } = useLingui();
   const { toast } = useToast();
-  const { remaining } = useLimits();
   const { user } = useSession();
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -694,7 +692,7 @@ export const EnvelopeEditorRecipientForm = () => {
             type="button"
             className="flex-1"
             size="sm"
-            disabled={isSubmitting || signers.length >= remaining.recipients}
+            disabled={isSubmitting}
             onClick={() => onAddSigner()}
           >
             <PlusIcon className="-ml-1 mr-1 h-5 w-5" />

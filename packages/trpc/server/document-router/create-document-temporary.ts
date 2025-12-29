@@ -1,6 +1,5 @@
 import { DocumentDataType, EnvelopeType } from '@prisma/client';
 
-import { getServerLimits } from '@documenso/ee/server-only/limits/server';
 import { AppError, AppErrorCode } from '@documenso/lib/errors/app-error';
 import { createDocumentData } from '@documenso/lib/server-only/document-data/create-document-data';
 import { createEnvelope } from '@documenso/lib/server-only/envelope/create-envelope';
@@ -39,15 +38,6 @@ export const createDocumentTemporaryRoute = authenticatedProcedure
       folderId,
       attachments,
     } = input;
-
-    const { remaining } = await getServerLimits({ userId: user.id, teamId });
-
-    if (remaining.documents <= 0) {
-      throw new AppError(AppErrorCode.LIMIT_EXCEEDED, {
-        message: 'You have reached your document limit for this month. Please upgrade your plan.',
-        statusCode: 400,
-      });
-    }
 
     const fileName = title.endsWith('.pdf') ? title : `${title}.pdf`;
 

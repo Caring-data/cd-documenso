@@ -4,8 +4,8 @@ import { Trans, useLingui } from '@lingui/react/macro';
 import type { z } from 'zod';
 
 import { generateDefaultSubscriptionClaim } from '@documenso/lib/utils/organisations-claims';
+import { ZCreateSubscriptionClaimRequestSchema } from '@documenso/lib/types/subscription';
 import { trpc } from '@documenso/trpc/react';
-import type { ZCreateSubscriptionClaimRequestSchema } from '@documenso/trpc/server/admin-router/create-subscription-claim.types';
 import { Button } from '@documenso/ui/primitives/button';
 import {
   Dialog,

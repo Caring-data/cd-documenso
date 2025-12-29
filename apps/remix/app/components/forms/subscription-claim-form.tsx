@@ -4,8 +4,10 @@ import type { SubscriptionClaim } from '@prisma/client';
 import { useForm } from 'react-hook-form';
 import type { z } from 'zod';
 
-import { SUBSCRIPTION_CLAIM_FEATURE_FLAGS } from '@documenso/lib/types/subscription';
-import { ZCreateSubscriptionClaimRequestSchema } from '@documenso/trpc/server/admin-router/create-subscription-claim.types';
+import {
+  SUBSCRIPTION_CLAIM_FEATURE_FLAGS,
+  ZCreateSubscriptionClaimRequestSchema,
+} from '@documenso/lib/types/subscription';
 import { Checkbox } from '@documenso/ui/primitives/checkbox';
 import {
   Form,

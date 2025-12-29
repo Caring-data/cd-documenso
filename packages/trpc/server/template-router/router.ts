@@ -1,7 +1,6 @@
 import type { Envelope } from '@prisma/client';
 import { DocumentDataType, EnvelopeType } from '@prisma/client';
 
-import { getServerLimits } from '@documenso/ee/server-only/limits/server';
 import { AppError, AppErrorCode } from '@documenso/lib/errors/app-error';
 import { jobs } from '@documenso/lib/jobs/client';
 import { createDocumentData } from '@documenso/lib/server-only/document-data/create-document-data';
@@ -470,12 +469,6 @@ export const templateRouter = router({
         },
       });
 
-      const limits = await getServerLimits({ userId: ctx.user.id, teamId });
-
-      if (limits.remaining.documents === 0) {
-        throw new Error('You have reached your document limit.');
-      }
-
       // Backwards compatibility mapping since we need the envelopeItemId for the custom document data.
       const customDocumentData = customDocumentDataId
         ? [
@@ -618,14 +611,6 @@ export const templateRouter = router({
         teamId,
         userId: ctx.user.id,
       });
-
-      const limits = await getServerLimits({ userId: ctx.user.id, teamId: template.teamId });
-
-      if (limits.remaining.directTemplates === 0) {
-        throw new AppError(AppErrorCode.LIMIT_EXCEEDED, {
-          message: 'You have reached your direct templates limit.',
-        });
-      }
 
       return await createTemplateDirectLink({
         userId,
