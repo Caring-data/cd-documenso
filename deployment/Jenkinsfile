@@ -38,36 +38,36 @@ pipeline {
                 }
             }
         }
-    }
 
-    stage('2. Prepare .env') {
-        steps {
-            sh """
-                set -e
-                ENV_FILE_PATH="/home/caringdata/${DEPLOY_ENV}/caring_data_documenso/.env.${DEPLOY_ENV}"
-                WORKSPACE_ENV_FILE=".env.${DEPLOY_ENV}"
+        stage('2. Prepare .env') {
+            steps {
+                sh """
+                    set -e
+                    ENV_FILE_PATH="/home/caringdata/${DEPLOY_ENV}/caring_data_documenso/.env.${DEPLOY_ENV}"
+                    WORKSPACE_ENV_FILE=".env.${DEPLOY_ENV}"
 
-                cp "\$ENV_FILE_PATH" "\$WORKSPACE_ENV_FILE"
-                cp "\$WORKSPACE_ENV_FILE" .env
-                echo '--- .env file created ---'
-            """
+                    cp "\$ENV_FILE_PATH" "\$WORKSPACE_ENV_FILE"
+                    cp "\$WORKSPACE_ENV_FILE" .env
+                    echo '--- .env file created ---'
+                """
+            }
         }
-    }
 
-    stage('3. Determine Slot') {
-        steps {
-            dir('deployment') {
-                script {
-                    def activeSlot = sh(
-                        script: "docker compose ${env.COMPOSE_FILES} --project-name \"${env.COMPOSE_PROJECT_NAME}\" exec -T nginx cat /etc/nginx/conf.d/active_slot.txt 2>/dev/null || echo 'blue'",
-                        returnStdout: true
-                    ).trim()
+        stage('3. Determine Slot') {
+            steps {
+                dir('deployment') {
+                    script {
+                        def activeSlot = sh(
+                            script: "docker compose ${env.COMPOSE_FILES} --project-name \"${env.COMPOSE_PROJECT_NAME}\" exec -T nginx cat /etc/nginx/conf.d/active_slot.txt 2>/dev/null || echo 'blue'",
+                            returnStdout: true
+                        ).trim()
 
-                    env.ACTIVE_SLOT = activeSlot ?: 'blue'
-                    env.TARGET_SLOT = (env.ACTIVE_SLOT == 'blue') ? 'green' : 'blue'
+                        env.ACTIVE_SLOT = activeSlot ?: 'blue'
+                        env.TARGET_SLOT = (env.ACTIVE_SLOT == 'blue') ? 'green' : 'blue'
 
-                    echo "🔵 Active Slot: ${env.ACTIVE_SLOT}"
-                    echo "🟢 Target Slot: ${env.TARGET_SLOT} (Deploying here)"
+                        echo "🔵 Active Slot: ${env.ACTIVE_SLOT}"
+                        echo "🟢 Target Slot: ${env.TARGET_SLOT} (Deploying here)"
+                    }
                 }
             }
         }
