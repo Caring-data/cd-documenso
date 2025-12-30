@@ -24,15 +24,15 @@ services:
 
   documenso:
     build:
-      context: ../../
-      dockerfile: docker/Dockerfile
+      context: ../../../
+      dockerfile: deployment/Dockerfile
     depends_on:
       database:
         condition: service_healthy
       inbucket:
         condition: service_started
     env_file:
-      - ../../.env.example
+      - ../../../.env.example
     environment:
       - NEXTAUTH_SECRET=secret
       - NEXT_PRIVATE_ENCRYPTION_KEY=CAFEBABE
@@ -49,6 +49,6 @@ services:
       - NEXT_PRIVATE_SMTP_FROM_ADDRESS=noreply@documenso.com
       - NEXT_PRIVATE_SIGNING_LOCAL_FILE_PATH=/opt/documenso/cert.p12
     ports:
-      - 3000:3000
+      - 4000:4000
     volumes:
-      - ../../apps/remix/example/cert.p12:/opt/documenso/cert.p12
+      - ../../../apps/remix/example/cert.p12:/opt/documenso/cert.p12:ro

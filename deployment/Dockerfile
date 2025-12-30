@@ -127,8 +127,8 @@ COPY --from=installer --chown=nodejs:nodejs /app/packages/prisma/migrations ./pa
 RUN npx prisma generate --schema ./packages/prisma/schema.prisma
 
 
-# Get the start script from docker/
-COPY --chown=nodejs:nodejs ./docker/start.sh /app/apps/remix/start.sh
+# Get the start script from deployment/
+COPY --chown=nodejs:nodejs ./deployment/start.sh /app/apps/remix/start.sh
 
 WORKDIR /app/apps/remix
 
