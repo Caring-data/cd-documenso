@@ -3,6 +3,13 @@
   "version": "0.0.0",
   "main": "./index.ts",
   "types": "./index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./hono": "./hono.ts",
+    "./v1/contract": "./v1/contract.ts",
+    "./v1/implementation": "./v1/implementation.ts",
+    "./v1/openapi": "./v1/openapi.ts"
+  },
   "license": "MIT",
   "scripts": {
     "lint": "eslint .",
@@ -21,6 +28,7 @@
     "@ts-rest/open-api": "^3.52.1",
     "@ts-rest/serverless": "^3.52.1",
     "@types/swagger-ui-react": "^5.18.0",
+    "hono": "4.10.6",
     "luxon": "^3.7.2",
     "superjson": "^2.2.5",
     "ts-pattern": "^5.9.0",

@@ -12,7 +12,6 @@
   "dependencies": {
     "@documenso/lib": "*",
     "@documenso/prisma": "*",
-    "@tanstack/react-query": "5.90.10",
     "@trpc/client": "11.8.1",
     "@trpc/react-query": "11.8.1",
     "@trpc/server": "11.8.1",

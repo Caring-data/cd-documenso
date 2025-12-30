@@ -17,6 +17,7 @@
     "ts-pattern": "^5.9.0"
   },
   "devDependencies": {
-    "vitest": "^3.2.4"
+    "@documenso/tsconfig": "*",
+    "@types/node": "^22.0.0"
   }
 }

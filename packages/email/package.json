@@ -42,7 +42,7 @@
     "resend": "^6.5.2"
   },
   "devDependencies": {
-    "@documenso/tsconfig": "*",
-    "@types/nodemailer": "^7.0.4"
+    "@documenso/tailwind-config": "*",
+    "@react-email/components": "0.0.12"
   }
 }
