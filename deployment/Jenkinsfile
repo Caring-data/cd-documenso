@@ -31,8 +31,8 @@ pipeline {
                     🚀 DEPLOY INITIATED
                     -------------------
                     Env:    ${DEPLOY_ENV}
-                    Files:  ${env.COMPOSE_FILES}
                     Agent:  ${AGENT_LABEL}
+                    Domain: ${DOMAIN_NAME}
                     -------------------
                     """
                 }
