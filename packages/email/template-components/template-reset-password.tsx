@@ -30,7 +30,7 @@ export const TemplateResetPassword = ({ assetBaseUrl }: TemplateResetPasswordPro
         <Section className="mb-6 mt-8 text-center">
           <Button
             className="bg-documenso-500 inline-flex items-center justify-center rounded-lg px-6 py-3 text-center text-sm font-medium text-black no-underline"
-            href={`${NEXT_PUBLIC_WEBAPP_URL ?? 'http://localhost:3000'}/signin`}
+            href={`${NEXT_PUBLIC_WEBAPP_URL ?? 'http://localhost:4000'}/signin`}
           >
             <Trans>Sign In</Trans>
           </Button>

@@ -145,7 +145,7 @@ export const deleteEnvelopeRecipient = async ({
     envelope.type === EnvelopeType.DOCUMENT &&
     isRecipientEmailValidForSending(recipientToDelete)
   ) {
-    const assetBaseUrl = NEXT_PUBLIC_WEBAPP_URL() || 'http://localhost:3000';
+    const assetBaseUrl = NEXT_PUBLIC_WEBAPP_URL() || 'http://localhost:4000';
 
     const template = createElement(RecipientRemovedFromDocumentTemplate, {
       documentName: envelope.title,

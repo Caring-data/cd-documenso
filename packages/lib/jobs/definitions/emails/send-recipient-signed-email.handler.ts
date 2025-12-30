@@ -94,7 +94,7 @@ export const run = async ({
     meta: envelope.documentMeta,
   });
 
-  const assetBaseUrl = NEXT_PUBLIC_WEBAPP_URL() || 'http://localhost:3000';
+  const assetBaseUrl = NEXT_PUBLIC_WEBAPP_URL() || 'http://localhost:4000';
 
   const i18n = await getI18nInstance(emailLanguage);
 

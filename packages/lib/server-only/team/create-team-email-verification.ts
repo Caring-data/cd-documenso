@@ -110,7 +110,7 @@ export const createTeamEmailVerification = async ({
  * @param teamUrl The url of the team the user is being invited to.
  */
 export const sendTeamEmailVerificationEmail = async (email: string, token: string, team: Team) => {
-  const assetBaseUrl = env('NEXT_PUBLIC_WEBAPP_URL') || 'http://localhost:3000';
+  const assetBaseUrl = env('NEXT_PUBLIC_WEBAPP_URL') || 'http://localhost:4000';
 
   const template = createElement(ConfirmTeamEmailTemplate, {
     assetBaseUrl,

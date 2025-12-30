@@ -13,6 +13,8 @@ import { Button } from '@documenso/ui/primitives/button';
 
 import { BrandingLogo } from '~/components/general/branding-logo';
 
+import { ThemeSwitcher } from '@documenso/ui/primitives/theme-switcher';
+
 import { AppCommandMenu } from './app-command-menu';
 import { AppNavDesktop } from './app-nav-desktop';
 import { AppNavMobile } from './app-nav-mobile';
@@ -67,6 +69,10 @@ export const Header = ({ className, ...props }: HeaderProps) => {
         </Link>
 
         <AppNavDesktop setIsCommandMenuOpen={setIsCommandMenuOpen} />
+
+        <div className="hidden md:block mr-4">
+          <ThemeSwitcher />
+        </div>
 
         <Button asChild variant="outline" className="relative hidden h-10 w-10 rounded-lg md:flex">
           <Link to="/inbox" className="relative block h-10 w-10">

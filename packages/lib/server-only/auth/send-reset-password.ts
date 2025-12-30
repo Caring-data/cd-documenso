@@ -19,7 +19,7 @@ export const sendResetPassword = async ({ userId }: SendResetPasswordOptions) =>
     },
   });
 
-  const assetBaseUrl = NEXT_PUBLIC_WEBAPP_URL() || 'http://localhost:3000';
+  const assetBaseUrl = NEXT_PUBLIC_WEBAPP_URL() || 'http://localhost:4000';
 
   const template = createElement(ResetPasswordTemplate, {
     assetBaseUrl,

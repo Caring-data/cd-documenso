@@ -9,7 +9,7 @@ import {
   useLoaderData,
   useLocation,
 } from 'react-router';
-import { PreventFlashOnWrongTheme, ThemeProvider, useTheme } from 'remix-themes';
+import { PreventFlashOnWrongTheme, Theme, ThemeProvider, useTheme } from 'remix-themes';
 
 import { getOptionalSession } from '@documenso/auth/server/lib/utils/get-session';
 import { SessionProvider } from '@documenso/lib/client-only/providers/session';
@@ -65,7 +65,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   return data(
     {
       lang,
-      theme: getTheme(),
+      theme: getTheme() ?? Theme.LIGHT,
       disableAnimations,
       session: session.isAuthenticated
         ? {

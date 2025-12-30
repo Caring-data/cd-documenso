@@ -763,7 +763,7 @@ export const createDocumentFromDirectTemplate = async ({
         createdEnvelope.id
       }`,
       documentName: createdEnvelope.title,
-      assetBaseUrl: NEXT_PUBLIC_WEBAPP_URL() || 'http://localhost:3000',
+      assetBaseUrl: NEXT_PUBLIC_WEBAPP_URL() || 'http://localhost:4000',
     });
 
     const [html, text] = await Promise.all([
