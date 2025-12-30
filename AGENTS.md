@@ -2,11 +2,11 @@
 
 ## Build/Test/Lint Commands
 
-- `npm run build` - Build all packages
-- `npm run lint` - Lint all packages
-- `npm run lint:fix` - Auto-fix linting issues
-- `npm run format` - Format code with Prettier
-- `npm run dev` - Start development server for Remix app
+- `pnpm run build` - Build all packages
+- `pnpm run lint` - Lint all packages
+- `pnpm run lint:fix` - Auto-fix linting issues
+- `pnpm run format` - Format code with Prettier
+- `pnpm run dev` - Start development server for Remix app
 
 ## Code Style Guidelines
 
