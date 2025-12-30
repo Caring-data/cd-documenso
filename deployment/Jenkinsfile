@@ -1,57 +1,42 @@
+def branchConfig = [
+    'main'        : ['production' , 'cd_production', 'rise.caringdata.com'],
+    'staging'     : ['staging'    , 'cd_staging'   , 'staging.caringdata.com'],
+    'development' : ['development', 'cd_development', 'caringdata.at.services']
+]
+
+def config = branchConfig[env.BRANCH_NAME] ?: branchConfig['development']
+def (DEPLOY_ENV, AGENT_LABEL, DOMAIN_NAME) = config
+
 pipeline {
-    agent any
+    agent { label "${AGENT_LABEL}" }
 
     environment {
-        DOCKER_IMAGE = 'documenso/documenso'
-        // Using GIT_COMMIT as tag for uniqueness, or BRANCH_NAME for latest of that branch
-        DOCKER_TAG = "${env.BRANCH_NAME}-${env.GIT_COMMIT.take(7)}"
-        COMPOSE_FILE = 'deployment/compose/compose.yml'
+        APP_NAME = 'cd-documenso'
+        COMPOSE_PROJECT_NAME = "${APP_NAME}-${DEPLOY_ENV}"
+        NODE_ENV = "${DEPLOY_ENV}"
+
+        HEALTH_CHECK_RETRIES = 10
+        HEALTH_CHECK_INTERVAL = 10
     }
+
 
     stages {
-        stage('Build') {
+        stage('1. Init') {
             steps {
                 script {
-                    echo "Building Docker image..."
-                    sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} -f deployment/Dockerfile ."
+                    if (!DOMAIN_NAME) error("❌ No domain configured for branch ${env.BRANCH_NAME}")
+
+                    currentBuild.displayName = "#${BUILD_NUMBER} - ${DEPLOY_ENV}"
+                    echo """
+                    🚀 DEPLOY INITIATED
+                    -------------------
+                    Env:    ${DEPLOY_ENV}
+                    Files:  ${env.COMPOSE_FILES}
+                    Agent:  ${AGENT_LABEL}
+                    -------------------
+                    """
                 }
             }
-        }
-
-        stage('Deploy') {
-            steps {
-                script {
-                    def envFile = ''
-                    
-                    if (env.BRANCH_NAME == 'development') {
-                        envFile = '.env.development'
-                    } else if (env.BRANCH_NAME == 'staging') {
-                        envFile = '.env.staging'
-                    } else if (env.BRANCH_NAME == 'main') {
-                        envFile = '.env.production'
-                    } else {
-                        echo "Skipping deployment for branch: ${env.BRANCH_NAME}"
-                        return
-                    }
-
-                    echo "Deploying to ${env.BRANCH_NAME} environment using ${envFile}..."
-                    
-                    // Ensure the env file exists or is provided (e.g. via Jenkins credentials binding if needed)
-                    // Here we assume it exists in the workspace or is created via previous steps/credentials
-                    
-                    withEnv(["DOCKER_TAG=${DOCKER_TAG}"]) {
-                         // We use --env-file to load the specific environment variables
-                         // and -f to point to the consolidated compose file
-                         sh "docker compose -f ${COMPOSE_FILE} --env-file ${envFile} up -d"
-                    }
-                }
-            }
-        }
-    }
-
-    post {
-        always {
-            cleanWs()
         }
     }
 }
