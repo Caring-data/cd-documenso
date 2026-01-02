@@ -12,6 +12,7 @@ import {
 import { TemplateType } from '@prisma/client';
 import { z } from 'zod';
 
+import { ZPasswordSchema } from '@documenso/auth/server/types/email-password';
 import { DATE_FORMATS, DEFAULT_DOCUMENT_DATE_FORMAT } from '@documenso/lib/constants/date-formats';
 import { SUPPORTED_LANGUAGE_CODES } from '@documenso/lib/constants/i18n';
 import { DEFAULT_DOCUMENT_TIME_ZONE, TIME_ZONES } from '@documenso/lib/constants/time-zones';
@@ -655,3 +656,52 @@ export const ZGetTemplatesQuerySchema = z.object({
   page: z.coerce.number().min(1).optional().default(1),
   perPage: z.coerce.number().min(1).optional().default(10),
 });
+
+/**
+ * Users
+ */
+export const ZCreateUserRequestSchema = z.object({
+  name: z.string().min(1),
+  email: z.string().email(),
+  password: ZPasswordSchema,
+});
+
+export type TCreateUserRequestSchema = z.infer<typeof ZCreateUserRequestSchema>;
+
+export const ZUpdateUserRequestSchema = z.object({
+  name: z.string().min(1).optional(),
+  email: z.string().email().optional(),
+  password: ZPasswordSchema.optional(),
+});
+
+export type TUpdateUserRequestSchema = z.infer<typeof ZUpdateUserRequestSchema>;
+
+export const ZUserResponseSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  email: z.string(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+});
+
+export type TUserResponseSchema = z.infer<typeof ZUserResponseSchema>;
+
+export const ZGetUsersQuerySchema = z.object({
+  page: z.coerce.number().min(1).optional().default(1),
+  perPage: z.coerce.number().min(1).optional().default(10),
+});
+
+export type TGetUsersQuerySchema = z.infer<typeof ZGetUsersQuerySchema>;
+
+export const ZSuccessfulGetUsersResponseSchema = z.object({
+  users: z.array(ZUserResponseSchema),
+  totalPages: z.number(),
+});
+
+export type TSuccessfulGetUsersResponseSchema = z.infer<typeof ZSuccessfulGetUsersResponseSchema>;
+
+export const ZApiKeyHeadersSchema = z.object({
+  'x-api-key': z.string(),
+});
+
+export type TApiKeyHeadersSchema = z.infer<typeof ZApiKeyHeadersSchema>;

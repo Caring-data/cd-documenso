@@ -68,6 +68,8 @@ declare namespace NodeJS {
 
     NEXT_PUBLIC_DISABLE_SIGNUP?: string;
 
+    NEXT_PRIVATE_API_KEY?: string;
+
     NEXT_PRIVATE_BROWSERLESS_URL?: string;
 
     NEXT_PRIVATE_JOBS_PROVIDER?: 'inngest' | 'local';
