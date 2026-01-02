@@ -27,7 +27,7 @@ To deploy Documenso, you need to provide an environment file (e.g., `.env.produc
 
     Key variables include:
     - `DOCKER_TAG`: The tag of the image to deploy (defaults to `latest`).
-    - `PORT`: Port to expose (default `4000`).
+    - `PORT`: Port to expose (default `3002`).
     - Database credentials (`NEXT_PRIVATE_DATABASE_URL`, etc.).
     - SMTP configuration.
     - Encryption keys.
@@ -53,7 +53,7 @@ Ensure the following environment variables are set in your `.env` file:
 | Variable | Description |
 | :--- | :--- |
 | `DOCKER_TAG` | The image tag to deploy (e.g., `latest`, `main-a1b2c3d`). |
-| `PORT` | Application port (default: 4000). |
+| `PORT` | Application port (default: 3002). |
 | `NEXTAUTH_SECRET` | Secret for NextAuth. |
 | `NEXT_PRIVATE_ENCRYPTION_KEY` | Primary encryption key (32 chars). |
 | `NEXT_PRIVATE_ENCRYPTION_SECONDARY_KEY` | Secondary encryption key (32 chars). |
