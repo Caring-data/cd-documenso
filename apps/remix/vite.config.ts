@@ -28,7 +28,7 @@ export default defineConfig({
     },
   },
   server: {
-    port: parseInt(process.env.PORT || '4000', 10),
+    port: parseInt(process.env.PORT || '3002', 10),
     strictPort: true,
   },
   plugins: [
@@ -49,7 +49,7 @@ export default defineConfig({
     }),
   ],
   ssr: {
-    noExternal: ['react-dropzone', 'plausible-tracker'],
+    noExternal: ['react-dropzone', 'plausible-tracker', 'superjson'],
     external: [
       '@napi-rs/canvas',
       '@node-rs/bcrypt',

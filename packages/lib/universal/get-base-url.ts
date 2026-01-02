@@ -13,5 +13,7 @@ export const getBaseUrl = () => {
     return webAppUrl;
   }
 
-  return `http://localhost:${env('PORT') ?? 4000}`;
+  if (typeof window === 'undefined') {
+    return `http://localhost:${env('PORT') ?? 3002}`;
+  }
 };
