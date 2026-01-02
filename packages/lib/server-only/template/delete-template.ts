@@ -19,7 +19,10 @@ export const deleteTemplate = async ({ id, userId, teamId }: DeleteTemplateOptio
     teamId,
   });
 
-  return await prisma.envelope.delete({
+  return await prisma.envelope.update({
     where: envelopeWhereInput,
+    data: {
+      deletedAt: new Date().toISOString(),
+    },
   });
 };

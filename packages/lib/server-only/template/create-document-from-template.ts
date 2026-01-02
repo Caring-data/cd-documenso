@@ -312,7 +312,10 @@ export const createDocumentFromTemplate = async ({
   });
 
   const template = await prisma.envelope.findUnique({
-    where: envelopeWhereInput,
+    where: {
+      ...envelopeWhereInput,
+      deletedAt: null,
+    },
     include: {
       recipients: {
         include: {

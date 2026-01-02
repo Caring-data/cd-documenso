@@ -36,6 +36,7 @@ export const getEnvelopeForDirectTemplateSigning = async ({
   const envelope = await prisma.envelope.findFirst({
     where: {
       type: EnvelopeType.TEMPLATE,
+      deletedAt: null,
       status: DocumentStatus.DRAFT,
       directLink: {
         enabled: true,

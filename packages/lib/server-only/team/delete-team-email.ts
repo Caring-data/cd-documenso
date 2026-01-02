@@ -72,7 +72,7 @@ export const deleteTeamEmail = async ({ userId, userEmail, teamId }: DeleteTeamE
   });
 
   try {
-    const assetBaseUrl = env('NEXT_PUBLIC_WEBAPP_URL') || 'http://localhost:4000';
+    const assetBaseUrl = env('NEXT_PUBLIC_WEBAPP_URL') || 'http://localhost:3002';
 
     const template = createElement(TeamEmailRemovedTemplate, {
       assetBaseUrl,

@@ -16,7 +16,7 @@ export const TemplateDocumentSelfSigned = ({
 }: TemplateDocumentSelfSignedProps) => {
   const NEXT_PUBLIC_WEBAPP_URL = env('NEXT_PUBLIC_WEBAPP_URL');
 
-  const signUpUrl = `${NEXT_PUBLIC_WEBAPP_URL ?? 'http://localhost:4000'}/signup`;
+  const signUpUrl = `${NEXT_PUBLIC_WEBAPP_URL ?? 'http://localhost:3002'}/signup`;
 
   const getAssetUrl = (path: string) => {
     return new URL(path, assetBaseUrl).toString();

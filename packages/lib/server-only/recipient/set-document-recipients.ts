@@ -306,7 +306,7 @@ export const setDocumentRecipients = async ({
           return;
         }
 
-        const assetBaseUrl = NEXT_PUBLIC_WEBAPP_URL() || 'http://localhost:4000';
+        const assetBaseUrl = NEXT_PUBLIC_WEBAPP_URL() || 'http://localhost:3002';
 
         const template = createElement(RecipientRemovedFromDocumentTemplate, {
           documentName: envelope.title,

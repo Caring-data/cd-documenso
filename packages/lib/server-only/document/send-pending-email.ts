@@ -75,7 +75,7 @@ export const sendPendingEmail = async ({ id, recipientId }: SendPendingEmailOpti
     return;
   }
 
-  const assetBaseUrl = NEXT_PUBLIC_WEBAPP_URL() || 'http://localhost:4000';
+  const assetBaseUrl = NEXT_PUBLIC_WEBAPP_URL() || 'http://localhost:3002';
 
   const template = createElement(DocumentPendingEmailTemplate, {
     documentName: envelope.title,

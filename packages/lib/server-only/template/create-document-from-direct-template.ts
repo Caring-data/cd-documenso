@@ -104,6 +104,7 @@ export const createDocumentFromDirectTemplate = async ({
 }: CreateDocumentFromDirectTemplateOptions): Promise<TCreateDocumentFromDirectTemplateResponse> => {
   const directTemplateEnvelope = await prisma.envelope.findFirst({
     where: {
+      deletedAt: null,
       directLink: {
         token: directTemplateToken,
       },
@@ -763,7 +764,7 @@ export const createDocumentFromDirectTemplate = async ({
         createdEnvelope.id
       }`,
       documentName: createdEnvelope.title,
-      assetBaseUrl: NEXT_PUBLIC_WEBAPP_URL() || 'http://localhost:4000',
+      assetBaseUrl: NEXT_PUBLIC_WEBAPP_URL() || 'http://localhost:3002',
     });
 
     const [html, text] = await Promise.all([
