@@ -86,7 +86,7 @@ export const deleteDocument = async ({
     });
   }
 
-  // Handle hard or soft deleting the actual document if user has permission.
+  // Handle soft deleting the actual document if user has permission.
   if (isUserOwner || isUserTeamMember) {
     await handleDocumentOwnerDelete({
       envelope,
@@ -149,52 +149,25 @@ const handleDocumentOwnerDelete = async ({
     meta: envelope.documentMeta,
   });
 
-  // Soft delete completed documents.
-  if (isDocumentCompleted(envelope.status)) {
-    return await prisma.$transaction(async (tx) => {
-      await tx.documentAuditLog.create({
-        data: createDocumentAuditLogData({
-          envelopeId: envelope.id,
-          type: DOCUMENT_AUDIT_LOG_TYPE.DOCUMENT_DELETED,
-          metadata: requestMetadata,
-          data: {
-            type: 'SOFT',
-          },
-        }),
-      });
-
-      return await tx.envelope.update({
-        where: {
-          id: envelope.id,
-        },
-        data: {
-          deletedAt: new Date().toISOString(),
-        },
-      });
-    });
-  }
-
-  // Hard delete draft and pending documents.
+  // Soft delete all documents.
   const deletedEnvelope = await prisma.$transaction(async (tx) => {
-    // Currently redundant since deleting a document will delete the audit logs.
-    // However may be useful if we disassociate audit logs and documents if required.
     await tx.documentAuditLog.create({
       data: createDocumentAuditLogData({
         envelopeId: envelope.id,
         type: DOCUMENT_AUDIT_LOG_TYPE.DOCUMENT_DELETED,
         metadata: requestMetadata,
         data: {
-          type: 'HARD',
+          type: 'SOFT',
         },
       }),
     });
 
-    return await tx.envelope.delete({
+    return await tx.envelope.update({
       where: {
         id: envelope.id,
-        status: {
-          not: DocumentStatus.COMPLETED,
-        },
+      },
+      data: {
+        deletedAt: new Date().toISOString(),
       },
     });
   });
@@ -203,50 +176,51 @@ const handleDocumentOwnerDelete = async ({
     envelope.documentMeta,
   ).documentDeleted;
 
-  if (!isEnvelopeDeleteEmailEnabled) {
-    return deletedEnvelope;
+  // Send cancellation emails to recipients for pending documents.
+  if (!isDocumentCompleted(envelope.status) && isEnvelopeDeleteEmailEnabled) {
+    await Promise.all(
+      envelope.recipients.map(async (recipient) => {
+        if (
+          recipient.sendStatus !== SendStatus.SENT ||
+          !isRecipientEmailValidForSending(recipient)
+        ) {
+          return;
+        }
+
+        const assetBaseUrl = NEXT_PUBLIC_WEBAPP_URL() || 'http://localhost:3002';
+
+        const template = createElement(DocumentCancelTemplate, {
+          documentName: envelope.title,
+          inviterName: user.name || undefined,
+          inviterEmail: user.email,
+          assetBaseUrl,
+        });
+
+        const [html, text] = await Promise.all([
+          renderEmailWithI18N(template, { lang: emailLanguage, branding }),
+          renderEmailWithI18N(template, {
+            lang: emailLanguage,
+            branding,
+            plainText: true,
+          }),
+        ]);
+
+        const i18n = await getI18nInstance(emailLanguage);
+
+        await mailer.sendMail({
+          to: {
+            address: recipient.email,
+            name: recipient.name,
+          },
+          from: senderEmail,
+          replyTo: replyToEmail,
+          subject: i18n._(msg`Document Cancelled`),
+          html,
+          text,
+        });
+      }),
+    );
   }
-
-  // Send cancellation emails to recipients.
-  await Promise.all(
-    envelope.recipients.map(async (recipient) => {
-      if (recipient.sendStatus !== SendStatus.SENT || !isRecipientEmailValidForSending(recipient)) {
-        return;
-      }
-
-      const assetBaseUrl = NEXT_PUBLIC_WEBAPP_URL() || 'http://localhost:4000';
-
-      const template = createElement(DocumentCancelTemplate, {
-        documentName: envelope.title,
-        inviterName: user.name || undefined,
-        inviterEmail: user.email,
-        assetBaseUrl,
-      });
-
-      const [html, text] = await Promise.all([
-        renderEmailWithI18N(template, { lang: emailLanguage, branding }),
-        renderEmailWithI18N(template, {
-          lang: emailLanguage,
-          branding,
-          plainText: true,
-        }),
-      ]);
-
-      const i18n = await getI18nInstance(emailLanguage);
-
-      await mailer.sendMail({
-        to: {
-          address: recipient.email,
-          name: recipient.name,
-        },
-        from: senderEmail,
-        replyTo: replyToEmail,
-        subject: i18n._(msg`Document Cancelled`),
-        html,
-        text,
-      });
-    }),
-  );
 
   return deletedEnvelope;
 };
