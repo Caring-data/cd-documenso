@@ -263,7 +263,7 @@ export const EnvelopeEditorFieldDragDrop = ({
   }, [onMouseClick, onMouseMove, selectedField]);
 
   const selectedRecipientColor = useMemo(() => {
-    return selectedRecipientId ? getRecipientColorKey(selectedRecipientId) : 'green';
+    return selectedRecipientId ? getRecipientColorKey(selectedRecipientId) : 'blue';
   }, [selectedRecipientId, getRecipientColorKey]);
 
   return (

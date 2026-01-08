@@ -142,7 +142,7 @@ export default function EnvelopeSignerPageRenderer() {
 
     const fieldToRender = ZFullFieldSchema.parse(unparsedField);
 
-    let color: TRecipientColor = 'green';
+    let color: TRecipientColor = 'blue';
 
     if (fieldToRender.fieldMeta?.readOnly) {
       color = 'readOnly';
