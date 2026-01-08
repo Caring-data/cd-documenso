@@ -357,6 +357,7 @@ export const FIELD_DROPDOWN_META_DEFAULT_VALUES: TDropdownFieldMeta = {
 export const FIELD_SIGNATURE_META_DEFAULT_VALUES: TSignatureFieldMeta = {
   type: 'signature',
   fontSize: DEFAULT_SIGNATURE_TEXT_FONT_SIZE,
+  required: true,
 };
 
 export const FIELD_META_DEFAULT_VALUES: Record<FieldType, TFieldMetaSchema> = {

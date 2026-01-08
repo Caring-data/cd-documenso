@@ -9,6 +9,7 @@ import { validateNumberField } from '@documenso/lib/advanced-fields-validation/v
 import { validateRadioField } from '@documenso/lib/advanced-fields-validation/validate-radio';
 import { validateTextField } from '@documenso/lib/advanced-fields-validation/validate-text';
 import { fromCheckboxValue } from '@documenso/lib/universal/field-checkbox';
+import { isRequiredField } from '@documenso/lib/utils/advanced-fields-helpers';
 import { prisma } from '@documenso/prisma';
 
 import { AUTO_SIGNABLE_FIELD_TYPES } from '../../constants/autosign';
@@ -202,7 +203,9 @@ export const signFieldWithToken = async ({
   }
 
   if (isSignatureField && !signatureImageAsBase64 && !typedSignature) {
-    throw new Error('Signature field must have a signature');
+    if (isRequiredField(field)) {
+      throw new Error('Signature field must have a signature');
+    }
   }
 
   if (isSignatureField && documentMeta?.typedSignatureEnabled === false && typedSignature) {
