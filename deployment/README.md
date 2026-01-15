@@ -50,21 +50,17 @@ A `Jenkinsfile` is provided in the `deployment/` directory to automate the build
 
 Ensure the following environment variables are set in your `.env` file:
 
-| Variable | Description |
-| :--- | :--- |
-| `DOCKER_TAG` | The image tag to deploy (e.g., `latest`, `main-a1b2c3d`). |
-| `PORT` | Application port (default: 4000). |
-| `NEXTAUTH_SECRET` | Secret for NextAuth. |
-| `NEXT_PRIVATE_ENCRYPTION_KEY` | Primary encryption key (32 chars). |
-| `NEXT_PRIVATE_ENCRYPTION_SECONDARY_KEY` | Secondary encryption key (32 chars). |
-| `NEXT_PUBLIC_WEBAPP_URL` | Public URL of the app. |
-| `NEXT_PRIVATE_DATABASE_URL` | Database connection string. |
-| `NEXT_PRIVATE_SMTP_TRANSPORT` | SMTP transport type (e.g., `smtp-auth`). |
-| `NEXT_PRIVATE_SMTP_HOST` | SMTP Host. |
-| `NEXT_PRIVATE_SMTP_PORT` | SMTP Port. |
-| `NEXT_PRIVATE_SMTP_USERNAME` | SMTP Username. |
-| `NEXT_PRIVATE_SMTP_PASSWORD` | SMTP Password. |
-| `NEXT_PRIVATE_SMTP_FROM_ADDRESS` | Sender email address. |
-| `NEXT_PRIVATE_SMTP_FROM_NAME` | Sender name. |
+| Variable                                | Description                                                                     |
+| :-------------------------------------- | :------------------------------------------------------------------------------ |
+| `DOCKER_TAG`                            | The image tag to deploy (e.g., `latest`, `main-a1b2c3d`).                       |
+| `PORT`                                  | Application port (default: 4000).                                               |
+| `NEXTAUTH_SECRET`                       | Secret for NextAuth.                                                            |
+| `NEXT_PRIVATE_ENCRYPTION_KEY`           | Primary encryption key (32 chars).                                              |
+| `NEXT_PRIVATE_ENCRYPTION_SECONDARY_KEY` | Secondary encryption key (32 chars).                                            |
+| `NEXT_PUBLIC_WEBAPP_URL`                | Public URL of the app.                                                          |
+| `NEXT_PRIVATE_DATABASE_URL`             | Database connection string.                                                     |
+| `NEXT_PRIVATE_NOTIFY_ENDPOINT`          | Base URL of the Notify service (e.g. `https://notify-it.com/notify/services/`). |
+| `NEXT_PRIVATE_NOTIFY_EMAIL`             | Notify service authentication email / username.                                 |
+| `NEXT_PRIVATE_NOTIFY_PASSWORD`          | Notify service authentication password / token.                                 |
 
-*Refer to the project's `.env.example` for a complete list of supported variables.*
+_Refer to the project's `.env.example` for a complete list of supported variables._

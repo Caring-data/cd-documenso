@@ -2,7 +2,7 @@ import { createElement } from 'react';
 
 import { msg } from '@lingui/core/macro';
 
-import { mailer } from '@documenso/email/mailer';
+import { sendEmailWithNotify } from '@documenso/email/notify';
 import OrganisationJoinEmailTemplate from '@documenso/email/templates/organisation-join';
 import { prisma } from '@documenso/prisma';
 
@@ -93,7 +93,7 @@ export const run = async ({
         });
 
         // !: Replace with the actual language of the recipient later
-        const [html, text] = await Promise.all([
+        const [html] = await Promise.all([
           renderEmailWithI18N(emailContent, {
             lang: emailLanguage,
             branding,
@@ -107,13 +107,14 @@ export const run = async ({
 
         const i18n = await getI18nInstance(emailLanguage);
 
-        await mailer.sendMail({
-          to: member.user.email,
-          from: senderEmail,
-          subject: i18n._(msg`A new member has joined your organisation`),
+        await sendEmailWithNotify(
+          {
+            email: member.user.email,
+            name: member.user.name ?? undefined,
+          },
+          i18n._(msg`A new member has joined your organization`),
           html,
-          text,
-        });
+        );
       },
     );
   }

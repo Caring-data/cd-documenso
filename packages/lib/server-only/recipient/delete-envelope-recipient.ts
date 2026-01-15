@@ -3,7 +3,7 @@ import { createElement } from 'react';
 import { msg } from '@lingui/core/macro';
 import { EnvelopeType, SendStatus } from '@prisma/client';
 
-import { mailer } from '@documenso/email/mailer';
+import { sendEmailWithNotify } from '@documenso/email/notify';
 import RecipientRemovedFromDocumentTemplate from '@documenso/email/templates/recipient-removed-from-document';
 import { DOCUMENT_AUDIT_LOG_TYPE } from '@documenso/lib/types/document-audit-logs';
 import type { ApiRequestMetadata } from '@documenso/lib/universal/extract-request-metadata';
@@ -153,7 +153,7 @@ export const deleteEnvelopeRecipient = async ({
       assetBaseUrl,
     });
 
-    const { branding, emailLanguage, senderEmail, replyToEmail } = await getEmailContext({
+    const { branding, emailLanguage } = await getEmailContext({
       emailType: 'RECIPIENT',
       source: {
         type: 'team',
@@ -162,24 +162,21 @@ export const deleteEnvelopeRecipient = async ({
       meta: envelope.documentMeta,
     });
 
-    const [html, text] = await Promise.all([
+    const [html] = await Promise.all([
       renderEmailWithI18N(template, { lang: emailLanguage, branding }),
       renderEmailWithI18N(template, { lang: emailLanguage, branding, plainText: true }),
     ]);
 
     const i18n = await getI18nInstance(emailLanguage);
 
-    await mailer.sendMail({
-      to: {
-        address: recipientToDelete.email,
-        name: recipientToDelete.name,
+    await sendEmailWithNotify(
+      {
+        email: recipientToDelete.email,
+        name: recipientToDelete.name ?? undefined,
       },
-      from: senderEmail,
-      replyTo: replyToEmail,
-      subject: i18n._(msg`You have been removed from a document`),
+      i18n._(msg`You have been removed from a document`),
       html,
-      text,
-    });
+    );
   }
 
   return deletedRecipient;

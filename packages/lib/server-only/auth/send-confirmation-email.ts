@@ -2,16 +2,13 @@ import { createElement } from 'react';
 
 import { msg } from '@lingui/core/macro';
 
-import { mailer } from '@documenso/email/mailer';
+import { sendEmailWithNotify } from '@documenso/email/notify';
 import { ConfirmEmailTemplate } from '@documenso/email/templates/confirm-email';
 import { prisma } from '@documenso/prisma';
 
 import { getI18nInstance } from '../../client-only/providers/i18n-server';
 import { NEXT_PUBLIC_WEBAPP_URL } from '../../constants/app';
-import {
-  DOCUMENSO_INTERNAL_EMAIL,
-  USER_SIGNUP_VERIFICATION_TOKEN_IDENTIFIER,
-} from '../../constants/email';
+import { USER_SIGNUP_VERIFICATION_TOKEN_IDENTIFIER } from '../../constants/email';
 import { renderEmailWithI18N } from '../../utils/render-email-with-i18n';
 
 export interface SendConfirmationEmailProps {
@@ -50,21 +47,19 @@ export const sendConfirmationEmail = async ({ userId }: SendConfirmationEmailPro
     confirmationLink,
   });
 
-  const [html, text] = await Promise.all([
+  const [html] = await Promise.all([
     renderEmailWithI18N(confirmationTemplate),
     renderEmailWithI18N(confirmationTemplate, { plainText: true }),
   ]);
 
   const i18n = await getI18nInstance();
 
-  return mailer.sendMail({
-    to: {
-      address: user.email,
-      name: user.name || '',
+  return await sendEmailWithNotify(
+    {
+      email: user.email,
+      name: user.name ?? undefined,
     },
-    from: DOCUMENSO_INTERNAL_EMAIL,
-    subject: i18n._(msg`Please confirm your email`),
+    i18n._(msg`Please confirm your email`),
     html,
-    text,
-  });
+  );
 };

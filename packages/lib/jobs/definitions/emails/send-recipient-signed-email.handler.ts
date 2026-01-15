@@ -3,7 +3,7 @@ import { createElement } from 'react';
 import { msg } from '@lingui/core/macro';
 import { EnvelopeType } from '@prisma/client';
 
-import { mailer } from '@documenso/email/mailer';
+import { sendEmailWithNotify } from '@documenso/email/notify';
 import { DocumentRecipientSignedEmailTemplate } from '@documenso/email/templates/document-recipient-signed';
 import { prisma } from '@documenso/prisma';
 
@@ -85,7 +85,7 @@ export const run = async ({
     return;
   }
 
-  const { branding, emailLanguage, senderEmail } = await getEmailContext({
+  const { branding, emailLanguage } = await getEmailContext({
     emailType: 'INTERNAL',
     source: {
       type: 'team',
@@ -106,7 +106,7 @@ export const run = async ({
   });
 
   await io.runTask('send-recipient-signed-email', async () => {
-    const [html, text] = await Promise.all([
+    const [html] = await Promise.all([
       renderEmailWithI18N(template, { lang: emailLanguage, branding }),
       renderEmailWithI18N(template, {
         lang: emailLanguage,
@@ -115,15 +115,13 @@ export const run = async ({
       }),
     ]);
 
-    await mailer.sendMail({
-      to: {
-        name: owner.name ?? '',
-        address: owner.email,
+    await sendEmailWithNotify(
+      {
+        email: owner.email,
+        name: owner.name ?? undefined,
       },
-      from: senderEmail,
-      subject: i18n._(msg`${recipientReference} has signed "${envelope.title}"`),
+      i18n._(msg`${recipientReference} has signed "${envelope.title}"`),
       html,
-      text,
-    });
+    );
   });
 };

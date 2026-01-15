@@ -5,7 +5,7 @@ import type { Organisation, Prisma } from '@prisma/client';
 import { OrganisationMemberInviteStatus } from '@prisma/client';
 import { nanoid } from 'nanoid';
 
-import { mailer } from '@documenso/email/mailer';
+import { sendEmailWithNotify } from '@documenso/email/notify';
 import { OrganisationInviteEmailTemplate } from '@documenso/email/templates/organisation-invite';
 import { NEXT_PUBLIC_WEBAPP_URL } from '@documenso/lib/constants/app';
 import { ORGANISATION_MEMBER_ROLE_PERMISSIONS_MAP } from '@documenso/lib/constants/organisations';
@@ -167,7 +167,7 @@ export const sendOrganisationMemberInviteEmail = async ({
     organisationName: organisation.name,
   });
 
-  const { branding, emailLanguage, senderEmail } = await getEmailContext({
+  const { branding, emailLanguage } = await getEmailContext({
     emailType: 'INTERNAL',
     source: {
       type: 'organisation',
@@ -175,7 +175,7 @@ export const sendOrganisationMemberInviteEmail = async ({
     },
   });
 
-  const [html, text] = await Promise.all([
+  const [html] = await Promise.all([
     renderEmailWithI18N(template, {
       lang: emailLanguage,
       branding,
@@ -189,11 +189,11 @@ export const sendOrganisationMemberInviteEmail = async ({
 
   const i18n = await getI18nInstance(emailLanguage);
 
-  await mailer.sendMail({
-    to: email,
-    from: senderEmail,
-    subject: i18n._(msg`You have been invited to join ${organisation.name} on Documenso`),
+  await sendEmailWithNotify(
+    {
+      email: email,
+    },
+    i18n._(msg`You have been invited to join ${organisation.name} on Documenso`),
     html,
-    text,
-  });
+  );
 };

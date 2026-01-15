@@ -3,7 +3,7 @@ import { createElement } from 'react';
 import { msg } from '@lingui/core/macro';
 import { EnvelopeType, ReadStatus, SendStatus, SigningStatus } from '@prisma/client';
 
-import { mailer } from '@documenso/email/mailer';
+import { sendEmailWithNotify } from '@documenso/email/notify';
 import DocumentCancelTemplate from '@documenso/email/templates/document-cancel';
 import { isRecipientEmailValidForSending } from '@documenso/lib/utils/recipients';
 import { prisma } from '@documenso/prisma';
@@ -93,7 +93,7 @@ export const run = async ({
           cancellationReason: cancellationReason || 'The document has been cancelled.',
         });
 
-        const [html, text] = await Promise.all([
+        const [html] = await Promise.all([
           renderEmailWithI18N(template, { lang: emailLanguage, branding }),
           renderEmailWithI18N(template, {
             lang: emailLanguage,
@@ -102,17 +102,14 @@ export const run = async ({
           }),
         ]);
 
-        await mailer.sendMail({
-          to: {
-            name: recipient.name,
-            address: recipient.email,
+        await sendEmailWithNotify(
+          {
+            name: recipient.name ?? undefined,
+            email: recipient.email,
           },
-          from: senderEmail,
-          replyTo: replyToEmail,
-          subject: i18n._(msg`Document "${envelope.title}" Cancelled`),
+          i18n._(msg`Document "${envelope.title}" Cancelled`),
           html,
-          text,
-        });
+        );
       }),
     );
   });

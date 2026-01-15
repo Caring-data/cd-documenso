@@ -2,7 +2,7 @@ import { createElement } from 'react';
 
 import { msg } from '@lingui/core/macro';
 
-import { mailer } from '@documenso/email/mailer';
+import { sendEmailWithNotify } from '@documenso/email/notify';
 import OrganisationLeaveEmailTemplate from '@documenso/email/templates/organisation-leave';
 import { prisma } from '@documenso/prisma';
 
@@ -62,7 +62,7 @@ export const run = async ({
     },
   });
 
-  const { branding, emailLanguage, senderEmail } = await getEmailContext({
+  const { branding, emailLanguage } = await getEmailContext({
     emailType: 'INTERNAL',
     source: {
       type: 'organisation',
@@ -87,7 +87,7 @@ export const run = async ({
           organisationUrl: organisation.url,
         });
 
-        const [html, text] = await Promise.all([
+        const [html] = await Promise.all([
           renderEmailWithI18N(emailContent, {
             lang: emailLanguage,
             branding,
@@ -101,13 +101,13 @@ export const run = async ({
 
         const i18n = await getI18nInstance(emailLanguage);
 
-        await mailer.sendMail({
-          to: member.user.email,
-          from: senderEmail,
-          subject: i18n._(msg`A member has left your organisation`),
+        await sendEmailWithNotify(
+          {
+            email: member.user.email,
+          },
+          i18n._(msg`A member has left your organization`),
           html,
-          text,
-        });
+        );
       },
     );
   }

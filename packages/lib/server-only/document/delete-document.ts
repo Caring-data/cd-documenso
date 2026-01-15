@@ -4,7 +4,7 @@ import { msg } from '@lingui/core/macro';
 import type { DocumentMeta, Envelope, Recipient, User } from '@prisma/client';
 import { DocumentStatus, EnvelopeType, SendStatus, WebhookTriggerEvents } from '@prisma/client';
 
-import { mailer } from '@documenso/email/mailer';
+import { sendEmailWithNotify } from '@documenso/email/notify';
 import DocumentCancelTemplate from '@documenso/email/templates/document-cancel';
 import { prisma } from '@documenso/prisma';
 
@@ -140,7 +140,7 @@ const handleDocumentOwnerDelete = async ({
     return;
   }
 
-  const { branding, emailLanguage, senderEmail, replyToEmail } = await getEmailContext({
+  const { branding, emailLanguage } = await getEmailContext({
     emailType: 'RECIPIENT',
     source: {
       type: 'team',
@@ -223,7 +223,7 @@ const handleDocumentOwnerDelete = async ({
         assetBaseUrl,
       });
 
-      const [html, text] = await Promise.all([
+      const [html] = await Promise.all([
         renderEmailWithI18N(template, { lang: emailLanguage, branding }),
         renderEmailWithI18N(template, {
           lang: emailLanguage,
@@ -234,17 +234,14 @@ const handleDocumentOwnerDelete = async ({
 
       const i18n = await getI18nInstance(emailLanguage);
 
-      await mailer.sendMail({
-        to: {
-          address: recipient.email,
-          name: recipient.name,
+      await sendEmailWithNotify(
+        {
+          email: recipient.email,
+          name: recipient.name ?? undefined,
         },
-        from: senderEmail,
-        replyTo: replyToEmail,
-        subject: i18n._(msg`Document Cancelled`),
+        i18n._(msg`Document Cancelled`),
         html,
-        text,
-      });
+      );
     }),
   );
 
