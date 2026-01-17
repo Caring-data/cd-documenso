@@ -315,6 +315,22 @@ export const signFieldWithToken = async ({
                 data: updatedField.customText,
               }),
             )
+            .with(
+              FieldType.RESIDENT_FIRST_NAME,
+              FieldType.RESIDENT_LAST_NAME,
+              FieldType.RESIDENT_DOB,
+              FieldType.RESIDENT_GENDER_IDENTITY,
+              FieldType.RESIDENT_LOCATION_NAME,
+              FieldType.RESIDENT_LOCATION_STATE,
+              FieldType.RESIDENT_LOCATION_ADDRESS,
+              FieldType.RESIDENT_LOCATION_CITY,
+              FieldType.RESIDENT_LOCATION_ZIP_CODE,
+              FieldType.RESIDENT_LOCATION_COUNTRY,
+              (type) => ({
+                type,
+                data: updatedField.customText,
+              }),
+            )
             .exhaustive(),
           fieldSecurity: derivedRecipientActionAuth
             ? {

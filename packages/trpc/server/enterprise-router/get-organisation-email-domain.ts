@@ -13,7 +13,7 @@ export const getOrganisationEmailDomainRoute = authenticatedProcedure
   .input(ZGetOrganisationEmailDomainRequestSchema)
   .output(ZGetOrganisationEmailDomainResponseSchema)
   .query(async ({ input, ctx }) => {
-    const { emailDomainId } = input;
+    const { id: emailDomainId } = input;
 
     ctx.logger.info({
       input: {

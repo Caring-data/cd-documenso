@@ -185,6 +185,21 @@ export const EnvelopeEditorPreviewPage = () => {
               customText: '',
             };
           })
+          .with(
+            { type: FieldType.RESIDENT_FIRST_NAME },
+            { type: FieldType.RESIDENT_LAST_NAME },
+            { type: FieldType.RESIDENT_DOB },
+            { type: FieldType.RESIDENT_GENDER_IDENTITY },
+            { type: FieldType.RESIDENT_LOCATION_NAME },
+            { type: FieldType.RESIDENT_LOCATION_STATE },
+            { type: FieldType.RESIDENT_LOCATION_ADDRESS },
+            { type: FieldType.RESIDENT_LOCATION_CITY },
+            { type: FieldType.RESIDENT_LOCATION_ZIP_CODE },
+            { type: FieldType.RESIDENT_LOCATION_COUNTRY },
+            () => ({
+              customText: '',
+            }),
+          )
           .exhaustive(),
       };
     });

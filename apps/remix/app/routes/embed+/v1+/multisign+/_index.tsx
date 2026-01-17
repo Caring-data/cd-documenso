@@ -5,7 +5,6 @@ import { useRevalidator } from 'react-router';
 
 import { getOptionalSession } from '@documenso/auth/server/lib/utils/get-session';
 import { getDocumentAndSenderByToken } from '@documenso/lib/server-only/document/get-document-by-token';
-import { getOrganisationClaimByTeamId } from '@documenso/lib/server-only/organisation/get-organisation-claims';
 import { getRecipientByToken } from '@documenso/lib/server-only/recipient/get-recipient-by-token';
 
 import { BrandingLogo } from '~/components/general/branding-logo';
@@ -51,10 +50,9 @@ export async function loader({ request }: Route.LoaderArgs) {
     });
   }
 
-  const organisationClaim = await getOrganisationClaimByTeamId({ teamId: firstDocument.teamId });
-
-  const allowWhitelabelling = organisationClaim.flags.embedSigningWhiteLabel;
-  const hidePoweredBy = organisationClaim.flags.hidePoweredBy;
+  // Feature flags removed - embedding always available
+  const allowWhitelabelling = false; // Can be configured per organisation if needed
+  const hidePoweredBy = false; // Can be configured per organisation if needed
 
   return superLoaderJson({
     envelopes,

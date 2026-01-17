@@ -84,12 +84,14 @@ export const handleOAuthOrganisationCallbackUrl = async (
   // Link the account directly without email confirmation
   await prisma.account.create({
     data: {
+      type: 'oauth',
       provider: clientOptions.id,
       providerAccountId: sub,
       userId: userToLink.id,
-      accessToken,
-      idToken,
-      expiresAt: Math.floor(accessTokenExpiresAt.getTime() / 1000),
+      access_token: accessToken,
+      id_token: idToken,
+      expires_at: Math.floor(accessTokenExpiresAt.getTime() / 1000),
+      token_type: 'Bearer',
     },
   });
 

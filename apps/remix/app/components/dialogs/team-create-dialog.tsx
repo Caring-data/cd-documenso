@@ -135,18 +135,6 @@ export const TeamCreateDialog = ({ trigger, onCreated, ...props }: TeamCreateDia
       return 'loading';
     }
 
-    if (!IS_BILLING_ENABLED()) {
-      return 'form';
-    }
-
-    if (fullOrganisation.organisationClaim.teamCount === 0) {
-      return 'form';
-    }
-
-    if (fullOrganisation.organisationClaim.teamCount <= fullOrganisation.teams.length) {
-      return 'alert';
-    }
-
     return 'form';
   }, [fullOrganisation]);
 
@@ -188,7 +176,7 @@ export const TeamCreateDialog = ({ trigger, onCreated, ...props }: TeamCreateDia
 
         {dialogState === 'loading' && <SpinnerBox className="py-32" />}
 
-        {dialogState === 'alert' && (
+        {false && (
           <>
             <Alert
               className="flex flex-col justify-between p-6 sm:flex-row sm:items-center"

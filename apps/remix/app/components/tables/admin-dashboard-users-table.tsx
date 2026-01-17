@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState, useTransition } from 'react';
 import { msg } from '@lingui/core/macro';
 import { useLingui } from '@lingui/react';
 import { Trans } from '@lingui/react/macro';
-import type { Role, Subscription } from '@prisma/client';
+import type { Role } from '@prisma/client';
 import { Edit, Loader } from 'lucide-react';
 import { Link } from 'react-router';
 
@@ -20,14 +20,8 @@ type UserData = {
   name: string | null;
   email: string;
   roles: Role[];
-  subscriptions?: SubscriptionLite[] | null;
   documentCount: number;
 };
-
-type SubscriptionLite = Pick<
-  Subscription,
-  'id' | 'status' | 'planId' | 'priceId' | 'createdAt' | 'periodEnd'
->;
 
 type AdminDashboardUsersTableProps = {
   users: UserData[];

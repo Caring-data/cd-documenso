@@ -39,7 +39,6 @@ export const updateOrganisationAuthenticationPortalRoute = authenticatedProcedur
       }),
       include: {
         organisationAuthenticationPortal: true,
-        organisationClaim: true,
       },
     });
 
@@ -47,11 +46,7 @@ export const updateOrganisationAuthenticationPortalRoute = authenticatedProcedur
       throw new AppError(AppErrorCode.UNAUTHORIZED);
     }
 
-    if (!organisation.organisationClaim.flags.authenticationPortal) {
-      throw new AppError(AppErrorCode.INVALID_REQUEST, {
-        message: 'Authentication portal is not allowed for this organisation',
-      });
-    }
+    // Feature flag checks removed - authentication portal is now always available
 
     const {
       defaultOrganisationRole,

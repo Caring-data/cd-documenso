@@ -67,3 +67,6 @@ scripts/output*
 
 # docs
 docs/
+
+# cursor
+.cursor

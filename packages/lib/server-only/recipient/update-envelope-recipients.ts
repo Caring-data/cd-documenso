@@ -60,7 +60,7 @@ export const updateEnvelopeRecipients = async ({
         select: {
           organisation: {
             select: {
-              organisationClaim: true,
+              id: true,
             },
           },
         },
@@ -84,12 +84,7 @@ export const updateEnvelopeRecipients = async ({
     (recipient) => recipient.actionAuth && recipient.actionAuth.length > 0,
   );
 
-  // Check if user has permission to set the global action auth.
-  if (recipientsHaveActionAuth && !envelope.team.organisation.organisationClaim.flags.cfr21) {
-    throw new AppError(AppErrorCode.UNAUTHORIZED, {
-      message: 'You do not have permission to set the action auth',
-    });
-  }
+  // Feature flag checks removed - action auth is now always available
 
   const recipientsToUpdate = recipients.map((recipient) => {
     const originalRecipient = envelope.recipients.find(

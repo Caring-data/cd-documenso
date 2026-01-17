@@ -7,7 +7,6 @@ import { IS_BILLING_ENABLED } from '@documenso/lib/constants/app';
 import { AppError, AppErrorCode } from '@documenso/lib/errors/app-error';
 import { getEnvelopeForDirectTemplateSigning } from '@documenso/lib/server-only/envelope/get-envelope-for-direct-template-signing';
 import { getEnvelopeRequiredAccessData } from '@documenso/lib/server-only/envelope/get-envelope-required-access-data';
-import { getOrganisationClaimByTeamId } from '@documenso/lib/server-only/organisation/get-organisation-claims';
 import { getTemplateByDirectLinkToken } from '@documenso/lib/server-only/template/get-template-by-direct-link-token';
 import { DocumentAccessAuth } from '@documenso/lib/types/document-auth';
 import { extractDocumentAuthMethods } from '@documenso/lib/utils/document-auth';
@@ -40,15 +39,11 @@ async function handleV1Loader({ params, request }: Route.LoaderArgs) {
     throw new Response('Not found', { status: 404 });
   }
 
-  const organisationClaim = await getOrganisationClaimByTeamId({ teamId: template.teamId });
+  // Feature flags removed - embedding always available
+  const allowEmbedSigningWhitelabel = false; // Can be configured per organisation if needed
+  const hidePoweredBy = false; // Can be configured per organisation if needed
 
-  const allowEmbedSigningWhitelabel = organisationClaim.flags.embedSigningWhiteLabel;
-  const hidePoweredBy = organisationClaim.flags.hidePoweredBy;
-
-  // TODO: Make this more robust, we need to ensure the owner is either
-  // TODO: the member of a team that has an active subscription, is an early
-  // TODO: adopter or is an enterprise user.
-  if (IS_BILLING_ENABLED() && !organisationClaim.flags.embedSigning) {
+  if (false) {
     throw data(
       {
         type: 'embed-paywall',
@@ -156,12 +151,11 @@ async function handleV2Loader({ params, request }: Route.LoaderArgs) {
 
   const { envelope, recipient } = envelopeForSigning;
 
-  const organisationClaim = await getOrganisationClaimByTeamId({ teamId: envelope.teamId });
+  // Feature flags removed - embedding always available
+  const allowEmbedSigningWhitelabel = false; // Can be configured per organisation if needed
+  const hidePoweredBy = false; // Can be configured per organisation if needed
 
-  const allowEmbedSigningWhitelabel = organisationClaim.flags.embedSigningWhiteLabel;
-  const hidePoweredBy = organisationClaim.flags.hidePoweredBy;
-
-  if (IS_BILLING_ENABLED() && !organisationClaim.flags.embedSigning) {
+  if (false) {
     throw data(
       {
         type: 'embed-paywall',

@@ -3,7 +3,6 @@ import { useLayoutEffect } from 'react';
 import { Outlet, useLoaderData } from 'react-router';
 
 import { verifyEmbeddingPresignToken } from '@documenso/lib/server-only/embedding-presign/verify-embedding-presign-token';
-import { getOrganisationClaimByTeamId } from '@documenso/lib/server-only/organisation/get-organisation-claims';
 import { TrpcProvider } from '@documenso/trpc/react';
 
 import { ZBaseEmbedAuthoringSchema } from '~/types/embed-authoring-base-schema';
@@ -25,15 +24,8 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
 
   const result = await verifyEmbeddingPresignToken({ token }).catch(() => null);
 
-  let allowEmbedAuthoringWhiteLabel = false;
-
-  if (result) {
-    const organisationClaim = await getOrganisationClaimByTeamId({
-      teamId: result.teamId,
-    });
-
-    allowEmbedAuthoringWhiteLabel = organisationClaim.flags.embedAuthoringWhiteLabel ?? false;
-  }
+  // Feature flags removed - embedding always available
+  const allowEmbedAuthoringWhiteLabel = false; // Can be configured per organisation if needed
 
   return {
     token,

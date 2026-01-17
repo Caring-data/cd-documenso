@@ -66,8 +66,6 @@ export const createTeam = async ({
     }),
     include: {
       groups: true,
-      subscription: true,
-      organisationClaim: true,
       owner: {
         select: {
           id: true,
@@ -84,20 +82,7 @@ export const createTeam = async ({
     });
   }
 
-  // Validate they have enough team slots. 0 means they can create unlimited teams.
-  if (organisation.organisationClaim.teamCount !== 0 && IS_BILLING_ENABLED()) {
-    const teamCount = await prisma.team.count({
-      where: {
-        organisationId,
-      },
-    });
-
-    if (teamCount >= organisation.organisationClaim.teamCount) {
-      throw new AppError(AppErrorCode.LIMIT_EXCEEDED, {
-        message: 'You have reached the maximum number of teams for your plan.',
-      });
-    }
-  }
+  // Team creation is now unlimited
 
   // Inherit internal organisation groups to the team.
   // Organisation Admins/Mangers get assigned as team admins, members get assigned as team members.

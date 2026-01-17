@@ -77,6 +77,12 @@ declare namespace NodeJS {
     NEXT_PUBLIC_USE_INTERNAL_URL_BROWSERLESS?: string;
 
     /**
+     * Caring Data API integration
+     */
+    NEXT_PUBLIC_CD_SERVICE_URL?: string;
+    NEXT_PUBLIC_CD_SERVICE_API_KEY?: string;
+
+    /**
      * Inngest environment variables
      */
     INNGEST_EVENT_KEY?: string;

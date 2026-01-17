@@ -2,7 +2,6 @@ import { z } from 'zod';
 
 import { ZOrganisationSchema } from '@documenso/lib/types/organisation';
 import { OrganisationMemberRole, TeamMemberRole } from '@documenso/prisma/generated/types';
-import SubscriptionSchema from '@documenso/prisma/generated/zod/modelSchema/SubscriptionSchema';
 import TeamSchema from '@documenso/prisma/generated/zod/modelSchema/TeamSchema';
 
 export const ZGetOrganisationSessionResponseSchema = ZOrganisationSchema.extend({
@@ -21,7 +20,6 @@ export const ZGetOrganisationSessionResponseSchema = ZOrganisationSchema.extend(
       }),
     }),
   ),
-  subscription: SubscriptionSchema.nullable(),
   currentOrganisationRole: z.nativeEnum(OrganisationMemberRole),
 }).array();
 

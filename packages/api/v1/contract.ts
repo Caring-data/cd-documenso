@@ -12,6 +12,8 @@ import {
   ZCreateDocumentFromTemplateMutationSchema,
   ZCreateDocumentMutationResponseSchema,
   ZCreateDocumentMutationSchema,
+  ZCreateEmbebedTemplateMutationSchema,
+  ZCreateEmbebedTemplateResponseSchema,
   ZCreateFieldMutationSchema,
   ZCreateRecipientMutationSchema,
   ZCreateUserRequestSchema,
@@ -108,6 +110,21 @@ export const ApiContractV1 = c.router(
         404: ZUnsuccessfulResponseSchema,
       },
       summary: 'Create a new template and get a presigned URL',
+    },
+
+    createEmbebedTemplate: {
+      method: 'POST',
+      path: '/api/v1/templates/embed',
+      body: ZCreateEmbebedTemplateMutationSchema,
+      responses: {
+        200: ZCreateEmbebedTemplateResponseSchema,
+        400: ZUnsuccessfulResponseSchema,
+        401: ZUnsuccessfulResponseSchema,
+        404: ZUnsuccessfulResponseSchema,
+        500: ZUnsuccessfulResponseSchema,
+      },
+      summary: 'Create a new template for embedding',
+      description: 'Create a new template for embedding',
     },
 
     deleteTemplate: {

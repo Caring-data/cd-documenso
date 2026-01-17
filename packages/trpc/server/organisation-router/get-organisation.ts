@@ -50,8 +50,6 @@ export const getOrganisation = async ({
     },
     include: {
       organisationGlobalSettings: true,
-      subscription: true,
-      organisationClaim: true,
       members: {
         select: {
           id: true,

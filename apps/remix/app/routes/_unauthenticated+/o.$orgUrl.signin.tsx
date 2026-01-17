@@ -56,7 +56,6 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     },
     select: {
       name: true,
-      organisationClaim: true,
       organisationAuthenticationPortal: {
         select: {
           enabled: true,
@@ -70,11 +69,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     },
   });
 
-  if (
-    !organisation ||
-    !organisation.organisationAuthenticationPortal.enabled ||
-    !organisation.organisationClaim.flags.authenticationPortal
-  ) {
+  if (!organisation || !organisation.organisationAuthenticationPortal.enabled) {
     throw new AppError(AppErrorCode.NOT_FOUND, {
       message: 'Organisation not found',
     });

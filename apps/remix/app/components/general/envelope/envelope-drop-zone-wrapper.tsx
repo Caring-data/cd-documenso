@@ -145,23 +145,6 @@ export const EnvelopeDropZoneWrapper = ({
       return;
     }
 
-    const maxItemsReached = fileRejections.some((fileRejection) =>
-      fileRejection.errors.some((error) => error.code === DropzoneErrorCode.TooManyFiles),
-    );
-
-    if (maxItemsReached) {
-      toast({
-        title: plural(maximumEnvelopeItemCount, {
-          one: `You cannot upload more than # item per envelope.`,
-          other: `You cannot upload more than # items per envelope.`,
-        }),
-        duration: 5000,
-        variant: 'destructive',
-      });
-
-      return;
-    }
-
     // Since users can only upload only one file (no multi-upload), we only handle the first file rejection
     const { file, errors } = fileRejections[0];
 

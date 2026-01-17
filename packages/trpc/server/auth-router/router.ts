@@ -1,4 +1,6 @@
-import { router } from '../trpc';
+import { z } from 'zod';
+
+import { authenticatedProcedure, router } from '../trpc';
 import { createPasskeyRoute } from './create-passkey';
 import { createPasskeyAuthenticationOptionsRoute } from './create-passkey-authentication-options';
 import { createPasskeyRegistrationOptionsRoute } from './create-passkey-registration-options';
@@ -8,6 +10,10 @@ import { findPasskeysRoute } from './find-passkeys';
 import { updatePasskeyRoute } from './update-passkey';
 
 export const authRouter = router({
+  // Stub for linkAccount - TODO: Implement
+  linkAccount: authenticatedProcedure
+    .input(z.object({ token: z.string() }))
+    .mutation(() => ({})),
   passkey: router({
     create: createPasskeyRoute,
     createAuthenticationOptions: createPasskeyAuthenticationOptionsRoute,

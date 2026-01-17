@@ -678,7 +678,7 @@ export type TUpdateUserRequestSchema = z.infer<typeof ZUpdateUserRequestSchema>;
 
 export const ZUserResponseSchema = z.object({
   id: z.number(),
-  name: z.string(),
+  name: z.string().nullable(),
   email: z.string(),
   createdAt: z.date(),
   updatedAt: z.date(),
@@ -705,3 +705,22 @@ export const ZApiKeyHeadersSchema = z.object({
 });
 
 export type TApiKeyHeadersSchema = z.infer<typeof ZApiKeyHeadersSchema>;
+
+export const ZCreateEmbebedTemplateMutationSchema = z.object({
+  title: z.string().min(1).trim(),
+  type: z.nativeEnum(DocumentDataType),
+  data: z.string().min(1),
+  key: z.string().min(1).trim(),
+  externalId: z.string().nullish(),
+  meta: z.object({}).optional(),
+});
+
+export type TCreateEmbebedTemplateMutationSchema = z.infer<
+  typeof ZCreateEmbebedTemplateMutationSchema
+>;
+
+export const ZCreateEmbebedTemplateResponseSchema = ZSuccessfulGetTemplateResponseSchema;
+
+export type TCreateEmbebedTemplateResponseSchema = z.infer<
+  typeof ZCreateEmbebedTemplateResponseSchema
+>;

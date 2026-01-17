@@ -68,6 +68,16 @@ const FieldSettingsTypeTranslations: Record<FieldType, MessageDescriptor> = {
   [FieldType.RADIO]: msg`Radio Settings`,
   [FieldType.CHECKBOX]: msg`Checkbox Settings`,
   [FieldType.DROPDOWN]: msg`Dropdown Settings`,
+  [FieldType.RESIDENT_FIRST_NAME]: msg`Resident First Name Settings`,
+  [FieldType.RESIDENT_LAST_NAME]: msg`Resident Last Name Settings`,
+  [FieldType.RESIDENT_DOB]: msg`Date of Birth Settings`,
+  [FieldType.RESIDENT_GENDER_IDENTITY]: msg`Gender Identity Settings`,
+  [FieldType.RESIDENT_LOCATION_NAME]: msg`Location Name Settings`,
+  [FieldType.RESIDENT_LOCATION_STATE]: msg`State Settings`,
+  [FieldType.RESIDENT_LOCATION_ADDRESS]: msg`Address Settings`,
+  [FieldType.RESIDENT_LOCATION_CITY]: msg`City Settings`,
+  [FieldType.RESIDENT_LOCATION_ZIP_CODE]: msg`ZIP Code Settings`,
+  [FieldType.RESIDENT_LOCATION_COUNTRY]: msg`Country Settings`,
 };
 
 export const EnvelopeEditorFieldsPage = () => {

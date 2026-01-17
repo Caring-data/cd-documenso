@@ -100,9 +100,7 @@ export const FolderGrid = ({ type, parentId }: FolderGridProps) => {
           <EnvelopeUploadButton type={type} folderId={parentId || undefined} />
 
           {/* If you delete this, delete the component as well. */}
-          {organisation.organisationClaim.flags.allowLegacyEnvelopes && (
-            <DocumentUploadButtonLegacy type={type} />
-          )}
+          {/* Legacy envelopes removed */}
 
           <FolderCreateDialog type={type} id="folder-create-header" />
         </div>

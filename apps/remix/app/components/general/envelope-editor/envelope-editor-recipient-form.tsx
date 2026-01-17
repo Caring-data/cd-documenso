@@ -705,7 +705,7 @@ export const EnvelopeEditorRecipientForm = () => {
         <AnimateGenericFadeInOut motionKey={showAdvancedSettings ? 'Show' : 'Hide'}>
           <Form {...form}>
             <div className="-mt-2 mb-2 space-y-4 rounded-md bg-accent/50 p-4">
-              {organisation.organisationClaim.flags.cfr21 && (
+              {(
                 <div className="flex flex-row items-center">
                   <Checkbox
                     id="showAdvancedRecipientSettings"
@@ -1068,8 +1068,7 @@ export const EnvelopeEditorRecipientForm = () => {
                                 </Button>
                               </div>
 
-                              {showAdvancedSettings &&
-                                organisation.organisationClaim.flags.cfr21 && (
+                              {showAdvancedSettings && (
                                   <FormField
                                     control={form.control}
                                     name={`signers.${index}.actionAuth`}

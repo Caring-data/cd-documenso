@@ -17,7 +17,6 @@ import {
 import { unsafeGetEntireEnvelope } from '@documenso/lib/server-only/admin/get-entire-document';
 import { decryptSecondaryData } from '@documenso/lib/server-only/crypto/decrypt';
 import { getDocumentCertificateAuditLogs } from '@documenso/lib/server-only/document/get-document-certificate-audit-logs';
-import { getOrganisationClaimByTeamId } from '@documenso/lib/server-only/organisation/get-organisation-claims';
 import { DOCUMENT_AUDIT_LOG_TYPE } from '@documenso/lib/types/document-audit-logs';
 import { extractDocumentAuthMethods } from '@documenso/lib/utils/document-auth';
 import { mapSecondaryIdToDocumentId } from '@documenso/lib/utils/envelope';
@@ -68,7 +67,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     throw redirect('/');
   }
 
-  const organisationClaim = await getOrganisationClaimByTeamId({ teamId: envelope.teamId });
+  // Feature flags removed - all features always available
 
   const documentLanguage = ZSupportedLanguageCodeSchema.parse(envelope.documentMeta?.language);
 
@@ -95,7 +94,7 @@ export async function loader({ request }: Route.LoaderArgs) {
       deletedAt: envelope.deletedAt,
       documentMeta: envelope.documentMeta,
     },
-    hidePoweredBy: organisationClaim.flags.hidePoweredBy,
+    hidePoweredBy: false, // Feature flags removed
     documentLanguage,
     auditLogs,
     messages,

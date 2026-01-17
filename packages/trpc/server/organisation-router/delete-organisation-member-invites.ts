@@ -31,8 +31,6 @@ export const deleteOrganisationMemberInvitesRoute = authenticatedProcedure
         roles: ORGANISATION_MEMBER_ROLE_PERMISSIONS_MAP['MANAGE_ORGANISATION'],
       }),
       include: {
-        organisationClaim: true,
-        subscription: true,
         members: {
           select: {
             id: true,

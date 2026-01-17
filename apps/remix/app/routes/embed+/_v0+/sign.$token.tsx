@@ -12,7 +12,6 @@ import { getEnvelopeForRecipientSigning } from '@documenso/lib/server-only/envel
 import { getEnvelopeRequiredAccessData } from '@documenso/lib/server-only/envelope/get-envelope-required-access-data';
 import { getCompletedFieldsForToken } from '@documenso/lib/server-only/field/get-completed-fields-for-token';
 import { getFieldsForToken } from '@documenso/lib/server-only/field/get-fields-for-token';
-import { getOrganisationClaimByTeamId } from '@documenso/lib/server-only/organisation/get-organisation-claims';
 import { getIsRecipientsTurnToSign } from '@documenso/lib/server-only/recipient/get-is-recipient-turn';
 import { getRecipientByToken } from '@documenso/lib/server-only/recipient/get-recipient-by-token';
 import { getRecipientsForAssistant } from '@documenso/lib/server-only/recipient/get-recipients-for-assistant';
@@ -59,24 +58,9 @@ async function handleV1Loader({ params, request }: Route.LoaderArgs) {
     throw new Response('Not found', { status: 404 });
   }
 
-  const organisationClaim = await getOrganisationClaimByTeamId({ teamId: document.teamId });
-
-  const allowEmbedSigningWhitelabel = organisationClaim.flags.embedSigningWhiteLabel;
-  const hidePoweredBy = organisationClaim.flags.hidePoweredBy;
-
-  // TODO: Make this more robust, we need to ensure the owner is either
-  // TODO: the member of a team that has an active subscription, is an early
-  // TODO: adopter or is an enterprise user.
-  if (IS_BILLING_ENABLED() && !organisationClaim.flags.embedSigning) {
-    throw data(
-      {
-        type: 'embed-paywall',
-      },
-      {
-        status: 403,
-      },
-    );
-  }
+  // Feature flags removed - embedding always available
+  const allowEmbedSigningWhitelabel = false; // Can be configured per organisation if needed
+  const hidePoweredBy = false; // Can be configured per organisation if needed
 
   const { derivedRecipientAccessAuth } = extractDocumentAuthMethods({
     documentAuth: document.authOptions,
@@ -192,12 +176,11 @@ async function handleV2Loader({ params, request }: Route.LoaderArgs) {
 
   const { envelope, recipient, isRecipientsTurn } = envelopeForSigning;
 
-  const organisationClaim = await getOrganisationClaimByTeamId({ teamId: envelope.teamId });
+  // Feature flags removed - embedding always available
+  const allowEmbedSigningWhitelabel = false; // Can be configured per organisation if needed
+  const hidePoweredBy = false; // Can be configured per organisation if needed
 
-  const allowEmbedSigningWhitelabel = organisationClaim.flags.embedSigningWhiteLabel;
-  const hidePoweredBy = organisationClaim.flags.hidePoweredBy;
-
-  if (IS_BILLING_ENABLED() && !organisationClaim.flags.embedSigning) {
+  if (false) {
     throw data(
       {
         type: 'embed-paywall',

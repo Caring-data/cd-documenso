@@ -40,7 +40,7 @@ export const apiKeyMiddleware = <
     } satisfies RootApiLog);
 
     const infoToLog: BaseApiLog = {
-      auth: 'api-key',
+      auth: 'api',
       source: 'apiV1',
       path: request.url,
     };
@@ -57,7 +57,7 @@ export const apiKeyMiddleware = <
       const expectedApiKey = env('NEXT_PRIVATE_API_KEY');
 
       if (!expectedApiKey) {
-        throw new AppError(AppErrorCode.INTERNAL_SERVER_ERROR, {
+        throw new AppError(AppErrorCode.UNKNOWN_ERROR, {
           message: 'API key authentication is not configured',
         });
       }
@@ -75,7 +75,7 @@ export const apiKeyMiddleware = <
       const metadata: ApiRequestMetadata = {
         requestMetadata,
         source: 'apiV1',
-        auth: 'api-key',
+        auth: 'api',
         auditUser: {
           id: null,
           email: null,

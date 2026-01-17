@@ -53,6 +53,16 @@ export const FRIENDLY_FIELD_TYPE: Record<FieldType, MessageDescriptor> = {
   [FieldType.RADIO]: msg`Radio`,
   [FieldType.CHECKBOX]: msg`Checkbox`,
   [FieldType.DROPDOWN]: msg`Select`,
+  [FieldType.RESIDENT_FIRST_NAME]: msg`Resident First Name`,
+  [FieldType.RESIDENT_LAST_NAME]: msg`Resident Last Name`,
+  [FieldType.RESIDENT_DOB]: msg`Resident Date of Birth`,
+  [FieldType.RESIDENT_GENDER_IDENTITY]: msg`Resident Gender Identity`,
+  [FieldType.RESIDENT_LOCATION_NAME]: msg`Resident Location Name`,
+  [FieldType.RESIDENT_LOCATION_STATE]: msg`Resident Location State`,
+  [FieldType.RESIDENT_LOCATION_ADDRESS]: msg`Resident Location Address`,
+  [FieldType.RESIDENT_LOCATION_CITY]: msg`Resident Location City`,
+  [FieldType.RESIDENT_LOCATION_ZIP_CODE]: msg`Resident Location Zip Code`,
+  [FieldType.RESIDENT_LOCATION_COUNTRY]: msg`Resident Location Country`,
 };
 
 export interface DocumentFlowStep {
