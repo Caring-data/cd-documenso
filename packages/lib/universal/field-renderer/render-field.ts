@@ -86,6 +86,16 @@ export const renderField = ({
       FieldType.DATE,
       FieldType.TEXT,
       FieldType.NUMBER,
+      FieldType.RESIDENT_FIRST_NAME,
+      FieldType.RESIDENT_LAST_NAME,
+      FieldType.RESIDENT_DOB,
+      FieldType.RESIDENT_GENDER_IDENTITY,
+      FieldType.RESIDENT_LOCATION_NAME,
+      FieldType.RESIDENT_LOCATION_STATE,
+      FieldType.RESIDENT_LOCATION_ADDRESS,
+      FieldType.RESIDENT_LOCATION_CITY,
+      FieldType.RESIDENT_LOCATION_ZIP_CODE,
+      FieldType.RESIDENT_LOCATION_COUNTRY,
       () => renderGenericTextFieldElement(field, options),
     )
     .with(FieldType.CHECKBOX, () => renderCheckboxFieldElement(field, options))

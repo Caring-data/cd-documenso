@@ -19,6 +19,7 @@ export const DEFAULT_FIELD_FONT_SIZE = 12;
 
 /**
  * Grouped field types that use the same generic text rendering function.
+ * Note: RESIDENT fields use TTextFieldMeta and TDateFieldMeta which are already included.
  */
 export type GenericTextFieldTypeMetas =
   | TInitialsFieldMeta
@@ -276,6 +277,46 @@ export const ZFieldAndMetaSchema = z.discriminatedUnion('type', [
     type: z.literal(FieldType.DROPDOWN),
     fieldMeta: ZDropdownFieldMeta.optional(),
   }),
+  z.object({
+    type: z.literal(FieldType.RESIDENT_FIRST_NAME),
+    fieldMeta: ZTextFieldMeta.optional(),
+  }),
+  z.object({
+    type: z.literal(FieldType.RESIDENT_LAST_NAME),
+    fieldMeta: ZTextFieldMeta.optional(),
+  }),
+  z.object({
+    type: z.literal(FieldType.RESIDENT_DOB),
+    fieldMeta: ZDateFieldMeta.optional(),
+  }),
+  z.object({
+    type: z.literal(FieldType.RESIDENT_GENDER_IDENTITY),
+    fieldMeta: ZTextFieldMeta.optional(),
+  }),
+  z.object({
+    type: z.literal(FieldType.RESIDENT_LOCATION_NAME),
+    fieldMeta: ZTextFieldMeta.optional(),
+  }),
+  z.object({
+    type: z.literal(FieldType.RESIDENT_LOCATION_STATE),
+    fieldMeta: ZTextFieldMeta.optional(),
+  }),
+  z.object({
+    type: z.literal(FieldType.RESIDENT_LOCATION_ADDRESS),
+    fieldMeta: ZTextFieldMeta.optional(),
+  }),
+  z.object({
+    type: z.literal(FieldType.RESIDENT_LOCATION_CITY),
+    fieldMeta: ZTextFieldMeta.optional(),
+  }),
+  z.object({
+    type: z.literal(FieldType.RESIDENT_LOCATION_ZIP_CODE),
+    fieldMeta: ZTextFieldMeta.optional(),
+  }),
+  z.object({
+    type: z.literal(FieldType.RESIDENT_LOCATION_COUNTRY),
+    fieldMeta: ZTextFieldMeta.optional(),
+  }),
 ]);
 
 export type TFieldAndMeta = z.infer<typeof ZFieldAndMetaSchema>;
@@ -372,6 +413,16 @@ export const FIELD_META_DEFAULT_VALUES: Record<FieldType, TFieldMetaSchema> = {
   [FieldType.RADIO]: FIELD_RADIO_META_DEFAULT_VALUES,
   [FieldType.CHECKBOX]: FIELD_CHECKBOX_META_DEFAULT_VALUES,
   [FieldType.DROPDOWN]: FIELD_DROPDOWN_META_DEFAULT_VALUES,
+  [FieldType.RESIDENT_FIRST_NAME]: FIELD_TEXT_META_DEFAULT_VALUES,
+  [FieldType.RESIDENT_LAST_NAME]: FIELD_TEXT_META_DEFAULT_VALUES,
+  [FieldType.RESIDENT_DOB]: FIELD_DATE_META_DEFAULT_VALUES,
+  [FieldType.RESIDENT_GENDER_IDENTITY]: FIELD_TEXT_META_DEFAULT_VALUES,
+  [FieldType.RESIDENT_LOCATION_NAME]: FIELD_TEXT_META_DEFAULT_VALUES,
+  [FieldType.RESIDENT_LOCATION_STATE]: FIELD_TEXT_META_DEFAULT_VALUES,
+  [FieldType.RESIDENT_LOCATION_ADDRESS]: FIELD_TEXT_META_DEFAULT_VALUES,
+  [FieldType.RESIDENT_LOCATION_CITY]: FIELD_TEXT_META_DEFAULT_VALUES,
+  [FieldType.RESIDENT_LOCATION_ZIP_CODE]: FIELD_TEXT_META_DEFAULT_VALUES,
+  [FieldType.RESIDENT_LOCATION_COUNTRY]: FIELD_TEXT_META_DEFAULT_VALUES,
 } as const;
 
 export const ZEnvelopeFieldAndMetaSchema = z.discriminatedUnion('type', [
@@ -419,6 +470,46 @@ export const ZEnvelopeFieldAndMetaSchema = z.discriminatedUnion('type', [
     type: z.literal(FieldType.DROPDOWN),
     fieldMeta: ZDropdownFieldMeta.optional().default(FIELD_DROPDOWN_META_DEFAULT_VALUES),
   }),
+  z.object({
+    type: z.literal('RESIDENT_FIRST_NAME' as FieldType),
+    fieldMeta: ZTextFieldMeta.optional().default(FIELD_TEXT_META_DEFAULT_VALUES),
+  }),
+  z.object({
+    type: z.literal('RESIDENT_LAST_NAME' as FieldType),
+    fieldMeta: ZTextFieldMeta.optional().default(FIELD_TEXT_META_DEFAULT_VALUES),
+  }),
+  z.object({
+    type: z.literal('RESIDENT_DOB' as FieldType),
+    fieldMeta: ZDateFieldMeta.optional().default(FIELD_DATE_META_DEFAULT_VALUES),
+  }),
+  z.object({
+    type: z.literal('RESIDENT_GENDER_IDENTITY' as FieldType),
+    fieldMeta: ZTextFieldMeta.optional().default(FIELD_TEXT_META_DEFAULT_VALUES),
+  }),
+  z.object({
+    type: z.literal('RESIDENT_LOCATION_NAME' as FieldType),
+    fieldMeta: ZTextFieldMeta.optional().default(FIELD_TEXT_META_DEFAULT_VALUES),
+  }),
+  z.object({
+    type: z.literal('RESIDENT_LOCATION_STATE' as FieldType),
+    fieldMeta: ZTextFieldMeta.optional().default(FIELD_TEXT_META_DEFAULT_VALUES),
+  }),
+  z.object({
+    type: z.literal('RESIDENT_LOCATION_ADDRESS' as FieldType),
+    fieldMeta: ZTextFieldMeta.optional().default(FIELD_TEXT_META_DEFAULT_VALUES),
+  }),
+  z.object({
+    type: z.literal('RESIDENT_LOCATION_CITY' as FieldType),
+    fieldMeta: ZTextFieldMeta.optional().default(FIELD_TEXT_META_DEFAULT_VALUES),
+  }),
+  z.object({
+    type: z.literal('RESIDENT_LOCATION_ZIP_CODE' as FieldType),
+    fieldMeta: ZTextFieldMeta.optional().default(FIELD_TEXT_META_DEFAULT_VALUES),
+  }),
+  z.object({
+    type: z.literal('RESIDENT_LOCATION_COUNTRY' as FieldType),
+    fieldMeta: ZTextFieldMeta.optional().default(FIELD_TEXT_META_DEFAULT_VALUES),
+  }),
 ]);
 
-type TEnvelopeFieldAndMeta = z.infer<typeof ZEnvelopeFieldAndMetaSchema>;
+export type TEnvelopeFieldAndMeta = z.infer<typeof ZEnvelopeFieldAndMetaSchema>;
