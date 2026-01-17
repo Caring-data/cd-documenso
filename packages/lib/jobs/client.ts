@@ -8,7 +8,6 @@ import { SEND_RECIPIENT_SIGNED_EMAIL_JOB_DEFINITION } from './definitions/emails
 import { SEND_SIGNING_REJECTION_EMAILS_JOB_DEFINITION } from './definitions/emails/send-rejection-emails';
 import { SEND_SIGNING_EMAIL_JOB_DEFINITION } from './definitions/emails/send-signing-email';
 import { SEND_TEAM_DELETED_EMAIL_JOB_DEFINITION } from './definitions/emails/send-team-deleted-email';
-import { BACKPORT_SUBSCRIPTION_CLAIM_JOB_DEFINITION } from './definitions/internal/backport-subscription-claims';
 import { BULK_SEND_TEMPLATE_JOB_DEFINITION } from './definitions/internal/bulk-send-template';
 import { EXECUTE_WEBHOOK_JOB_DEFINITION } from './definitions/internal/execute-webhook';
 import { SEAL_DOCUMENT_JOB_DEFINITION } from './definitions/internal/seal-document';
@@ -28,7 +27,6 @@ export const jobsClient = new JobClient([
   SEND_SIGNING_REJECTION_EMAILS_JOB_DEFINITION,
   SEND_RECIPIENT_SIGNED_EMAIL_JOB_DEFINITION,
   SEND_DOCUMENT_CANCELLED_EMAILS_JOB_DEFINITION,
-  BACKPORT_SUBSCRIPTION_CLAIM_JOB_DEFINITION,
   BULK_SEND_TEMPLATE_JOB_DEFINITION,
   EXECUTE_WEBHOOK_JOB_DEFINITION,
 ] as const);

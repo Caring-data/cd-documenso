@@ -60,8 +60,6 @@ export const createOrganisationMemberInvites = async ({
         },
       },
       organisationGlobalSettings: true,
-      organisationClaim: true,
-      subscription: true,
     },
   });
 

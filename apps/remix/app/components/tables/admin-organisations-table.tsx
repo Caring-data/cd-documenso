@@ -103,34 +103,15 @@ export const AdminOrganisationsTable = ({
       {
         id: 'billingStatus',
         header: t`Status`,
-        cell: ({ row }) => {
-          const subscription = row.original.subscription;
-          const isPaid = subscription && subscription.status === 'ACTIVE';
-          return (
-            <div
-              className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                isPaid ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-              }`}
-            >
-              {isPaid ? (
-                <Trans context="Subscription status">Paid</Trans>
-              ) : (
-                <Trans context="Subscription status">Free</Trans>
-              )}
-            </div>
-          );
-        },
+        cell: () => (
+          <div className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800">
+            <Trans context="Subscription status">Free</Trans>
+          </div>
+        ),
       },
       {
         header: t`Subscription`,
-        cell: ({ row }) =>
-          row.original.subscription ? (
-            <Badge variant="neutral">
-              {row.original.subscription.status}
-            </Badge>
-          ) : (
-            <Trans>None</Trans>
-          ),
+        cell: () => <Trans>None</Trans>,
       },
       {
         id: 'actions',
@@ -159,11 +140,11 @@ export const AdminOrganisationsTable = ({
                 </Link>
               </DropdownMenuItem>
 
-              <DropdownMenuItem disabled={!row.original.customerId} asChild>
-                <Link to={`https://dashboard.stripe.com/customers/${row.original.customerId}`}>
+              <DropdownMenuItem disabled asChild>
+                <Link to="#">
                   <CreditCardIcon className="mr-2 h-4 w-4" />
                   <Trans>Stripe</Trans>
-                  {!row.original.customerId && <span>&nbsp;(N/A)</span>}
+                  <span>&nbsp;(N/A)</span>
                 </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>

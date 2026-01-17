@@ -60,18 +60,6 @@ export const seedUser = async ({
     },
     include: {
       teams: true,
-      organisationClaim: true,
-    },
-  });
-
-  await prisma.organisationClaim.update({
-    where: {
-      id: organisation.organisationClaim.id,
-    },
-    data: {
-      flags: {
-        allowLegacyEnvelopes: true,
-      },
     },
   });
 

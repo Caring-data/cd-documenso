@@ -278,11 +278,7 @@ export const EnvelopeDistributeDialog = ({
                   </TabsList>
                 </Tabs>
 
-                <div
-                  className={cn('min-h-72', {
-                    'min-h-[23rem]': organisation.organisationClaim.flags.emailDomains,
-                  })}
-                >
+                <div className="min-h-72">
                   <AnimatePresence initial={false} mode="wait">
                     {isSyncing ? (
                       <motion.div
@@ -305,8 +301,7 @@ export const EnvelopeDistributeDialog = ({
                             className="mt-2 flex flex-col gap-y-4 rounded-lg"
                             disabled={form.formState.isSubmitting}
                           >
-                            {organisation.organisationClaim.flags.emailDomains && (
-                              <FormField
+                            <FormField
                                 control={form.control}
                                 name="meta.emailId"
                                 render={({ field }) => (
@@ -345,7 +340,6 @@ export const EnvelopeDistributeDialog = ({
                                   </FormItem>
                                 )}
                               />
-                            )}
 
                             <FormField
                               control={form.control}

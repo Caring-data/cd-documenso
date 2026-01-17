@@ -4,21 +4,19 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { msg } from '@lingui/core/macro';
 import { useLingui } from '@lingui/react/macro';
 import { Trans } from '@lingui/react/macro';
-import { ExternalLinkIcon, InfoIcon, Loader } from 'lucide-react';
+import { Loader } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router';
 import type { z } from 'zod';
 
 import { NEXT_PUBLIC_WEBAPP_URL } from '@documenso/lib/constants/app';
 import { AppError } from '@documenso/lib/errors/app-error';
-import { SUBSCRIPTION_CLAIM_FEATURE_FLAGS } from '@documenso/lib/types/subscription';
 import { trpc } from '@documenso/trpc/react';
 import type { TGetAdminOrganisationResponse } from '@documenso/trpc/server/admin-router/get-admin-organisation.types';
 import { ZUpdateAdminOrganisationRequestSchema } from '@documenso/trpc/server/admin-router/update-admin-organisation.types';
 import { Alert, AlertDescription, AlertTitle } from '@documenso/ui/primitives/alert';
 import { Badge } from '@documenso/ui/primitives/badge';
 import { Button } from '@documenso/ui/primitives/button';
-import { Checkbox } from '@documenso/ui/primitives/checkbox';
 import { DataTable, type DataTableColumnDef } from '@documenso/ui/primitives/data-table';
 import {
   Form,
@@ -30,7 +28,6 @@ import {
   FormMessage,
 } from '@documenso/ui/primitives/form/form';
 import { Input } from '@documenso/ui/primitives/input';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@documenso/ui/primitives/tooltip';
 import { useToast } from '@documenso/ui/primitives/use-toast';
 
 import { AdminOrganisationMemberUpdateDialog } from '~/components/dialogs/admin-organisation-member-update-dialog';
@@ -152,8 +149,6 @@ export default function OrganisationGroupSettingsPage({ params }: Route.Componen
       </SettingsHeader>
 
       <GenericOrganisationAdminForm organisation={organisation} />
-
-      <OrganisationAdminForm organisation={organisation} />
 
       <div className="mt-16 space-y-10">
         <div>
@@ -287,251 +282,3 @@ const GenericOrganisationAdminForm = ({ organisation }: OrganisationAdminFormOpt
   );
 };
 
-const ZUpdateOrganisationBillingFormSchema = ZUpdateAdminOrganisationRequestSchema.shape.data.pick({
-  claims: true,
-  customerId: true,
-  originalSubscriptionClaimId: true,
-});
-
-type TUpdateOrganisationBillingFormSchema = z.infer<typeof ZUpdateOrganisationBillingFormSchema>;
-
-const OrganisationAdminForm = ({ organisation }: OrganisationAdminFormOptions) => {
-  const { toast } = useToast();
-  const { t } = useLingui();
-
-  const { mutateAsync: updateOrganisation } = trpc.admin.organisation.update.useMutation();
-
-  const form = useForm<TUpdateOrganisationBillingFormSchema>({
-    resolver: zodResolver(ZUpdateOrganisationBillingFormSchema),
-    defaultValues: {
-      customerId: organisation.customerId || '',
-      claims: {
-        teamCount: organisation.organisationClaim.teamCount,
-        memberCount: organisation.organisationClaim.memberCount,
-        envelopeItemCount: organisation.organisationClaim.envelopeItemCount,
-        flags: organisation.organisationClaim.flags,
-      },
-      originalSubscriptionClaimId: organisation.organisationClaim.originalSubscriptionClaimId || '',
-    },
-  });
-
-  const onSubmit = async (values: TUpdateOrganisationBillingFormSchema) => {
-    try {
-      await updateOrganisation({
-        organisationId: organisation.id,
-        data: values,
-      });
-
-      toast({
-        title: t`Success`,
-        description: t`Organisation has been updated successfully`,
-        duration: 5000,
-      });
-    } catch (err) {
-      const error = AppError.parseError(err);
-      console.error(error);
-
-      toast({
-        title: t`An error occurred`,
-        description: t`We couldn't update the organisation. Please try again.`,
-        variant: 'destructive',
-      });
-    }
-  };
-
-  return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <FormField
-          control={form.control}
-          name="originalSubscriptionClaimId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="flex items-center">
-                <Trans>Inherited subscription claim</Trans>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <InfoIcon className="mx-2 h-4 w-4" />
-                  </TooltipTrigger>
-
-                  <TooltipContent className="text-foreground max-w-md space-y-2 p-4">
-                    <h2>
-                      <strong>
-                        <Trans>Inherited subscription claim</Trans>
-                      </strong>
-                    </h2>
-
-                    <p>
-                      <Trans>
-                        This is the claim that this organisation was initially created with. Any
-                        feature flag changes to this claim will be backported into this
-                        organisation.
-                      </Trans>
-                    </p>
-
-                    <p>
-                      <Trans>
-                        For example, if the claim has a new flag "FLAG_1" set to true, then this
-                        organisation will get that flag added.
-                      </Trans>
-                    </p>
-                    <p>
-                      <Trans>
-                        This will ONLY backport feature flags which are set to true, anything
-                        disabled in the initial claim will not be backported
-                      </Trans>
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </FormLabel>
-              <FormControl>
-                <Input disabled {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="customerId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel required>
-                <Trans>Stripe Customer ID</Trans>
-              </FormLabel>
-              <FormControl>
-                <Input {...field} placeholder={t`No Stripe customer attached`} />
-              </FormControl>
-              {!form.formState.errors.customerId && field.value && (
-                <Link
-                  target="_blank"
-                  to={`https://dashboard.stripe.com/customers/${field.value}`}
-                  className="text-foreground/50 text-xs font-normal"
-                >
-                  {`https://dashboard.stripe.com/customers/${field.value}`}
-                </Link>
-              )}
-
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="claims.teamCount"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>
-                <Trans>Team Count</Trans>
-              </FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  min={0}
-                  {...field}
-                  onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}
-                />
-              </FormControl>
-              <FormDescription>
-                <Trans>Number of teams allowed. 0 = Unlimited</Trans>
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="claims.memberCount"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>
-                <Trans>Member Count</Trans>
-              </FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  min={0}
-                  {...field}
-                  onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}
-                />
-              </FormControl>
-              <FormDescription>
-                <Trans>Number of members allowed. 0 = Unlimited</Trans>
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="claims.envelopeItemCount"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>
-                <Trans>Envelope Item Count</Trans>
-              </FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  min={1}
-                  {...field}
-                  onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}
-                />
-              </FormControl>
-              <FormDescription>
-                <Trans>Maximum number of uploaded files per envelope allowed</Trans>
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div>
-          <FormLabel>
-            <Trans>Feature Flags</Trans>
-          </FormLabel>
-
-          <div className="mt-2 space-y-2 rounded-md border p-4">
-            {Object.values(SUBSCRIPTION_CLAIM_FEATURE_FLAGS).map(({ key, label }) => (
-              <FormField
-                key={key}
-                control={form.control}
-                name={`claims.flags.${key}`}
-                render={({ field }) => (
-                  <FormItem className="flex items-center space-x-2">
-                    <FormControl>
-                      <div className="flex items-center">
-                        <Checkbox
-                          id={`flag-${key}`}
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-
-                        <label
-                          className="text-muted-foreground ml-2 flex flex-row items-center text-sm"
-                          htmlFor={`flag-${key}`}
-                        >
-                          {label}
-                        </label>
-                      </div>
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            ))}
-          </div>
-        </div>
-
-        <div className="flex justify-end">
-          <Button type="submit" loading={form.formState.isSubmitting}>
-            <Trans>Update</Trans>
-          </Button>
-        </div>
-      </form>
-    </Form>
-  );
-};

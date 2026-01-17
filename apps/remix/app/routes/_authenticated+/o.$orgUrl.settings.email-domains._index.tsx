@@ -25,7 +25,7 @@ export default function OrganisationSettingsEmailDomains() {
 
   const isPersonalLayoutMode = isPersonalLayout(organisations);
 
-  const isEmailDomainsEnabled = organisation.organisationClaim.flags.emailDomains;
+  const isEmailDomainsEnabled = true; // Feature flags removed - email domains always available
 
   if (!IS_BILLING_ENABLED()) {
     return null;

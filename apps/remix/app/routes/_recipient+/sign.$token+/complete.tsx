@@ -1,4 +1,4 @@
-import { useLingui } from '@lingui/react';
+import { useLingui } from '@lingui/react/macro';
 import { Trans } from '@lingui/react/macro';
 import { DocumentStatus, FieldType, RecipientRole } from '@prisma/client';
 import { CheckCircle2, Clock8, DownloadIcon, Loader2 } from 'lucide-react';
@@ -26,6 +26,10 @@ import { Button } from '@documenso/ui/primitives/button';
 import { EnvelopeDownloadDialog } from '~/components/dialogs/envelope-download-dialog';
 import { ClaimAccount } from '~/components/general/claim-account';
 import { DocumentSigningAuthPageView } from '~/components/general/document-signing/document-signing-auth-page';
+import { DocumentDownloadButton } from '@documenso/ui/components/document/document-download-button';
+
+import { DocumentPreviewButton } from './document-preview-button';
+
 
 import type { Route } from './+types/complete';
 
@@ -102,7 +106,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 }
 
 export default function CompletedSigningPage({ loaderData }: Route.ComponentProps) {
-  const { _ } = useLingui();
+  const { t } = useLingui();
 
   const { sessionData } = useOptionalSession();
   const user = sessionData?.user;
@@ -133,12 +137,14 @@ export default function CompletedSigningPage({ loaderData }: Route.ComponentProp
     },
   );
 
-  // Use signing status from query if available, otherwise fall back to document status
-  const signingStatus = signingStatusData?.status ?? 'PENDING';
-
   if (!isDocumentAccessValid) {
     return <DocumentSigningAuthPageView email={recipientEmail} />;
   }
+
+  const documentData = document.documentData;
+
+  // Use signing status from query if available, otherwise fall back to document status
+  const signingStatus = signingStatusData?.status ?? 'PENDING';
 
   return (
     <div
@@ -182,7 +188,7 @@ export default function CompletedSigningPage({ loaderData }: Route.ComponentProp
               <div className="mt-4 flex items-center text-center text-documenso-700">
                 <CheckCircle2 className="mr-2 h-5 w-5" />
                 <span className="text-sm">
-                  <Trans>Everyone has signed</Trans>
+                  <Trans>All parties have signed the document</Trans>
                 </span>
               </div>
             ))
@@ -243,7 +249,7 @@ export default function CompletedSigningPage({ loaderData }: Route.ComponentProp
               </p>
             ))}
 
-          <div className="mt-8 flex w-full max-w-xs flex-col items-stretch gap-4 md:w-auto md:max-w-none md:flex-row md:items-center">
+          {/* <div className="mt-8 flex w-full max-w-xs flex-col items-stretch gap-4 md:w-auto md:max-w-none md:flex-row md:items-center">
             <DocumentShareButton
               documentId={document.id}
               token={recipient.token}
@@ -272,25 +278,25 @@ export default function CompletedSigningPage({ loaderData }: Route.ComponentProp
                 </Link>
               </Button>
             )}
+          </div> */}
+
+
+           <div className="mt-8 flex w-full max-w-sm items-center justify-center gap-4">
+            {document.status === DocumentStatus.COMPLETED ? (
+              <DocumentDownloadButton
+                className="flex-1"
+                fileName={document.title}
+                documentData={documentData}
+                disabled={document.status !== DocumentStatus.COMPLETED}
+              />
+            ) : (
+              <DocumentPreviewButton
+                className="text-[11px]"
+                title={t`Signatures will appear once the document has been completed`}
+                documentData={documentData}
+              />
+            )}
           </div>
-        </div>
-
-        <div className="flex flex-col items-center">
-          {canSignUp && (
-            <div className="flex max-w-xl flex-col items-center justify-center p-4 md:p-12">
-              <h2 className="mt-8 text-center text-xl font-semibold md:mt-0">
-                <Trans>Need to sign documents?</Trans>
-              </h2>
-
-              <p className="mt-4 max-w-[55ch] text-center leading-normal text-muted-foreground/60">
-                <Trans>
-                  Create your account and start using state-of-the-art document signing.
-                </Trans>
-              </p>
-
-              <ClaimAccount defaultName={recipientName} defaultEmail={recipient.email} />
-            </div>
-          )}
         </div>
       </div>
     </div>
