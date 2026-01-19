@@ -46,6 +46,47 @@ export const ZSignEnvelopeFieldValue = z.discriminatedUnion('type', [
     type: z.literal(FieldType.SIGNATURE),
     value: z.string().nullable(),
   }),
+  // Resident fields - all behave like text fields
+  z.object({
+    type: z.literal(FieldType.RESIDENT_FIRST_NAME),
+    value: z.string().nullable(),
+  }),
+  z.object({
+    type: z.literal(FieldType.RESIDENT_LAST_NAME),
+    value: z.string().nullable(),
+  }),
+  z.object({
+    type: z.literal(FieldType.RESIDENT_DOB),
+    value: z.string().nullable(),
+  }),
+  z.object({
+    type: z.literal(FieldType.RESIDENT_GENDER_IDENTITY),
+    value: z.string().nullable(),
+  }),
+  z.object({
+    type: z.literal(FieldType.RESIDENT_LOCATION_NAME),
+    value: z.string().nullable(),
+  }),
+  z.object({
+    type: z.literal(FieldType.RESIDENT_LOCATION_STATE),
+    value: z.string().nullable(),
+  }),
+  z.object({
+    type: z.literal(FieldType.RESIDENT_LOCATION_ADDRESS),
+    value: z.string().nullable(),
+  }),
+  z.object({
+    type: z.literal(FieldType.RESIDENT_LOCATION_CITY),
+    value: z.string().nullable(),
+  }),
+  z.object({
+    type: z.literal(FieldType.RESIDENT_LOCATION_ZIP_CODE),
+    value: z.string().nullable(),
+  }),
+  z.object({
+    type: z.literal(FieldType.RESIDENT_LOCATION_COUNTRY),
+    value: z.string().nullable(),
+  }),
 ]);
 
 export const ZSignEnvelopeFieldRequestSchema = z.object({
