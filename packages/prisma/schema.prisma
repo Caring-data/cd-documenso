@@ -72,6 +72,7 @@ model User {
   webhooks           Webhook[]
   siteSettings       SiteSettings[]
   passkeys           Passkey[]
+  logs               Log[]
   avatarImage        AvatarImage?           @relation(fields: [avatarImageId], references: [id], onDelete: SetNull)
 
   @@index([email])
@@ -105,6 +106,23 @@ enum UserSecurityAuditLogType {
   SIGN_IN_FAIL
   SIGN_IN_2FA_FAIL
   SIGN_IN_PASSKEY_FAIL
+}
+
+enum LogLevel {
+  DEBUG
+  INFO
+  WARN
+  ERROR
+  CRITICAL
+}
+
+enum LogCategory {
+  DOCUMENT
+  TEMPLATE
+  AUTHENTICATION
+  INTEGRATION
+  SYSTEM
+  JOB
 }
 
 model UserSecurityAuditLog {
@@ -346,6 +364,7 @@ model Envelope {
   fields        Field[]
   shareLinks    DocumentShareLink[]
   auditLogs     DocumentAuditLog[]
+  logs          Log[]
 
   // Envelope settings
   authOptions Json? /// [DocumentAuthOptions] @zod.custom.use(ZDocumentAuthOptionsSchema)
@@ -419,6 +438,28 @@ model DocumentAuditLog {
   ipAddress String?
 
   envelope Envelope @relation(fields: [envelopeId], references: [id], onDelete: Cascade)
+}
+
+model Log {
+  id         String      @id @default(cuid())
+  level      LogLevel     @default(ERROR)
+  category   LogCategory  @default(SYSTEM)
+  action     String
+  message    String?
+  data       Json?
+  metaData   Json?
+  userId     Int?
+  user       User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  envelopeId String?
+  envelope   Envelope?    @relation(fields: [envelopeId], references: [id], onDelete: SetNull)
+  createdAt  DateTime     @default(now())
+
+  @@index([level])
+  @@index([category])
+  @@index([createdAt])
+  @@index([userId])
+  @@index([envelopeId])
+  @@index([action])
 }
 
 enum DocumentDataType {
@@ -546,6 +587,7 @@ enum FieldType {
   NAME
   EMAIL
   DATE
+  CALENDAR
   TEXT
   NUMBER
   RADIO

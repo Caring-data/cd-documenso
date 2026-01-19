@@ -7,6 +7,7 @@ import { msg } from '@lingui/core/macro';
 import { useLingui } from '@lingui/react';
 import { Trans } from '@lingui/react/macro';
 import { FieldType, RecipientRole } from '@prisma/client';
+
 import {
   CalendarDays,
   CheckSquare,
@@ -86,6 +87,7 @@ const FieldSettingsTypeTranslations: Record<FieldType, MessageDescriptor> = {
   [FieldType.FREE_SIGNATURE]: msg`Free Signature Settings`,
   [FieldType.TEXT]: msg`Text Settings`,
   [FieldType.DATE]: msg`Date Settings`,
+  [FieldType.CALENDAR]: msg`Calendar Settings`,
   [FieldType.EMAIL]: msg`Email Settings`,
   [FieldType.NAME]: msg`Name Settings`,
   [FieldType.INITIALS]: msg`Initials Settings`,
@@ -446,6 +448,14 @@ export const EmbedAddTemplateFieldsFormPartial = ({
               />
 
               <FieldButton
+                type={FieldType.CALENDAR}
+                selectedField={selectedField}
+                onSelect={setSelectedField}
+                icon={CalendarDays}
+                label={<Trans>Calendar</Trans>}
+              />
+
+              <FieldButton
                 type={FieldType.TEXT}
                 selectedField={selectedField}
                 onSelect={setSelectedField}
@@ -627,6 +637,12 @@ export const EmbedAddTemplateFieldsFormPartial = ({
                         onValueChange={(value) => updateSelectedFieldMeta(value)}
                       />
                     ))
+                    .with(FieldType.CALENDAR, () => (
+                      <EditorFieldDateForm
+                        value={selectedFieldFromEditor?.fieldMeta as TDateFieldMeta | undefined}
+                        onValueChange={(value) => updateSelectedFieldMeta(value)}
+                      />
+                    ))
                     .with(FieldType.DROPDOWN, () => (
                       <EditorFieldDropdownForm
                         value={selectedFieldFromEditor?.fieldMeta as TDropdownFieldMeta | undefined}
@@ -785,8 +801,14 @@ const FieldButton = ({ type, selectedField, onSelect, icon: Icon, label, classNa
     <button
       type="button"
       className="group h-full w-full"
-      onClick={() => onSelect(type)}
-      onMouseDown={() => onSelect(type)}
+      onClick={() => {
+        console.log('FieldButton clicked:', type);
+        onSelect(type);
+      }}
+      onMouseDown={() => {
+        console.log('FieldButton mousedown:', type);
+        onSelect(type);
+      }}
       data-selected={selectedField === type ? true : undefined}
     >
       <Card

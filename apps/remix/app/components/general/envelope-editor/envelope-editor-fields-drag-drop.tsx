@@ -61,6 +61,11 @@ export const fieldButtonList = [
     name: msg`Date`,
   },
   {
+    type: FieldType.CALENDAR,
+    icon: CalendarIcon,
+    name: msg`Calendar`,
+  },
+  {
     type: FieldType.TEXT,
     icon: TextIcon,
     name: msg`Text`,

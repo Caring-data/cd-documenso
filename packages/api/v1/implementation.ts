@@ -1536,6 +1536,7 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
                 'SIGNATURE',
                 'INITIALS',
                 'DATE',
+                'CALENDAR',
                 'EMAIL',
                 'NAME',
                 'RESIDENT_FIRST_NAME',

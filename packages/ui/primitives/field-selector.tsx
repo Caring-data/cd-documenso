@@ -54,6 +54,11 @@ export const FieldSelector = ({
       icon: CalendarDays,
     },
     {
+      type: FieldType.CALENDAR,
+      label: 'Calendar',
+      icon: CalendarDays,
+    },
+    {
       type: FieldType.TEXT,
       label: 'Text',
       icon: Type,

@@ -623,6 +623,7 @@ export const createDocumentFromDirectTemplate = async ({
               }))
               .with(
                 FieldType.DATE,
+                FieldType.CALENDAR,
                 FieldType.EMAIL,
                 FieldType.INITIALS,
                 FieldType.NAME,

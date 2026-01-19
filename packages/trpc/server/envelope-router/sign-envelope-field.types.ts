@@ -43,6 +43,10 @@ export const ZSignEnvelopeFieldValue = z.discriminatedUnion('type', [
     value: z.boolean(),
   }),
   z.object({
+    type: z.literal(FieldType.CALENDAR),
+    value: z.string().nullable(),
+  }),
+  z.object({
     type: z.literal(FieldType.SIGNATURE),
     value: z.string().nullable(),
   }),

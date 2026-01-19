@@ -293,6 +293,21 @@ export const extractFieldInsertionValues = ({
         };
       },
     )
+    // CALENDAR behaves like a date field - the value comes as YYYY-MM-DD
+    .with({ type: FieldType.CALENDAR }, (fieldValue) => {
+      if (!fieldValue.value) {
+        return {
+          customText: '',
+          inserted: false,
+        };
+      }
+
+      // The value comes as YYYY-MM-DD from the calendar picker, we just use it as-is
+      return {
+        customText: fieldValue.value,
+        inserted: true,
+      };
+    })
     // RESIDENT_DOB behaves like a date field - format the value as date
     .with({ type: FieldType.RESIDENT_DOB }, (fieldValue) => {
       if (!fieldValue.value) {

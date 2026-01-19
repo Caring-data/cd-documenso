@@ -35,6 +35,7 @@ import type { TRecipientColor } from '@documenso/ui/lib/recipient-colors';
 import { useToast } from '@documenso/ui/primitives/use-toast';
 
 import { useEmbedSigningContext } from '~/components/embed/embed-signing-context';
+import { handleCalendarFieldClick } from '~/utils/field-signing/calendar-field';
 import { handleCheckboxFieldClick } from '~/utils/field-signing/checkbox-field';
 import { handleDropdownFieldClick } from '~/utils/field-signing/dropdown-field';
 import { handleEmailFieldClick } from '~/utils/field-signing/email-field';
@@ -234,20 +235,21 @@ export default function EnvelopeSignerPageRenderer() {
       // Helper function to handle resident field click
       const handleResidentFieldClick = async (field: typeof parsedFoundField) => {
         try {
-
-
-
           // Get resident value from already fetched residentInfo
           const residentValue = residentInfo && isResidentFieldType(field.type) && recipient.role !== RecipientRole.ASSISTANT
             ? getResidentValue(field.type, residentInfo) || null
             : null;
 
-          // Use residentValue if available, otherwise show dialog
-          const textToUse = residentValue || null;
+          let payload;
 
-          const payload = await handleTextFieldClick({ field, text: textToUse });
-
-
+          // For RESIDENT_DOB without value, use calendar picker
+          if (field.type === FieldType.RESIDENT_DOB && !residentValue && recipient.role !== RecipientRole.ASSISTANT) {
+            payload = await handleCalendarFieldClick({ field, date: null });
+          } else {
+            // Use residentValue if available, otherwise show dialog
+            const textToUse = residentValue || null;
+            payload = await handleTextFieldClick({ field, text: textToUse });
+          }
 
           if (payload) {
             fieldGroup.add(loadingSpinnerGroup);
@@ -321,9 +323,6 @@ export default function EnvelopeSignerPageRenderer() {
               loadingSpinnerGroup.destroy();
             });
         })
-        /**
-         * TEXT FIELD.
-         */
         .with({ type: FieldType.TEXT }, (field) => {
           handleTextFieldClick({ field, text: null })
             .then(async (payload) => {
@@ -336,9 +335,6 @@ export default function EnvelopeSignerPageRenderer() {
               loadingSpinnerGroup.destroy();
             });
         })
-        /**
-         * RESIDENT FIELDS - Handle all resident field types.
-         */
         .with({ type: FieldType.RESIDENT_FIRST_NAME }, (field) => {
           void handleResidentFieldClick(field);
         })
@@ -453,6 +449,23 @@ export default function EnvelopeSignerPageRenderer() {
           }).finally(() => {
             loadingSpinnerGroup.destroy();
           });
+        })
+        /**
+         * CALENDAR FIELD.
+         */
+        .with({ type: FieldType.CALENDAR }, (field) => {
+          handleCalendarFieldClick({ field, date: null })
+            .then(async (payload) => {
+              if (payload) {
+                fieldGroup.add(loadingSpinnerGroup);
+                await signField(field.id, payload);
+              }
+
+              loadingSpinnerGroup.destroy();
+            })
+            .finally(() => {
+              loadingSpinnerGroup.destroy();
+            });
         })
         /**
          * SIGNATURE FIELD.

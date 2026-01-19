@@ -158,6 +158,13 @@ export const ZFieldDateSchema = BaseFieldSchemaUsingNumbers.extend({
 
 export type TFieldDate = z.infer<typeof ZFieldDateSchema>;
 
+export const ZFieldCalendarSchema = BaseFieldSchemaUsingNumbers.extend({
+  type: z.literal(FieldType.CALENDAR),
+  fieldMeta: ZDateFieldMeta,
+});
+
+export type TFieldCalendar = z.infer<typeof ZFieldCalendarSchema>;
+
 export const ZFieldNumberSchema = BaseFieldSchemaUsingNumbers.extend({
   type: z.literal(FieldType.NUMBER),
   fieldMeta: ZNumberFieldMeta,
@@ -267,6 +274,7 @@ export const ZFullFieldSchema = z.discriminatedUnion('type', [
   ZFieldNameSchema,
   ZFieldEmailSchema,
   ZFieldDateSchema,
+  ZFieldCalendarSchema,
   ZFieldNumberSchema,
   ZFieldRadioSchema,
   ZFieldCheckboxSchema,

@@ -61,6 +61,7 @@ const FieldSettingsTypeTranslations: Record<FieldType, MessageDescriptor> = {
   [FieldType.FREE_SIGNATURE]: msg`Free Signature Settings`,
   [FieldType.TEXT]: msg`Text Settings`,
   [FieldType.DATE]: msg`Date Settings`,
+  [FieldType.CALENDAR]: msg`Calendar Settings`,
   [FieldType.EMAIL]: msg`Email Settings`,
   [FieldType.NAME]: msg`Name Settings`,
   [FieldType.INITIALS]: msg`Initials Settings`,
@@ -347,6 +348,12 @@ export const EnvelopeEditorFieldsPage = () => {
                       />
                     ))
                     .with(FieldType.DATE, () => (
+                      <EditorFieldDateForm
+                        value={selectedField?.fieldMeta as TDateFieldMeta | undefined}
+                        onValueChange={(value) => updateSelectedFieldMeta(value)}
+                      />
+                    ))
+                    .with(FieldType.CALENDAR, () => (
                       <EditorFieldDateForm
                         value={selectedField?.fieldMeta as TDateFieldMeta | undefined}
                         onValueChange={(value) => updateSelectedFieldMeta(value)}

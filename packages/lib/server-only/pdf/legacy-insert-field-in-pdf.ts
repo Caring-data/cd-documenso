@@ -303,6 +303,7 @@ export const legacy_insertFieldInPDF = async (pdf: PDFDocument, field: FieldWith
         [FieldType.TEXT]: ZTextFieldMeta,
         [FieldType.NUMBER]: ZNumberFieldMeta,
         [FieldType.DATE]: ZDateFieldMeta,
+        [FieldType.CALENDAR]: ZDateFieldMeta,
         [FieldType.EMAIL]: ZEmailFieldMeta,
         [FieldType.NAME]: ZNameFieldMeta,
         [FieldType.INITIALS]: ZInitialsFieldMeta,

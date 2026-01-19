@@ -84,6 +84,7 @@ export const renderField = ({
       FieldType.NAME,
       FieldType.EMAIL,
       FieldType.DATE,
+      FieldType.CALENDAR,
       FieldType.TEXT,
       FieldType.NUMBER,
       FieldType.RESIDENT_FIRST_NAME,

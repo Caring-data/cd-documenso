@@ -42,6 +42,7 @@ export type DocumentSigningFieldContainerProps = {
   onRemove?: (fieldType?: string) => Promise<void> | void;
   type?:
     | 'Date'
+    | 'Calendar'
     | 'Initials'
     | 'Email'
     | 'Name'

@@ -258,6 +258,10 @@ export const ZFieldAndMetaSchema = z.discriminatedUnion('type', [
     fieldMeta: ZDateFieldMeta.optional(),
   }),
   z.object({
+    type: z.literal(FieldType.CALENDAR),
+    fieldMeta: ZDateFieldMeta.optional(),
+  }),
+  z.object({
     type: z.literal(FieldType.TEXT),
     fieldMeta: ZTextFieldMeta.optional(),
   }),
@@ -408,6 +412,7 @@ export const FIELD_META_DEFAULT_VALUES: Record<FieldType, TFieldMetaSchema> = {
   [FieldType.NAME]: FIELD_NAME_META_DEFAULT_VALUES,
   [FieldType.EMAIL]: FIELD_EMAIL_META_DEFAULT_VALUES,
   [FieldType.DATE]: FIELD_DATE_META_DEFAULT_VALUES,
+  [FieldType.CALENDAR]: FIELD_DATE_META_DEFAULT_VALUES,
   [FieldType.TEXT]: FIELD_TEXT_META_DEFAULT_VALUES,
   [FieldType.NUMBER]: FIELD_NUMBER_META_DEFAULT_VALUES,
   [FieldType.RADIO]: FIELD_RADIO_META_DEFAULT_VALUES,
@@ -448,6 +453,10 @@ export const ZEnvelopeFieldAndMetaSchema = z.discriminatedUnion('type', [
   }),
   z.object({
     type: z.literal(FieldType.DATE),
+    fieldMeta: ZDateFieldMeta.optional().default(FIELD_DATE_META_DEFAULT_VALUES),
+  }),
+  z.object({
+    type: z.literal(FieldType.CALENDAR),
     fieldMeta: ZDateFieldMeta.optional().default(FIELD_DATE_META_DEFAULT_VALUES),
   }),
   z.object({
