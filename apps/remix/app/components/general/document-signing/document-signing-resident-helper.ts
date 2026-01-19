@@ -18,7 +18,6 @@ export const getResidentValue = (
     case FieldType.RESIDENT_LAST_NAME:
       return resident.last_name || '';
     case FieldType.RESIDENT_DOB: {
-      // Format date from ISO string to YYYY-MM-DD for input[type="date"]
       const dob = resident.dob;
       if (dob) {
         return new Date(dob).toISOString().split('T')[0];
@@ -45,7 +44,7 @@ export const getResidentValue = (
 };
 
 export const isResidentFieldType = (fieldType: FieldType): boolean => {
-  return [
+  const residentFieldTypes = [
     FieldType.RESIDENT_FIRST_NAME,
     FieldType.RESIDENT_LAST_NAME,
     FieldType.RESIDENT_DOB,
@@ -56,5 +55,6 @@ export const isResidentFieldType = (fieldType: FieldType): boolean => {
     FieldType.RESIDENT_LOCATION_CITY,
     FieldType.RESIDENT_LOCATION_ZIP_CODE,
     FieldType.RESIDENT_LOCATION_COUNTRY,
-  ].includes(fieldType);
+  ] as const satisfies readonly FieldType[];
+  return (residentFieldTypes as readonly FieldType[]).includes(fieldType);
 };
