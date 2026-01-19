@@ -9,7 +9,7 @@ import {
   SigningStatus,
 } from '@prisma/client';
 
-import { mailer } from '@documenso/email/mailer';
+import { sendEmailWithNotify } from '@documenso/email/notify';
 import { DocumentInviteEmailTemplate } from '@documenso/email/templates/document-invite';
 import {
   RECIPIENT_ROLES_DESCRIPTION,
@@ -107,15 +107,14 @@ export const resendDocument = async ({
     return envelope;
   }
 
-  const { branding, emailLanguage, organisationType, senderEmail, replyToEmail } =
-    await getEmailContext({
-      emailType: 'RECIPIENT',
-      source: {
-        type: 'team',
-        teamId: envelope.teamId,
-      },
-      meta: envelope.documentMeta,
-    });
+  const { branding, emailLanguage, organisationType } = await getEmailContext({
+    emailType: 'RECIPIENT',
+    source: {
+      type: 'team',
+      teamId: envelope.teamId,
+    },
+    meta: envelope.documentMeta,
+  });
 
   await Promise.all(
     recipientsToRemind.map(async (recipient) => {
@@ -180,7 +179,7 @@ export const resendDocument = async ({
         teamName: envelope.team?.name,
       });
 
-      const [html, text] = await Promise.all([
+      const [html] = await Promise.all([
         renderEmailWithI18N(template, {
           lang: emailLanguage,
           branding,
@@ -194,22 +193,19 @@ export const resendDocument = async ({
 
       await prisma.$transaction(
         async (tx) => {
-          await mailer.sendMail({
-            to: {
-              address: email,
-              name,
+          await sendEmailWithNotify(
+            {
+              email: email,
+              name: name ?? undefined,
             },
-            from: senderEmail,
-            replyTo: replyToEmail,
-            subject: envelope.documentMeta.subject
+            envelope.documentMeta.subject
               ? renderCustomEmailTemplate(
                   i18n._(msg`Reminder: ${envelope.documentMeta.subject}`),
                   customEmailTemplate,
                 )
               : emailSubject,
             html,
-            text,
-          });
+          );
 
           await tx.documentAuditLog.create({
             data: createDocumentAuditLogData({

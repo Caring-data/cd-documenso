@@ -2,7 +2,7 @@ import { createElement } from 'react';
 
 import { msg } from '@lingui/core/macro';
 
-import { mailer } from '@documenso/email/mailer';
+import { sendEmailWithNotify } from '@documenso/email/notify';
 import { DocumentSuperDeleteEmailTemplate } from '@documenso/email/templates/document-super-delete';
 import { prisma } from '@documenso/prisma';
 
@@ -50,7 +50,7 @@ export const sendDeleteEmail = async ({ envelopeId, reason }: SendDeleteEmailOpt
     return;
   }
 
-  const { branding, emailLanguage, senderEmail } = await getEmailContext({
+  const { branding, emailLanguage } = await getEmailContext({
     emailType: 'INTERNAL',
     source: {
       type: 'team',
@@ -69,7 +69,7 @@ export const sendDeleteEmail = async ({ envelopeId, reason }: SendDeleteEmailOpt
     assetBaseUrl,
   });
 
-  const [html, text] = await Promise.all([
+  const [html] = await Promise.all([
     renderEmailWithI18N(template, { lang: emailLanguage, branding }),
     renderEmailWithI18N(template, {
       lang: emailLanguage,
@@ -80,14 +80,12 @@ export const sendDeleteEmail = async ({ envelopeId, reason }: SendDeleteEmailOpt
 
   const i18n = await getI18nInstance(emailLanguage);
 
-  await mailer.sendMail({
-    to: {
-      address: email,
-      name: name || '',
+  await sendEmailWithNotify(
+    {
+      email: email,
+      name: name ?? undefined,
     },
-    from: senderEmail,
-    subject: i18n._(msg`Document Deleted!`),
+    i18n._(msg`Document Deleted!`),
     html,
-    text,
-  });
+  );
 };

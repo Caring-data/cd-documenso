@@ -3,7 +3,7 @@ import { createElement } from 'react';
 import { msg } from '@lingui/core/macro';
 import { DocumentStatus, SendStatus } from '@prisma/client';
 
-import { mailer } from '@documenso/email/mailer';
+import { sendEmailWithNotify } from '@documenso/email/notify';
 import DocumentCancelTemplate from '@documenso/email/templates/document-cancel';
 import { prisma } from '@documenso/prisma';
 
@@ -50,7 +50,7 @@ export const adminSuperDeleteDocument = async ({
     });
   }
 
-  const { branding, settings, senderEmail, replyToEmail } = await getEmailContext({
+  const { branding, settings } = await getEmailContext({
     emailType: 'RECIPIENT',
     source: {
       type: 'team',
@@ -91,7 +91,7 @@ export const adminSuperDeleteDocument = async ({
 
         const lang = envelope.documentMeta?.language ?? settings.documentLanguage;
 
-        const [html, text] = await Promise.all([
+        const [html] = await Promise.all([
           renderEmailWithI18N(template, { lang, branding }),
           renderEmailWithI18N(template, {
             lang,
@@ -102,17 +102,14 @@ export const adminSuperDeleteDocument = async ({
 
         const i18n = await getI18nInstance(lang);
 
-        await mailer.sendMail({
-          to: {
-            address: recipient.email,
-            name: recipient.name,
+        await sendEmailWithNotify(
+          {
+            email: recipient.email,
+            name: recipient.name ?? undefined,
           },
-          from: senderEmail,
-          replyTo: replyToEmail,
-          subject: i18n._(msg`Document Cancelled`),
+          i18n._(msg`Document Cancelled`),
           html,
-          text,
-        });
+        );
       }),
     );
   }

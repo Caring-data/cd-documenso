@@ -6,9 +6,8 @@
   "license": "MIT",
   "files": [
     "templates/",
-    "transports/",
-    "mailer.ts",
     "render.ts",
+    "notify.ts",
     "index.ts"
   ],
   "scripts": {
