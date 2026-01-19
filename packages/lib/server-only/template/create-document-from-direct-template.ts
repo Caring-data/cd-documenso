@@ -18,7 +18,7 @@ import { DateTime } from 'luxon';
 import { match } from 'ts-pattern';
 import { z } from 'zod';
 
-import { mailer } from '@documenso/email/mailer';
+import { sendEmailWithNotify } from '@documenso/email/notify';
 import { DocumentCreatedFromDirectTemplateEmailTemplate } from '@documenso/email/templates/document-created-from-direct-template';
 import { nanoid, prefixedId } from '@documenso/lib/universal/id';
 import { prisma } from '@documenso/prisma';
@@ -157,7 +157,7 @@ export const createDocumentFromDirectTemplate = async ({
     });
   }
 
-  const { branding, settings, senderEmail, emailLanguage } = await getEmailContext({
+  const { branding, settings, emailLanguage } = await getEmailContext({
     emailType: 'INTERNAL',
     source: {
       type: 'team',
@@ -777,25 +777,21 @@ export const createDocumentFromDirectTemplate = async ({
       assetBaseUrl: NEXT_PUBLIC_WEBAPP_URL() || 'http://localhost:3002',
     });
 
-    const [html, text] = await Promise.all([
+    const [html] = await Promise.all([
       renderEmailWithI18N(emailTemplate, { lang: emailLanguage, branding }),
       renderEmailWithI18N(emailTemplate, { lang: emailLanguage, branding, plainText: true }),
     ]);
 
     const i18n = await getI18nInstance(emailLanguage);
 
-    await mailer.sendMail({
-      to: [
-        {
-          name: templateOwner.name || '',
-          address: templateOwner.email,
-        },
-      ],
-      from: senderEmail,
-      subject: i18n._(msg`Document created from direct template`),
+    await sendEmailWithNotify(
+      {
+        email: templateOwner.email,
+        name: templateOwner.name ?? undefined,
+      },
+      i18n._(msg`Document created from direct template`),
       html,
-      text,
-    });
+    );
 
     return {
       createdEnvelope,

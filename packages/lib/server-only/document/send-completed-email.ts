@@ -3,7 +3,7 @@ import { createElement } from 'react';
 import { msg } from '@lingui/core/macro';
 import { DocumentSource, EnvelopeType } from '@prisma/client';
 
-import { mailer } from '@documenso/email/mailer';
+import { sendEmailWithNotify } from '@documenso/email/notify';
 import { DocumentCompletedEmailTemplate } from '@documenso/email/templates/document-completed';
 import { prisma } from '@documenso/prisma';
 
@@ -12,7 +12,6 @@ import { NEXT_PUBLIC_WEBAPP_URL } from '../../constants/app';
 import { DOCUMENT_AUDIT_LOG_TYPE } from '../../types/document-audit-logs';
 import { extractDerivedDocumentEmailSettings } from '../../types/document-email';
 import type { RequestMetadata } from '../../universal/extract-request-metadata';
-import { getFileServerSide } from '../../universal/upload/get-file.server';
 import { createDocumentAuditLogData } from '../../utils/document-audit-logs';
 import type { EnvelopeIdOptions } from '../../utils/envelope';
 import { unsafeBuildEnvelopeIdQuery } from '../../utils/envelope';
@@ -70,7 +69,7 @@ export const sendCompletedEmail = async ({ id, requestMetadata }: SendDocumentOp
     throw new Error('Document has no recipients');
   }
 
-  const { branding, emailLanguage, senderEmail, replyToEmail } = await getEmailContext({
+  const { branding, emailLanguage } = await getEmailContext({
     emailType: 'RECIPIENT',
     source: {
       type: 'team',
@@ -80,22 +79,6 @@ export const sendCompletedEmail = async ({ id, requestMetadata }: SendDocumentOp
   });
 
   const { user: owner } = envelope;
-
-  const completedDocumentEmailAttachments = await Promise.all(
-    envelope.envelopeItems.map(async (envelopeItem) => {
-      const file = await getFileServerSide(envelopeItem.documentData);
-
-      // Use the envelope title for version 1, and the envelope item title for version 2.
-      const fileNameToUse =
-        envelope.internalVersion === 1 ? envelope.title : envelopeItem.title + '.pdf';
-
-      return {
-        filename: fileNameToUse.endsWith('.pdf') ? fileNameToUse : fileNameToUse + '.pdf',
-        content: Buffer.from(file),
-        contentType: 'application/pdf',
-      };
-    }),
-  );
 
   const assetBaseUrl = NEXT_PUBLIC_WEBAPP_URL() || 'http://localhost:3002';
 
@@ -129,7 +112,7 @@ export const sendCompletedEmail = async ({ id, requestMetadata }: SendDocumentOp
       downloadLink: documentOwnerDownloadLink,
     });
 
-    const [html, text] = await Promise.all([
+    const [html] = await Promise.all([
       renderEmailWithI18N(template, { lang: emailLanguage, branding }),
       renderEmailWithI18N(template, {
         lang: emailLanguage,
@@ -140,20 +123,14 @@ export const sendCompletedEmail = async ({ id, requestMetadata }: SendDocumentOp
 
     const i18n = await getI18nInstance(emailLanguage);
 
-    await mailer.sendMail({
-      to: [
-        {
-          name: owner.name || '',
-          address: owner.email,
-        },
-      ],
-      from: senderEmail,
-      replyTo: replyToEmail,
-      subject: i18n._(msg`Signing Complete!`),
+    await sendEmailWithNotify(
+      {
+        email: owner.email,
+        name: owner.name ?? undefined,
+      },
+      i18n._(msg`Signing Complete!`),
       html,
-      text,
-      attachments: completedDocumentEmailAttachments,
-    });
+    );
 
     await prisma.documentAuditLog.create({
       data: createDocumentAuditLogData({
@@ -201,7 +178,7 @@ export const sendCompletedEmail = async ({ id, requestMetadata }: SendDocumentOp
             : undefined,
       });
 
-      const [html, text] = await Promise.all([
+      const [html] = await Promise.all([
         renderEmailWithI18N(template, { lang: emailLanguage, branding }),
         renderEmailWithI18N(template, {
           lang: emailLanguage,
@@ -212,23 +189,16 @@ export const sendCompletedEmail = async ({ id, requestMetadata }: SendDocumentOp
 
       const i18n = await getI18nInstance(emailLanguage);
 
-      await mailer.sendMail({
-        to: [
-          {
-            name: recipient.name,
-            address: recipient.email,
-          },
-        ],
-        from: senderEmail,
-        replyTo: replyToEmail,
-        subject:
-          isDirectTemplate && envelope.documentMeta?.subject
-            ? renderCustomEmailTemplate(envelope.documentMeta.subject, customEmailTemplate)
-            : i18n._(msg`Signing Complete!`),
+      await sendEmailWithNotify(
+        {
+          email: recipient.email,
+          name: recipient.name ?? undefined,
+        },
+        isDirectTemplate && envelope.documentMeta?.subject
+          ? renderCustomEmailTemplate(envelope.documentMeta.subject, customEmailTemplate)
+          : i18n._(msg`Signing Complete!`),
         html,
-        text,
-        attachments: completedDocumentEmailAttachments,
-      });
+      );
 
       await prisma.documentAuditLog.create({
         data: createDocumentAuditLogData({

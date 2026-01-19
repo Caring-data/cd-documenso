@@ -3,7 +3,7 @@ import { createElement } from 'react';
 import { msg } from '@lingui/core/macro';
 import { EnvelopeType, SendStatus, SigningStatus } from '@prisma/client';
 
-import { mailer } from '@documenso/email/mailer';
+import { sendEmailWithNotify } from '@documenso/email/notify';
 import DocumentRejectedEmail from '@documenso/email/templates/document-rejected';
 import DocumentRejectionConfirmedEmail from '@documenso/email/templates/document-rejection-confirmed';
 import { isRecipientEmailValidForSending } from '@documenso/lib/utils/recipients';
@@ -11,7 +11,6 @@ import { prisma } from '@documenso/prisma';
 
 import { getI18nInstance } from '../../../client-only/providers/i18n-server';
 import { NEXT_PUBLIC_WEBAPP_URL } from '../../../constants/app';
-import { DOCUMENSO_INTERNAL_EMAIL } from '../../../constants/email';
 import { getEmailContext } from '../../../server-only/email/get-email-context';
 import { extractDerivedDocumentEmailSettings } from '../../../types/document-email';
 import { unsafeBuildEnvelopeIdQuery } from '../../../utils/envelope';
@@ -74,7 +73,7 @@ export const run = async ({
     return;
   }
 
-  const { branding, emailLanguage, senderEmail, replyToEmail } = await getEmailContext({
+  const { branding, emailLanguage } = await getEmailContext({
     emailType: 'RECIPIENT',
     source: {
       type: 'team',
@@ -96,7 +95,7 @@ export const run = async ({
         assetBaseUrl: NEXT_PUBLIC_WEBAPP_URL(),
       });
 
-      const [html, text] = await Promise.all([
+      const [html] = await Promise.all([
         renderEmailWithI18N(recipientTemplate, { lang: emailLanguage, branding }),
         renderEmailWithI18N(recipientTemplate, {
           lang: emailLanguage,
@@ -105,17 +104,14 @@ export const run = async ({
         }),
       ]);
 
-      await mailer.sendMail({
-        to: {
-          name: recipient.name,
-          address: recipient.email,
+      await sendEmailWithNotify(
+        {
+          email: recipient.email,
+          name: recipient.name ?? undefined,
         },
-        from: senderEmail,
-        replyTo: replyToEmail,
-        subject: i18n._(msg`Document "${envelope.title}" - Rejection Confirmed`),
+        i18n._(msg`Document "${envelope.title}" - Rejection Confirmed`),
         html,
-        text,
-      });
+      );
     });
   }
 
@@ -131,7 +127,7 @@ export const run = async ({
       assetBaseUrl: NEXT_PUBLIC_WEBAPP_URL(),
     });
 
-    const [html, text] = await Promise.all([
+    const [html] = await Promise.all([
       renderEmailWithI18N(ownerTemplate, { lang: emailLanguage, branding }),
       renderEmailWithI18N(ownerTemplate, {
         lang: emailLanguage,
@@ -140,16 +136,14 @@ export const run = async ({
       }),
     ]);
 
-    await mailer.sendMail({
-      to: {
-        name: documentOwner.name || '',
-        address: documentOwner.email,
+    await sendEmailWithNotify(
+      {
+        email: documentOwner.email,
+        name: documentOwner.name ?? undefined,
       },
-      from: DOCUMENSO_INTERNAL_EMAIL, // Purposefully using internal email here.
-      subject: i18n._(msg`Document "${envelope.title}" - Rejected by ${recipient.name}`),
+      i18n._(msg`Document "${envelope.title}" - Rejected by ${recipient.name}`),
       html,
-      text,
-    });
+    );
   });
 
   await io.runTask('update-recipient', async () => {
