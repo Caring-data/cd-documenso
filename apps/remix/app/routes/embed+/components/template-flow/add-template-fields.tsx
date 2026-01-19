@@ -70,6 +70,10 @@ import { EditorFieldSignatureForm } from '~/components/forms/editor/editor-field
 import { EditorFieldTextForm } from '~/components/forms/editor/editor-field-text-form';
 
 import { useCurrentEmbedTemplateEditor } from '../providers/embed-template-editor-provider';
+import { Accordion } from '@documenso/ui/primitives/accordion';
+import { AccordionItem, AccordionTrigger, AccordionContent } from '@documenso/ui/primitives/accordion';
+import { Input } from '@documenso/ui/primitives/input';
+import { Label } from '@documenso/ui/primitives/label';
 
 const MIN_HEIGHT_PX = 12;
 const MIN_WIDTH_PX = 36;
@@ -481,86 +485,117 @@ export const EmbedAddTemplateFieldsFormPartial = ({
                 label={<Trans>Dropdown</Trans>}
               />
 
-              <FieldButton
-                type={FieldType.RESIDENT_FIRST_NAME}
-                selectedField={selectedField}
-                onSelect={setSelectedField}
-                icon={UserCircle}
-                label={<Trans>Resident First Name</Trans>}
-              />
-
-              <FieldButton
-                type={FieldType.RESIDENT_LAST_NAME}
-                selectedField={selectedField}
-                onSelect={setSelectedField}
-                icon={UserCircle}
-                label={<Trans>Resident Last Name</Trans>}
-              />
-
-              <FieldButton
-                type={FieldType.RESIDENT_DOB}
-                selectedField={selectedField}
-                onSelect={setSelectedField}
-                icon={CalendarDays}
-                label={<Trans>Resident DOB</Trans>}
-              />
-
-              <FieldButton
-                type={FieldType.RESIDENT_GENDER_IDENTITY}
-                selectedField={selectedField}
-                onSelect={setSelectedField}
-                icon={User}
-                label={<Trans>Resident Gender</Trans>}
-              />
-
-              <FieldButton
-                type={FieldType.RESIDENT_LOCATION_NAME}
-                selectedField={selectedField}
-                onSelect={setSelectedField}
-                icon={MapPin}
-                label={<Trans>Location Name</Trans>}
-              />
-
-              <FieldButton
-                type={FieldType.RESIDENT_LOCATION_STATE}
-                selectedField={selectedField}
-                onSelect={setSelectedField}
-                icon={MapPin}
-                label={<Trans>Location State</Trans>}
-              />
-
-              <FieldButton
-                type={FieldType.RESIDENT_LOCATION_ADDRESS}
-                selectedField={selectedField}
-                onSelect={setSelectedField}
-                icon={MapPin}
-                label={<Trans>Location Address</Trans>}
-              />
-
-              <FieldButton
-                type={FieldType.RESIDENT_LOCATION_CITY}
-                selectedField={selectedField}
-                onSelect={setSelectedField}
-                icon={MapPin}
-                label={<Trans>Location City</Trans>}
-              />
-
-              <FieldButton
-                type={FieldType.RESIDENT_LOCATION_ZIP_CODE}
-                selectedField={selectedField}
-                onSelect={setSelectedField}
-                icon={MapPin}
-                label={<Trans>Location Zip Code</Trans>}
-              />
-
-              <FieldButton
-                type={FieldType.RESIDENT_LOCATION_COUNTRY}
-                selectedField={selectedField}
-                onSelect={setSelectedField}
-                icon={MapPin}
-                label={<Trans>Location Country</Trans>}
-              />
             </fieldset>
+
+
+            <div className="mt-4 flex flex-col gap-2">
+              <Separator />
+              <Accordion type="single" collapsible>
+                <AccordionItem value="resident-fields">
+                  <AccordionTrigger>
+                    <Label>Resident Fields</Label>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <fieldset disabled={isFieldsDisabled} className="grid grid-cols-3 gap-4">
+                      <FieldButton
+                        type={FieldType.RESIDENT_FIRST_NAME}
+                        selectedField={selectedField}
+                        onSelect={setSelectedField}
+                        icon={UserCircle}
+                        label={<Trans>First Name</Trans>}
+                      />
+
+                      <FieldButton
+                        type={FieldType.RESIDENT_LAST_NAME}
+                        selectedField={selectedField}
+                        onSelect={setSelectedField}
+                        icon={UserCircle}
+                        label={<Trans>Last Name</Trans>}
+                      />
+
+                      <FieldButton
+                        type={FieldType.RESIDENT_DOB}
+                        selectedField={selectedField}
+                        onSelect={setSelectedField}
+                        icon={CalendarDays}
+                        label={<Trans>Date of Birth</Trans>}
+                      />
+
+                      <FieldButton
+                        type={FieldType.RESIDENT_GENDER_IDENTITY}
+                        selectedField={selectedField}
+                        onSelect={setSelectedField}
+                        icon={User}
+                        label={<Trans>Gender Identity</Trans>}
+                      />
+                    </fieldset>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </div>
+
+
+            <div className="mt-4 flex flex-col gap-2">
+              <Separator />
+              <Accordion type="single" collapsible>
+                <AccordionItem value="resident-location-fields">
+                  <AccordionTrigger>
+                    <Label>Resident Location Fields</Label>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <fieldset disabled={isFieldsDisabled} className="grid grid-cols-3 gap-4">
+                      <FieldButton
+                        type={FieldType.RESIDENT_LOCATION_NAME}
+                        selectedField={selectedField}
+                        onSelect={setSelectedField}
+                        icon={MapPin}
+                        label={<Trans>Location Name</Trans>}
+                      />
+
+                      <FieldButton
+                        type={FieldType.RESIDENT_LOCATION_STATE}
+                        selectedField={selectedField}
+                        onSelect={setSelectedField}
+                        icon={MapPin}
+                        label={<Trans>State</Trans>}
+                      />
+
+                      <FieldButton
+                        type={FieldType.RESIDENT_LOCATION_ADDRESS}
+                        selectedField={selectedField}
+                        onSelect={setSelectedField}
+                        icon={MapPin}
+                        label={<Trans>Address</Trans>}
+                      />
+
+                      <FieldButton
+                        type={FieldType.RESIDENT_LOCATION_CITY}
+                        selectedField={selectedField}
+                        onSelect={setSelectedField}
+                        icon={MapPin}
+                        label={<Trans>City</Trans>}
+                      />
+
+                      <FieldButton
+                        type={FieldType.RESIDENT_LOCATION_ZIP_CODE}
+                        selectedField={selectedField}
+                        onSelect={setSelectedField}
+                        icon={MapPin}
+                        label={<Trans>ZIP Code</Trans>}
+                      />
+
+                      <FieldButton
+                        type={FieldType.RESIDENT_LOCATION_COUNTRY}
+                        selectedField={selectedField}
+                        onSelect={setSelectedField}
+                        icon={MapPin}
+                        label={<Trans>Country</Trans>}
+                      />
+                    </fieldset>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </div>
           </div>
 
           <AnimateGenericFadeInOut key={editorFields.selectedField?.formId}>

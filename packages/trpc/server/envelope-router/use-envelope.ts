@@ -33,6 +33,7 @@ export const useEnvelopeRoute = authenticatedProcedure
       prefillFields,
       override,
       attachments,
+      residentId,
     } = payload;
 
     ctx.logger.info({
@@ -137,6 +138,7 @@ export const useEnvelopeRoute = authenticatedProcedure
       prefillFields,
       override,
       attachments,
+      residentId,
     });
 
     // Distribute document if requested

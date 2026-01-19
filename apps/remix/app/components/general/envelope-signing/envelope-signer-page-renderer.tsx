@@ -13,6 +13,7 @@ import type Konva from 'konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import { match } from 'ts-pattern';
 
+import { useGetResidentInfo } from '@documenso/lib/client-only/hooks/use-get-resident-info';
 import { usePageRenderer } from '@documenso/lib/client-only/hooks/use-page-renderer';
 import { useCurrentEnvelopeRender } from '@documenso/lib/client-only/providers/envelope-render-provider';
 import { useOptionalSession } from '@documenso/lib/client-only/providers/session';
@@ -26,6 +27,7 @@ import { renderField } from '@documenso/lib/universal/field-renderer/render-fiel
 import { isFieldUnsignedAndRequired } from '@documenso/lib/utils/advanced-fields-helpers';
 import { getClientSideFieldTranslations } from '@documenso/lib/utils/fields';
 import { extractInitials } from '@documenso/lib/utils/recipient-formatter';
+import { trpc } from '@documenso/trpc/react';
 import type { TSignEnvelopeFieldValue } from '@documenso/trpc/server/envelope-router/sign-envelope-field.types';
 import { EnvelopeRecipientFieldTooltip } from '@documenso/ui/components/document/envelope-recipient-field-tooltip';
 import { EnvelopeFieldToolTip } from '@documenso/ui/components/field/envelope-field-tooltip';
@@ -44,6 +46,7 @@ import { handleTextFieldClick } from '~/utils/field-signing/text-field';
 
 import { useRequiredDocumentSigningAuthContext } from '../document-signing/document-signing-auth-provider';
 import { useRequiredEnvelopeSigningContext } from '../document-signing/envelope-signing-provider';
+import { getResidentValue, isResidentFieldType } from '../document-signing/document-signing-resident-helper';
 
 type GenericLocalField = TEnvelope['fields'][number] & {
   recipient: Pick<Recipient, 'id' | 'name' | 'email' | 'signingStatus'>;
@@ -90,6 +93,27 @@ export default function EnvelopeSignerPageRenderer() {
   const { _className, scale } = pageContext;
 
   const { envelope } = envelopeData;
+
+  // Check if there are any resident fields to enable automatic fetching
+  const hasResidentFields = useMemo(() => {
+    const fieldsToCheck = recipient.role === RecipientRole.ASSISTANT
+      ? selectedAssistantRecipientFields
+      : recipientFields;
+    return fieldsToCheck.some((field) => isResidentFieldType(field.type));
+  }, [recipientFields, selectedAssistantRecipientFields, recipient.role]);
+
+  // Automatically fetch resident info when there are resident fields
+  const { data: residentIdData } = trpc.envelope.getResidentInfo.useQuery(
+    { token: recipient.token },
+    {
+      enabled: hasResidentFields && recipient.role !== RecipientRole.ASSISTANT,
+      retry: false,
+    },
+  );
+
+  const { data: residentInfo } = useGetResidentInfo({
+    residentId: residentIdData?.residentId || '',
+  });
 
   const localPageFields = useMemo(() => {
     let fieldsToRender = recipientFields;
@@ -207,7 +231,36 @@ export default function EnvelopeSignerPageRenderer() {
 
       const parsedFoundField = ZFullFieldSchema.parse(foundField);
 
-      match(parsedFoundField)
+      // Helper function to handle resident field click
+      const handleResidentFieldClick = async (field: typeof parsedFoundField) => {
+        try {
+
+
+
+          // Get resident value from already fetched residentInfo
+          const residentValue = residentInfo && isResidentFieldType(field.type) && recipient.role !== RecipientRole.ASSISTANT
+            ? getResidentValue(field.type, residentInfo) || null
+            : null;
+
+          // Use residentValue if available, otherwise show dialog
+          const textToUse = residentValue || null;
+
+          const payload = await handleTextFieldClick({ field, text: textToUse });
+
+
+
+          if (payload) {
+            fieldGroup.add(loadingSpinnerGroup);
+            await signField(field.id, payload);
+          }
+        } catch (error) {
+          console.error('Error handling resident field:', error);
+        } finally {
+          loadingSpinnerGroup.destroy();
+        }
+      };
+
+      void match(parsedFoundField)
         /**
          * CHECKBOX FIELD.
          */
@@ -282,6 +335,39 @@ export default function EnvelopeSignerPageRenderer() {
             .finally(() => {
               loadingSpinnerGroup.destroy();
             });
+        })
+        /**
+         * RESIDENT FIELDS - Handle all resident field types.
+         */
+        .with({ type: FieldType.RESIDENT_FIRST_NAME }, (field) => {
+          void handleResidentFieldClick(field);
+        })
+        .with({ type: FieldType.RESIDENT_LAST_NAME }, (field) => {
+          void handleResidentFieldClick(field);
+        })
+        .with({ type: FieldType.RESIDENT_DOB }, (field) => {
+          void handleResidentFieldClick(field);
+        })
+        .with({ type: FieldType.RESIDENT_GENDER_IDENTITY }, (field) => {
+          void handleResidentFieldClick(field);
+        })
+        .with({ type: FieldType.RESIDENT_LOCATION_NAME }, (field) => {
+          void handleResidentFieldClick(field);
+        })
+        .with({ type: FieldType.RESIDENT_LOCATION_STATE }, (field) => {
+          void handleResidentFieldClick(field);
+        })
+        .with({ type: FieldType.RESIDENT_LOCATION_ADDRESS }, (field) => {
+          void handleResidentFieldClick(field);
+        })
+        .with({ type: FieldType.RESIDENT_LOCATION_CITY }, (field) => {
+          void handleResidentFieldClick(field);
+        })
+        .with({ type: FieldType.RESIDENT_LOCATION_ZIP_CODE }, (field) => {
+          void handleResidentFieldClick(field);
+        })
+        .with({ type: FieldType.RESIDENT_LOCATION_COUNTRY }, (field) => {
+          void handleResidentFieldClick(field);
         })
         /**
          * EMAIL FIELD.
