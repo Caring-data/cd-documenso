@@ -478,6 +478,7 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
     const {
       title,
       folderId,
+      folderName,
       externalId,
       visibility,
       globalAccessAuth,
@@ -550,6 +551,7 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
           templateType: type,
           title,
           folderId,
+          folderName,
           externalId: externalId ?? undefined,
           visibility,
           globalAccessAuth,

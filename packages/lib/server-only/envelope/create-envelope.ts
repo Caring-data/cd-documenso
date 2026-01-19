@@ -81,6 +81,7 @@ export type CreateEnvelopeOptions = {
     globalActionAuth?: TDocumentActionAuthTypes[];
     recipients?: CreateEnvelopeRecipientOptions[];
     folderId?: string;
+    folderName?: string;
   };
   attachments?: Array<{
     label: string;
@@ -108,6 +109,7 @@ export const createEnvelope = async ({
     formValues,
     userTimezone,
     folderId,
+    folderName,
     templateType,
     globalAccessAuth,
     globalActionAuth,
@@ -147,6 +149,20 @@ export const createEnvelope = async ({
       throw new AppError(AppErrorCode.NOT_FOUND, {
         message: 'Folder not found',
       });
+    }
+  }
+
+  if (folderName && !folderId) {
+    const folder = await prisma.folder.findFirst({
+      where: {
+        name: folderName,
+        team: buildTeamWhereQuery({ teamId, userId }),
+        type: FolderType.TEMPLATE,
+      },
+    });
+
+    if (!folder) {
+      throw new AppError(AppErrorCode.NOT_FOUND, { message: 'Folder not found' });
     }
   }
 

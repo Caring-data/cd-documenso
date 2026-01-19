@@ -225,6 +225,7 @@ export const ZDeleteTemplateMutationSchema = z.object({
 export const ZCreateTemplateV2RequestSchema = z.object({
   title: ZTemplateTitleSchema,
   folderId: z.string().optional(),
+  folderName: z.string().optional(),
   externalId: z.string().nullish(),
   visibility: z.nativeEnum(DocumentVisibility).optional(),
   globalAccessAuth: z.array(ZDocumentAccessAuthTypesSchema).optional().default([]),
