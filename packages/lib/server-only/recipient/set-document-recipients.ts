@@ -6,7 +6,7 @@ import { EnvelopeType, RecipientRole } from '@prisma/client';
 import { SendStatus, SigningStatus } from '@prisma/client';
 import { isDeepEqual } from 'remeda';
 
-import { mailer } from '@documenso/email/mailer';
+import { sendEmailWithNotify } from '@documenso/email/notify';
 import RecipientRemovedFromDocumentTemplate from '@documenso/email/templates/recipient-removed-from-document';
 import { DOCUMENT_AUDIT_LOG_TYPE } from '@documenso/lib/types/document-audit-logs';
 import type { TRecipientAccessAuthTypes } from '@documenso/lib/types/document-auth';
@@ -92,7 +92,7 @@ export const setDocumentRecipients = async ({
     throw new Error('Document already complete');
   }
 
-  const { branding, emailLanguage, senderEmail, replyToEmail } = await getEmailContext({
+  const { branding, emailLanguage } = await getEmailContext({
     emailType: 'RECIPIENT',
     source: {
       type: 'team',
@@ -106,7 +106,6 @@ export const setDocumentRecipients = async ({
   );
 
   // Feature flag checks removed - action auth is now always available
-
 
   const normalizedRecipients = recipients.map((recipient) => ({
     ...recipient,
@@ -310,24 +309,21 @@ export const setDocumentRecipients = async ({
           assetBaseUrl,
         });
 
-        const [html, text] = await Promise.all([
+        const [html] = await Promise.all([
           renderEmailWithI18N(template, { lang: emailLanguage, branding }),
           renderEmailWithI18N(template, { lang: emailLanguage, branding, plainText: true }),
         ]);
 
         const i18n = await getI18nInstance(emailLanguage);
 
-        await mailer.sendMail({
-          to: {
-            address: recipient.email,
-            name: recipient.name,
+        await sendEmailWithNotify(
+          {
+            email: recipient.email,
+            name: recipient.name ?? undefined,
           },
-          from: senderEmail,
-          replyTo: replyToEmail,
-          subject: i18n._(msg`You have been removed from a document`),
+          i18n._(msg`You have been removed from a document`),
           html,
-          text,
-        });
+        );
       }),
     );
   }

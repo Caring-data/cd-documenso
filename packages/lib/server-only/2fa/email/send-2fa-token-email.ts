@@ -3,7 +3,7 @@ import { createElement } from 'react';
 import { msg } from '@lingui/core/macro';
 import { EnvelopeType } from '@prisma/client';
 
-import { mailer } from '@documenso/email/mailer';
+import { sendEmailWithNotify } from '@documenso/email/notify';
 import { AccessAuth2FAEmailTemplate } from '@documenso/email/templates/access-auth-2fa';
 import { isRecipientEmailValidForSending } from '@documenso/lib/utils/recipients';
 import { prisma } from '@documenso/prisma';
@@ -81,7 +81,7 @@ export const send2FATokenEmail = async ({ token, envelopeId }: Send2FATokenEmail
     email: recipient.email,
   });
 
-  const { branding, emailLanguage, senderEmail, replyToEmail } = await getEmailContext({
+  const { branding, emailLanguage } = await getEmailContext({
     emailType: 'RECIPIENT',
     source: {
       type: 'team',
@@ -103,24 +103,21 @@ export const send2FATokenEmail = async ({ token, envelopeId }: Send2FATokenEmail
     assetBaseUrl: NEXT_PUBLIC_WEBAPP_URL(),
   });
 
-  const [html, text] = await Promise.all([
+  const [html] = await Promise.all([
     renderEmailWithI18N(template, { lang: emailLanguage, branding }),
     renderEmailWithI18N(template, { lang: emailLanguage, branding, plainText: true }),
   ]);
 
   await prisma.$transaction(
     async (tx) => {
-      await mailer.sendMail({
-        to: {
-          address: recipient.email,
-          name: recipient.name,
+      await sendEmailWithNotify(
+        {
+          email: recipient.email,
+          name: recipient.name ?? undefined,
         },
-        from: senderEmail,
-        replyTo: replyToEmail,
         subject,
         html,
-        text,
-      });
+      );
 
       await tx.documentAuditLog.create({
         data: createDocumentAuditLogData({
