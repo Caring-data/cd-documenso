@@ -7,7 +7,6 @@ import { ReadStatus, RecipientRole, SendStatus, SigningStatus } from '@prisma/cl
 import { EnvelopeRenderProvider } from '@documenso/lib/client-only/providers/envelope-render-provider';
 import { AppError } from '@documenso/lib/errors/app-error';
 import type { TEnvelope } from '@documenso/lib/types/envelope';
-import type { DocumentData } from '@documenso/prisma/client';
 import { generateRecipientPlaceholder } from '@documenso/lib/utils/templates';
 import { trpc } from '@documenso/trpc/react';
 import PDFViewerKonvaLazy from '@documenso/ui/components/pdf-viewer/pdf-viewer-konva-lazy';
@@ -29,11 +28,10 @@ type TemplateStep = 'general' | 'fields';
 export type ClientProps = {
   envelopeId: string;
   externalId: string;
-  documentData: DocumentData;
   initialEnvelope: TEnvelope;
 };
 
-export function Client({ envelopeId, externalId, documentData, initialEnvelope }: ClientProps) {
+export function Client({ envelopeId, externalId, initialEnvelope }: ClientProps) {
   return (
     <EmbedTemplateEditorProvider initialEnvelope={initialEnvelope}>
       <EnvelopeRenderProvider

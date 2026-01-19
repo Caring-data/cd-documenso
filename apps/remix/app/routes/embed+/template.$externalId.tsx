@@ -177,14 +177,13 @@ export async function loader({ params }: Route.LoaderArgs) {
   return {
     envelopeId: envelope.id,
     externalId: envelope.externalId || '',
-    documentData: firstEnvelopeItem.documentData,
     initialEnvelope,
     teamId: envelope.teamId,
   };
 }
 
 export default function EmbedTemplatePage({ loaderData }: Route.ComponentProps) {
-  const { envelopeId, externalId, documentData, initialEnvelope, teamId } = loaderData;
+  const { envelopeId, externalId, initialEnvelope, teamId } = loaderData;
 
   const trpcHeaders = teamId
     ? {
@@ -197,7 +196,6 @@ export default function EmbedTemplatePage({ loaderData }: Route.ComponentProps) 
       <Client
         envelopeId={envelopeId}
         externalId={externalId}
-        documentData={documentData}
         initialEnvelope={initialEnvelope as unknown as TEnvelope}
       />
     </TrpcProvider>
