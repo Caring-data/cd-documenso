@@ -186,6 +186,77 @@ export const ZFieldDropdownSchema = BaseFieldSchemaUsingNumbers.extend({
 
 export type TFieldDropdown = z.infer<typeof ZFieldDropdownSchema>;
 
+// Resident field schemas
+export const ZFieldResidentFirstNameSchema = BaseFieldSchemaUsingNumbers.extend({
+  type: z.literal(FieldType.RESIDENT_FIRST_NAME),
+  fieldMeta: ZTextFieldMeta,
+});
+
+export type TFieldResidentFirstName = z.infer<typeof ZFieldResidentFirstNameSchema>;
+
+export const ZFieldResidentLastNameSchema = BaseFieldSchemaUsingNumbers.extend({
+  type: z.literal(FieldType.RESIDENT_LAST_NAME),
+  fieldMeta: ZTextFieldMeta,
+});
+
+export type TFieldResidentLastName = z.infer<typeof ZFieldResidentLastNameSchema>;
+
+export const ZFieldResidentDobSchema = BaseFieldSchemaUsingNumbers.extend({
+  type: z.literal(FieldType.RESIDENT_DOB),
+  fieldMeta: ZDateFieldMeta,
+});
+
+export type TFieldResidentDob = z.infer<typeof ZFieldResidentDobSchema>;
+
+export const ZFieldResidentGenderIdentitySchema = BaseFieldSchemaUsingNumbers.extend({
+  type: z.literal(FieldType.RESIDENT_GENDER_IDENTITY),
+  fieldMeta: ZTextFieldMeta,
+});
+
+export type TFieldResidentGenderIdentity = z.infer<typeof ZFieldResidentGenderIdentitySchema>;
+
+export const ZFieldResidentLocationNameSchema = BaseFieldSchemaUsingNumbers.extend({
+  type: z.literal(FieldType.RESIDENT_LOCATION_NAME),
+  fieldMeta: ZTextFieldMeta,
+});
+
+export type TFieldResidentLocationName = z.infer<typeof ZFieldResidentLocationNameSchema>;
+
+export const ZFieldResidentLocationStateSchema = BaseFieldSchemaUsingNumbers.extend({
+  type: z.literal(FieldType.RESIDENT_LOCATION_STATE),
+  fieldMeta: ZTextFieldMeta,
+});
+
+export type TFieldResidentLocationState = z.infer<typeof ZFieldResidentLocationStateSchema>;
+
+export const ZFieldResidentLocationAddressSchema = BaseFieldSchemaUsingNumbers.extend({
+  type: z.literal(FieldType.RESIDENT_LOCATION_ADDRESS),
+  fieldMeta: ZTextFieldMeta,
+});
+
+export type TFieldResidentLocationAddress = z.infer<typeof ZFieldResidentLocationAddressSchema>;
+
+export const ZFieldResidentLocationCitySchema = BaseFieldSchemaUsingNumbers.extend({
+  type: z.literal(FieldType.RESIDENT_LOCATION_CITY),
+  fieldMeta: ZTextFieldMeta,
+});
+
+export type TFieldResidentLocationCity = z.infer<typeof ZFieldResidentLocationCitySchema>;
+
+export const ZFieldResidentLocationZipCodeSchema = BaseFieldSchemaUsingNumbers.extend({
+  type: z.literal(FieldType.RESIDENT_LOCATION_ZIP_CODE),
+  fieldMeta: ZTextFieldMeta,
+});
+
+export type TFieldResidentLocationZipCode = z.infer<typeof ZFieldResidentLocationZipCodeSchema>;
+
+export const ZFieldResidentLocationCountrySchema = BaseFieldSchemaUsingNumbers.extend({
+  type: z.literal(FieldType.RESIDENT_LOCATION_COUNTRY),
+  fieldMeta: ZTextFieldMeta,
+});
+
+export type TFieldResidentLocationCountry = z.infer<typeof ZFieldResidentLocationCountrySchema>;
+
 /**
  * The full field schema which will enforce all types and meta fields.
  */
@@ -200,6 +271,16 @@ export const ZFullFieldSchema = z.discriminatedUnion('type', [
   ZFieldRadioSchema,
   ZFieldCheckboxSchema,
   ZFieldDropdownSchema,
+  ZFieldResidentFirstNameSchema,
+  ZFieldResidentLastNameSchema,
+  ZFieldResidentDobSchema,
+  ZFieldResidentGenderIdentitySchema,
+  ZFieldResidentLocationNameSchema,
+  ZFieldResidentLocationStateSchema,
+  ZFieldResidentLocationAddressSchema,
+  ZFieldResidentLocationCitySchema,
+  ZFieldResidentLocationZipCodeSchema,
+  ZFieldResidentLocationCountrySchema,
 ]);
 
 export type TFullFieldSchema = z.infer<typeof ZFullFieldSchema>;
