@@ -3,7 +3,6 @@ import type { Prisma } from '@prisma/client';
 import { Hono } from 'hono';
 
 import { getOptionalSession } from '@documenso/auth/server/lib/utils/get-session';
-import { APP_DOCUMENT_UPLOAD_SIZE_LIMIT } from '@documenso/lib/constants/app';
 import { AppError, AppErrorCode } from '@documenso/lib/errors/app-error';
 import { verifyEmbeddingPresignToken } from '@documenso/lib/server-only/embedding-presign/verify-embedding-presign-token';
 import { getTeamById } from '@documenso/lib/server-only/team/get-team';
@@ -37,13 +36,19 @@ export const filesRoute = new Hono<HonoEnv>()
         return c.json({ error: 'No file provided' }, 400);
       }
 
-      // Todo: (RR7) This is new.
-      // Add file size validation.
-      // Convert MB to bytes (1 MB = 1024 * 1024 bytes)
-      const MAX_FILE_SIZE = APP_DOCUMENT_UPLOAD_SIZE_LIMIT * 1024 * 1024;
+      // File size limit
+      const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB
+      const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
 
       if (file.size > MAX_FILE_SIZE) {
-        return c.json({ error: 'File too large' }, 400);
+        return c.json(
+          { error: `File size exceeds the limit of 500MB. File size: ${fileSizeMB}MB` },
+          400,
+        );
+      }
+
+      if (parseFloat(fileSizeMB) > 100) {
+        console.log(`[upload-pdf] Processing large file: ${file.name}, size: ${fileSizeMB}MB`);
       }
 
       const result = await putNormalizedPdfFileServerSide(file);
