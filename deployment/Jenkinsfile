@@ -10,30 +10,36 @@ def (DEPLOY_ENV, AGENT_LABEL, DOMAIN_NAME) = config
 pipeline {
     agent { label "${AGENT_LABEL}" }
 
+    options {
+        timeout(time: 45, unit: 'MINUTES')
+        disableConcurrentBuilds()
+    }
+
     environment {
         APP_NAME = 'cd-documenso'
         COMPOSE_PROJECT_NAME = "${APP_NAME}-${DEPLOY_ENV}"
         NODE_ENV = "${DEPLOY_ENV}"
 
-        HEALTH_CHECK_RETRIES = 10
+        HEALTH_CHECK_RETRIES = 15
         HEALTH_CHECK_INTERVAL = 10
     }
-
 
     stages {
         stage('1. Init') {
             steps {
                 script {
-                    if (!DOMAIN_NAME) error("❌ No domain configured for branch ${env.BRANCH_NAME}")
+                    if (!DOMAIN_NAME) error("No domain configured for branch ${env.BRANCH_NAME}")
 
                     currentBuild.displayName = "#${BUILD_NUMBER} - ${DEPLOY_ENV}"
                     echo """
-                    🚀 DEPLOY INITIATED
-                    -------------------
-                    Env:    ${DEPLOY_ENV}
-                    Agent:  ${AGENT_LABEL}
-                    Domain: ${DOMAIN_NAME}
-                    -------------------
+                    ============================================
+                    DEPLOY INITIATED
+                    ============================================
+                    Environment: ${DEPLOY_ENV}
+                    Agent:       ${AGENT_LABEL}
+                    Domain:      ${DOMAIN_NAME}
+                    Port:        3002
+                    ============================================
                     """
                 }
             }
@@ -43,12 +49,15 @@ pipeline {
             steps {
                 sh """
                     set -e
-                    ENV_FILE_PATH="/home/caringdata/${DEPLOY_ENV}/caring_data_documenso/.env.${DEPLOY_ENV}"
-                    WORKSPACE_ENV_FILE=".env.${DEPLOY_ENV}"
+                    ENV_FILE_PATH="/home/caringdata/${DEPLOY_ENV}/caring_data_documenso/.env"
 
-                    cp "\$ENV_FILE_PATH" "\$WORKSPACE_ENV_FILE"
-                    cp "\$WORKSPACE_ENV_FILE" .env
-                    echo '--- .env file created ---'
+                    if [ ! -f "\$ENV_FILE_PATH" ]; then
+                        echo "ERROR: Environment file not found at \$ENV_FILE_PATH"
+                        exit 1
+                    fi
+
+                    cp "\$ENV_FILE_PATH" .env
+                    echo "Environment file prepared from \$ENV_FILE_PATH"
                 """
             }
         }
@@ -58,17 +67,175 @@ pipeline {
                 dir('deployment') {
                     script {
                         def activeSlot = sh(
-                            script: "docker compose ${env.COMPOSE_FILES} --project-name \"${env.COMPOSE_PROJECT_NAME}\" exec -T nginx cat /etc/nginx/conf.d/active_slot.txt 2>/dev/null || echo 'blue'",
+                            script: """
+                                docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" \
+                                    exec -T nginx cat /etc/nginx/conf.d/active_slot.txt 2>/dev/null || echo 'blue'
+                            """,
                             returnStdout: true
                         ).trim()
 
                         env.ACTIVE_SLOT = activeSlot ?: 'blue'
                         env.TARGET_SLOT = (env.ACTIVE_SLOT == 'blue') ? 'green' : 'blue'
 
-                        echo "🔵 Active Slot: ${env.ACTIVE_SLOT}"
-                        echo "🟢 Target Slot: ${env.TARGET_SLOT} (Deploying here)"
+                        echo "Active Slot: ${env.ACTIVE_SLOT}"
+                        echo "Target Slot: ${env.TARGET_SLOT} (deploying here)"
                     }
                 }
+            }
+        }
+
+        stage('4. Build Target') {
+            steps {
+                dir('deployment') {
+                    sh """
+                        set -e
+                        echo "Building app_${env.TARGET_SLOT}..."
+                        docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" \
+                            build --no-cache app_${env.TARGET_SLOT}
+                        echo "Build completed for app_${env.TARGET_SLOT}"
+                    """
+                }
+            }
+        }
+
+        stage('5. Start Target') {
+            steps {
+                dir('deployment') {
+                    sh """
+                        set -e
+                        echo "Starting app_${env.TARGET_SLOT} and nginx..."
+                        docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" \
+                            up -d app_${env.TARGET_SLOT} nginx
+                        echo "Containers started"
+                    """
+                }
+            }
+        }
+
+        stage('6. Healthcheck') {
+            steps {
+                dir('deployment') {
+                    script {
+                        def healthy = false
+                        def retries = env.HEALTH_CHECK_RETRIES.toInteger()
+                        def interval = env.HEALTH_CHECK_INTERVAL.toInteger()
+
+                        for (int i = 1; i <= retries && !healthy; i++) {
+                            echo "Health check attempt ${i}/${retries}..."
+
+                            def status = sh(
+                                script: """
+                                    docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" \
+                                        ps app_${env.TARGET_SLOT} --format '{{.Health}}' 2>/dev/null || echo 'unknown'
+                                """,
+                                returnStdout: true
+                            ).trim()
+
+                            echo "Container health status: ${status}"
+
+                            if (status == 'healthy') {
+                                healthy = true
+                                echo "Container app_${env.TARGET_SLOT} is healthy!"
+                            } else if (i < retries) {
+                                echo "Waiting ${interval}s before next check..."
+                                sleep(interval)
+                            }
+                        }
+
+                        if (!healthy) {
+                            error("Health check failed after ${retries} attempts for app_${env.TARGET_SLOT}")
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('7. Switch Traffic') {
+            steps {
+                dir('deployment') {
+                    sh """
+                        set -e
+                        echo "Switching traffic from ${env.ACTIVE_SLOT} to ${env.TARGET_SLOT}..."
+
+                        # Update nginx config to point to new slot
+                        docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" \
+                            exec -T nginx sh -c "sed -i 's/app_${env.ACTIVE_SLOT}:3002/app_${env.TARGET_SLOT}:3002/g' /etc/nginx/conf.d/app.conf"
+
+                        # Update active slot tracker
+                        docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" \
+                            exec -T nginx sh -c "echo '${env.TARGET_SLOT}' > /etc/nginx/conf.d/active_slot.txt"
+
+                        # Reload nginx configuration
+                        docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" \
+                            exec -T nginx nginx -s reload
+
+                        echo "Traffic switched to ${env.TARGET_SLOT}"
+                    """
+                }
+            }
+        }
+
+        stage('8. Verify & Stop Old') {
+            steps {
+                dir('deployment') {
+                    script {
+                        // Verify via nginx
+                        def verifyResult = sh(
+                            script: """
+                                sleep 5
+                                curl -k -s -o /dev/null -w '%{http_code}' \
+                                    https://localhost:3002/api/health || echo '000'
+                            """,
+                            returnStdout: true
+                        ).trim()
+
+                        echo "Verification response code: ${verifyResult}"
+
+                        if (verifyResult != '200') {
+                            error("Verification failed! Response code: ${verifyResult}")
+                        }
+
+                        echo "Verification successful, stopping old slot..."
+
+                        // Stop old container
+                        sh """
+                            docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" \
+                                stop app_${env.ACTIVE_SLOT} || true
+                            echo "Old container app_${env.ACTIVE_SLOT} stopped"
+                        """
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo """
+            ============================================
+            DEPLOYMENT SUCCESSFUL
+            ============================================
+            URL: https://${DOMAIN_NAME}:3002
+            Health: https://${DOMAIN_NAME}:3002/api/health
+            Certificate: https://${DOMAIN_NAME}:3002/api/certificate-status
+            ============================================
+            """
+        }
+        failure {
+            dir('deployment') {
+                sh """
+                    echo "=== DEPLOYMENT FAILED - Collecting logs ==="
+                    docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" logs --tail=100 || true
+                """
+            }
+        }
+        always {
+            dir('deployment') {
+                sh """
+                    # Prune stopped containers and dangling images
+                    docker container prune -f || true
+                    docker image prune -f || true
+                """
             }
         }
     }
