@@ -1,0 +1,8 @@
+services:
+  app_blue:
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+
+  app_green:
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
