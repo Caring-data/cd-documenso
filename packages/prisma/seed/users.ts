@@ -21,7 +21,7 @@ type SeedUserOptions = {
 
 const nanoid = customAlphabet('1234567890abcdef', 10);
 
-export const seedTestEmail = () => `${nanoid()}@test.documenso.com`;
+export const seedTestEmail = () => `${nanoid()}@test.caringdata.com`;
 
 export const seedUser = async ({
   name = nanoid(),
@@ -35,7 +35,7 @@ export const seedUser = async ({
   isPersonalOrganisation = false,
 }: SeedUserOptions = {}) => {
   if (!email) {
-    email = `${nanoid()}@test.documenso.com`;
+    email = `${nanoid()}@test.caringdata.com`;
   }
 
   const user = await prisma.user.create({
@@ -60,18 +60,6 @@ export const seedUser = async ({
     },
     include: {
       teams: true,
-      organisationClaim: true,
-    },
-  });
-
-  await prisma.organisationClaim.update({
-    where: {
-      id: organisation.organisationClaim.id,
-    },
-    data: {
-      flags: {
-        allowLegacyEnvelopes: true,
-      },
     },
   });
 

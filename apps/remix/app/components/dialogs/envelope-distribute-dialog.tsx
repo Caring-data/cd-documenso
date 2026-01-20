@@ -7,7 +7,6 @@ import {
   DocumentDistributionMethod,
   DocumentStatus,
   EnvelopeType,
-  FieldType,
   RecipientRole,
 } from '@prisma/client';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -139,18 +138,6 @@ export const EnvelopeDistributeDialog = ({
     [envelope.recipients],
   );
 
-  const recipientsMissingSignatureFields = useMemo(
-    () =>
-      recipientsWithIndex.filter(
-        (recipient) =>
-          recipient.role === RecipientRole.SIGNER &&
-          !envelope.fields.some(
-            (field) => field.type === FieldType.SIGNATURE && field.recipientId === recipient.id,
-          ),
-      ),
-    [recipientsWithIndex, envelope.fields],
-  );
-
   /**
    * List of recipients who must have an email due to having auth enabled.
    */
@@ -168,10 +155,6 @@ export const EnvelopeDistributeDialog = ({
   }, [recipientsWithIndex, envelope.authOptions]);
 
   const invalidEnvelopeCode = useMemo(() => {
-    if (recipientsMissingSignatureFields.length > 0) {
-      return 'MISSING_SIGNATURES';
-    }
-
     if (envelope.recipients.length === 0) {
       return 'MISSING_RECIPIENTS';
     }
@@ -181,7 +164,7 @@ export const EnvelopeDistributeDialog = ({
     }
 
     return null;
-  }, [envelope.recipients, recipientsMissingRequiredEmail, recipientsMissingSignatureFields]);
+  }, [envelope.recipients, recipientsMissingRequiredEmail]);
 
   const onFormSubmit = async ({ meta }: TEnvelopeDistributeFormSchema) => {
     try {
@@ -278,11 +261,7 @@ export const EnvelopeDistributeDialog = ({
                   </TabsList>
                 </Tabs>
 
-                <div
-                  className={cn('min-h-72', {
-                    'min-h-[23rem]': organisation.organisationClaim.flags.emailDomains,
-                  })}
-                >
+                <div className="min-h-72">
                   <AnimatePresence initial={false} mode="wait">
                     {isSyncing ? (
                       <motion.div
@@ -305,8 +284,7 @@ export const EnvelopeDistributeDialog = ({
                             className="mt-2 flex flex-col gap-y-4 rounded-lg"
                             disabled={form.formState.isSubmitting}
                           >
-                            {organisation.organisationClaim.flags.emailDomains && (
-                              <FormField
+                            <FormField
                                 control={form.control}
                                 name="meta.emailId"
                                 render={({ field }) => (
@@ -345,7 +323,6 @@ export const EnvelopeDistributeDialog = ({
                                   </FormItem>
                                 )}
                               />
-                            )}
 
                             <FormField
                               control={form.control}
@@ -472,19 +449,6 @@ export const EnvelopeDistributeDialog = ({
                 .with('MISSING_RECIPIENTS', () => (
                   <AlertDescription>
                     <Trans>You need at least one recipient to send a document</Trans>
-                  </AlertDescription>
-                ))
-                .with('MISSING_SIGNATURES', () => (
-                  <AlertDescription>
-                    <Trans>The following signers are missing signature fields:</Trans>
-
-                    <ul className="ml-2 mt-1 list-inside list-disc">
-                      {recipientsMissingSignatureFields.map((recipient) => (
-                        <li key={recipient.id}>
-                          {recipient.email || recipient.name || t`Recipient ${recipient.index + 1}`}
-                        </li>
-                      ))}
-                    </ul>
                   </AlertDescription>
                 ))
                 .with('MISSING_REQUIRED_EMAIL', () => (

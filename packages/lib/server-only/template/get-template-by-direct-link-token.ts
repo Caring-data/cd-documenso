@@ -15,6 +15,7 @@ export const getTemplateByDirectLinkToken = async ({
   const envelope = await prisma.envelope.findFirst({
     where: {
       type: EnvelopeType.TEMPLATE,
+      deletedAt: null,
       directLink: {
         token,
         enabled: true,

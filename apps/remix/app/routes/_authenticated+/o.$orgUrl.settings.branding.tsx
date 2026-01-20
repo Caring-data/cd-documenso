@@ -96,8 +96,7 @@ export default function OrganisationSettingsBrandingPage() {
     <div className="max-w-2xl">
       <SettingsHeader title={settingsHeaderText} subtitle={settingsHeaderSubtitle} />
 
-      {organisationWithSettings.organisationClaim.flags.allowCustomBranding ||
-      !IS_BILLING_ENABLED() ? (
+      {!IS_BILLING_ENABLED() ? (
         <section>
           <BrandingPreferencesForm
             context="Organisation"

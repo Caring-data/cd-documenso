@@ -1,7 +1,7 @@
 import { EnvelopeType } from '@prisma/client';
 
 import { DOCUMENT_AUDIT_LOG_TYPE } from '@documenso/lib/types/document-audit-logs';
-import type { TFieldAndMeta } from '@documenso/lib/types/field-meta';
+import type { TEnvelopeFieldAndMeta, TFieldAndMeta } from '@documenso/lib/types/field-meta';
 import type { ApiRequestMetadata } from '@documenso/lib/universal/extract-request-metadata';
 import { createDocumentAuditLogData } from '@documenso/lib/utils/document-audit-logs';
 import { prisma } from '@documenso/prisma';
@@ -17,7 +17,7 @@ export interface CreateEnvelopeFieldsOptions {
   teamId: number;
   id: EnvelopeIdOptions;
 
-  fields: (TFieldAndMeta & {
+  fields: ((TEnvelopeFieldAndMeta | TFieldAndMeta) & {
     /**
      * The ID of the item to insert the fields into.
      *

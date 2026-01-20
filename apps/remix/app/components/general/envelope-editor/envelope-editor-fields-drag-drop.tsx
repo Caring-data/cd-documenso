@@ -61,6 +61,11 @@ export const fieldButtonList = [
     name: msg`Date`,
   },
   {
+    type: FieldType.CALENDAR,
+    icon: CalendarIcon,
+    name: msg`Calendar`,
+  },
+  {
     type: FieldType.TEXT,
     icon: TextIcon,
     name: msg`Text`,
@@ -263,7 +268,7 @@ export const EnvelopeEditorFieldDragDrop = ({
   }, [onMouseClick, onMouseMove, selectedField]);
 
   const selectedRecipientColor = useMemo(() => {
-    return selectedRecipientId ? getRecipientColorKey(selectedRecipientId) : 'green';
+    return selectedRecipientId ? getRecipientColorKey(selectedRecipientId) : 'blue';
   }, [selectedRecipientId, getRecipientColorKey]);
 
   return (

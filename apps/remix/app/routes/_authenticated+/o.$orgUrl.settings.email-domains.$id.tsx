@@ -43,7 +43,7 @@ export default function OrganisationEmailDomainSettingsPage({ params }: Route.Co
   const { data: emailDomain, isLoading: isLoadingEmailDomain } =
     trpc.enterprise.organisation.emailDomain.get.useQuery(
       {
-        emailDomainId,
+        id: emailDomainId,
       },
       {
         enabled: !!emailDomainId,
@@ -108,7 +108,6 @@ export default function OrganisationEmailDomainSettingsPage({ params }: Route.Co
     return <SpinnerBox className="py-32" />;
   }
 
-  // Todo: Update UI, currently out of place.
   if (!emailDomain) {
     return (
       <GenericErrorLayout

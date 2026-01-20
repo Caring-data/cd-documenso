@@ -28,7 +28,6 @@ export const getOrganisationAuthenticationPortalOptions = async (
             id: options.organisationId,
           },
     include: {
-      organisationClaim: true,
       organisationAuthenticationPortal: true,
       groups: true,
     },
@@ -46,10 +45,7 @@ export const getOrganisationAuthenticationPortalOptions = async (
     });
   }
 
-  if (
-    !organisation.organisationClaim.flags.authenticationPortal ||
-    !organisation.organisationAuthenticationPortal.enabled
-  ) {
+  if (!organisation.organisationAuthenticationPortal.enabled) {
     throw new AppError(AppErrorCode.NOT_SETUP, {
       message: 'Authentication portal is not enabled for this organisation',
     });

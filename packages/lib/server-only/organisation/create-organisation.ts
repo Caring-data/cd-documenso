@@ -1,4 +1,3 @@
-import type { Prisma } from '@prisma/client';
 import { OrganisationType } from '@prisma/client';
 import { OrganisationMemberRole } from '@prisma/client';
 
@@ -6,8 +5,6 @@ import { prisma } from '@documenso/prisma';
 import { ORGANISATION_INTERNAL_GROUPS } from '../../constants/organisations';
 import { AppErrorCode } from '../../errors/app-error';
 import { AppError } from '../../errors/app-error';
-import type { InternalClaim } from '../../types/subscription';
-import { INTERNAL_CLAIM_ID, internalClaims } from '../../types/subscription';
 import { generateDatabaseId, prefixedId } from '../../universal/id';
 import { generateDefaultOrganisationSettings } from '../../utils/organisations';
 import { createTeam } from '../team/create-team';
@@ -17,8 +14,6 @@ type CreateOrganisationOptions = {
   name: string;
   type: OrganisationType;
   url?: string;
-  customerId?: string;
-  claim: InternalClaim;
 };
 
 export const createOrganisation = async ({
@@ -26,24 +21,12 @@ export const createOrganisation = async ({
   url,
   type,
   userId,
-  customerId,
-  claim,
 }: CreateOrganisationOptions) => {
-  const customerIdToUse = customerId;
-
   return await prisma.$transaction(async (tx) => {
     const organisationSetting = await tx.organisationGlobalSettings.create({
       data: {
         ...generateDefaultOrganisationSettings(),
         id: generateDatabaseId('org_setting'),
-      },
-    });
-
-    const organisationClaim = await tx.organisationClaim.create({
-      data: {
-        id: generateDatabaseId('org_claim'),
-        originalSubscriptionClaimId: claim.id,
-        ...createOrganisationClaimUpsertData(claim),
       },
     });
 
@@ -68,7 +51,6 @@ export const createOrganisation = async ({
           url: url || orgIdAndUrl,
           ownerUserId: userId,
           organisationGlobalSettingsId: organisationSetting.id,
-          organisationClaimId: organisationClaim.id,
           organisationAuthenticationPortalId: organisationAuthenticationPortal.id,
           groups: {
             create: ORGANISATION_INTERNAL_GROUPS.map((group) => ({
@@ -76,7 +58,6 @@ export const createOrganisation = async ({
               id: generateDatabaseId('org_group'),
             })),
           },
-          customerId: customerIdToUse,
         },
         include: {
           groups: true,
@@ -140,7 +121,6 @@ export const createPersonalOrganisation = async ({
     userId,
     url: orgUrl,
     type,
-    claim: internalClaims[INTERNAL_CLAIM_ID.FREE],
   }).catch((err) => {
     console.error(err);
 
@@ -166,23 +146,4 @@ export const createPersonalOrganisation = async ({
   }
 
   return organisation;
-};
-
-export const createOrganisationClaimUpsertData = (subscriptionClaim: InternalClaim) => {
-  // Done like this to ensure type errors are thrown if items are added.
-  const data: Omit<
-    Prisma.SubscriptionClaimCreateInput,
-    'id' | 'createdAt' | 'updatedAt' | 'locked' | 'name'
-  > = {
-    flags: {
-      ...subscriptionClaim.flags,
-    },
-    envelopeItemCount: subscriptionClaim.envelopeItemCount,
-    teamCount: subscriptionClaim.teamCount,
-    memberCount: subscriptionClaim.memberCount,
-  };
-
-  return {
-    ...data,
-  };
 };

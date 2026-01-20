@@ -373,9 +373,20 @@ export const insertFieldInPDFV1 = async (pdf: PDFDocument, field: FieldWithSigna
         [FieldType.TEXT]: ZTextFieldMeta,
         [FieldType.NUMBER]: ZNumberFieldMeta,
         [FieldType.DATE]: ZDateFieldMeta,
+        [FieldType.CALENDAR]: ZDateFieldMeta,
         [FieldType.EMAIL]: ZEmailFieldMeta,
         [FieldType.NAME]: ZNameFieldMeta,
         [FieldType.INITIALS]: ZInitialsFieldMeta,
+        [FieldType.RESIDENT_FIRST_NAME]: ZTextFieldMeta,
+        [FieldType.RESIDENT_LAST_NAME]: ZTextFieldMeta,
+        [FieldType.RESIDENT_DOB]: ZDateFieldMeta,
+        [FieldType.RESIDENT_GENDER_IDENTITY]: ZTextFieldMeta,
+        [FieldType.RESIDENT_LOCATION_NAME]: ZTextFieldMeta,
+        [FieldType.RESIDENT_LOCATION_STATE]: ZTextFieldMeta,
+        [FieldType.RESIDENT_LOCATION_ADDRESS]: ZTextFieldMeta,
+        [FieldType.RESIDENT_LOCATION_CITY]: ZTextFieldMeta,
+        [FieldType.RESIDENT_LOCATION_ZIP_CODE]: ZTextFieldMeta,
+        [FieldType.RESIDENT_LOCATION_COUNTRY]: ZTextFieldMeta,
       } as const;
 
       // eslint-disable-next-line @typescript-eslint/consistent-type-assertions

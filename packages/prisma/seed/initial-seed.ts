@@ -43,13 +43,13 @@ export const seedDatabase = async () => {
 
   const exampleUserExists = await prisma.user.findFirst({
     where: {
-      email: 'example@documenso.com',
+      email: 'example@caringdata.com',
     },
   });
 
   const adminUserExists = await prisma.user.findFirst({
     where: {
-      email: 'admin@documenso.com',
+      email: 'admin@caringdata.com',
     },
   });
 
@@ -57,17 +57,44 @@ export const seedDatabase = async () => {
     return;
   }
 
-  const exampleUser = await seedUser({
-    name: 'Example User',
-    email: 'example@documenso.com',
-  });
-
+  // Create Admin User
   const adminUser = await seedUser({
     name: 'Admin User',
-    email: 'admin@documenso.com',
+    email: 'admin@caringdata.com',
+    password: 'password',
     isAdmin: true,
   });
 
+  // Rename Admin Organisation and Team
+  await prisma.organisation.update({
+    where: { id: adminUser.organisation.id },
+    data: { name: 'Caring Data' },
+  });
+
+  await prisma.team.update({
+    where: { id: adminUser.team.id },
+    data: { name: 'Caring Data' },
+  });
+
+  // Create Example User
+  const exampleUser = await seedUser({
+    name: 'Example User',
+    email: 'example@caringdata.com',
+    password: 'password',
+  });
+
+  // Rename Example Organisation and Team
+  await prisma.organisation.update({
+    where: { id: exampleUser.organisation.id },
+    data: { name: 'Example Caring Data' },
+  });
+
+  await prisma.team.update({
+    where: { id: exampleUser.team.id },
+    data: { name: 'Example Caring Data' },
+  });
+
+  // Create documents for Example User (sent to Admin)
   for (let i = 1; i <= 4; i++) {
     const documentData = await createDocumentData({ documentData: examplePdf });
 
@@ -107,7 +134,8 @@ export const seedDatabase = async () => {
     });
   }
 
-  for (let i = 1; i <= 4; i++) {
+  // Create documents for Example User (sent to Admin) - Batch 2
+  for (let i = 5; i <= 8; i++) {
     const documentData = await createDocumentData({ documentData: examplePdf });
 
     const documentId = await incrementDocumentId();
@@ -123,22 +151,22 @@ export const seedDatabase = async () => {
         internalVersion: 1,
         type: EnvelopeType.DOCUMENT,
         source: DocumentSource.DOCUMENT,
-        title: `Document ${i}`,
+        title: `Example Document ${i}`,
         documentMetaId: documentMeta.id,
         envelopeItems: {
           create: {
             id: prefixedId('envelope_item'),
-            title: `Document ${i}`,
+            title: `Example Document ${i}`,
             documentDataId: documentData.id,
             order: 1,
           },
         },
-        userId: adminUser.user.id,
-        teamId: adminUser.team.id,
+        userId: exampleUser.user.id,
+        teamId: exampleUser.team.id,
         recipients: {
           create: {
-            name: String(exampleUser.user.name),
-            email: exampleUser.user.email,
+            name: String(adminUser.user.name),
+            email: adminUser.user.email,
             token: Math.random().toString(36).slice(2, 9),
           },
         },
@@ -153,10 +181,10 @@ export const seedDatabase = async () => {
     },
   });
 
-  await seedPendingDocument(adminUser.user, adminUser.team.id, [exampleUser.user], {
-    key: 'admin-pending',
+  await seedPendingDocument(exampleUser.user, exampleUser.team.id, [adminUser.user], {
+    key: 'example-pending-2',
     createDocumentOptions: {
-      title: 'Pending Document',
+      title: 'Pending Document 2',
     },
   });
 
@@ -172,14 +200,14 @@ export const seedDatabase = async () => {
       teamId: exampleUser.team.id,
     }),
     seedTemplate({
-      title: 'Template 1',
-      userId: adminUser.user.id,
-      teamId: adminUser.team.id,
+      title: 'Template 2',
+      userId: exampleUser.user.id,
+      teamId: exampleUser.team.id,
     }),
     seedDirectTemplate({
-      title: 'Direct Template 1',
-      userId: adminUser.user.id,
-      teamId: adminUser.team.id,
+      title: 'Direct Template 2',
+      userId: exampleUser.user.id,
+      teamId: exampleUser.team.id,
     }),
   ]);
 };

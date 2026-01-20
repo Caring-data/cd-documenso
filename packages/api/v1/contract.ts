@@ -6,13 +6,17 @@ import {
 } from '@documenso/trpc/server/template-router/schema';
 
 import {
+  ZApiKeyHeadersSchema,
   ZAuthorizationHeadersSchema,
   ZCreateDocumentFromTemplateMutationResponseSchema,
   ZCreateDocumentFromTemplateMutationSchema,
   ZCreateDocumentMutationResponseSchema,
   ZCreateDocumentMutationSchema,
+  ZCreateEmbebedTemplateMutationSchema,
+  ZCreateEmbebedTemplateResponseSchema,
   ZCreateFieldMutationSchema,
   ZCreateRecipientMutationSchema,
+  ZCreateUserRequestSchema,
   ZDeleteDocumentMutationSchema,
   ZDeleteFieldMutationSchema,
   ZDeleteRecipientMutationSchema,
@@ -22,6 +26,7 @@ import {
   ZGenerateDocumentFromTemplateMutationSchema,
   ZGetDocumentsQuerySchema,
   ZGetTemplatesQuerySchema,
+  ZGetUsersQuerySchema,
   ZNoBodyMutationSchema,
   ZResendDocumentForSigningMutationSchema,
   ZSendDocumentForSigningMutationSchema,
@@ -32,6 +37,7 @@ import {
   ZSuccessfulGetDocumentResponseSchema,
   ZSuccessfulGetTemplateResponseSchema,
   ZSuccessfulGetTemplatesResponseSchema,
+  ZSuccessfulGetUsersResponseSchema,
   ZSuccessfulRecipientResponseSchema,
   ZSuccessfulResendDocumentResponseSchema,
   ZSuccessfulResponseSchema,
@@ -39,6 +45,8 @@ import {
   ZUnsuccessfulResponseSchema,
   ZUpdateFieldMutationSchema,
   ZUpdateRecipientMutationSchema,
+  ZUpdateUserRequestSchema,
+  ZUserResponseSchema,
 } from './schema';
 
 const c = initContract();
@@ -102,6 +110,21 @@ export const ApiContractV1 = c.router(
         404: ZUnsuccessfulResponseSchema,
       },
       summary: 'Create a new template and get a presigned URL',
+    },
+
+    createEmbebedTemplate: {
+      method: 'POST',
+      path: '/api/v1/templates/embed',
+      body: ZCreateEmbebedTemplateMutationSchema,
+      responses: {
+        200: ZCreateEmbebedTemplateResponseSchema,
+        400: ZUnsuccessfulResponseSchema,
+        401: ZUnsuccessfulResponseSchema,
+        404: ZUnsuccessfulResponseSchema,
+        500: ZUnsuccessfulResponseSchema,
+      },
+      summary: 'Create a new template for embedding',
+      description: 'Create a new template for embedding',
     },
 
     deleteTemplate: {
@@ -298,5 +321,76 @@ export const ApiContractV1 = c.router(
   },
   {
     baseHeaders: ZAuthorizationHeadersSchema,
+  },
+);
+
+export const ApiContractV1Users = c.router(
+  {
+    createUser: {
+      method: 'POST',
+      path: '/api/v1/users',
+      body: ZCreateUserRequestSchema,
+      responses: {
+        200: ZUserResponseSchema,
+        400: ZUnsuccessfulResponseSchema,
+        401: ZUnsuccessfulResponseSchema,
+        500: ZUnsuccessfulResponseSchema,
+      },
+      summary: 'Create a new user',
+    },
+
+    getUsers: {
+      method: 'GET',
+      path: '/api/v1/users',
+      query: ZGetUsersQuerySchema,
+      responses: {
+        200: ZSuccessfulGetUsersResponseSchema,
+        401: ZUnsuccessfulResponseSchema,
+        500: ZUnsuccessfulResponseSchema,
+      },
+      summary: 'Get all users',
+    },
+
+    getUser: {
+      method: 'GET',
+      path: '/api/v1/users/:id',
+      responses: {
+        200: ZUserResponseSchema,
+        401: ZUnsuccessfulResponseSchema,
+        404: ZUnsuccessfulResponseSchema,
+        500: ZUnsuccessfulResponseSchema,
+      },
+      summary: 'Get a single user',
+    },
+
+    updateUser: {
+      method: 'PUT',
+      path: '/api/v1/users/:id',
+      body: ZUpdateUserRequestSchema,
+      responses: {
+        200: ZUserResponseSchema,
+        400: ZUnsuccessfulResponseSchema,
+        401: ZUnsuccessfulResponseSchema,
+        404: ZUnsuccessfulResponseSchema,
+        500: ZUnsuccessfulResponseSchema,
+      },
+      summary: 'Update a user',
+    },
+
+    deleteUser: {
+      method: 'DELETE',
+      path: '/api/v1/users/:id',
+      body: ZNoBodyMutationSchema,
+      responses: {
+        200: ZUserResponseSchema,
+        401: ZUnsuccessfulResponseSchema,
+        404: ZUnsuccessfulResponseSchema,
+        500: ZUnsuccessfulResponseSchema,
+      },
+      summary: 'Delete a user',
+    },
+  },
+  {
+    baseHeaders: ZApiKeyHeadersSchema,
   },
 );

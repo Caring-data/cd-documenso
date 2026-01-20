@@ -1,7 +1,6 @@
 import { OrganisationType } from '@prisma/client';
 
 import { createOrganisation } from '@documenso/lib/server-only/organisation/create-organisation';
-import { INTERNAL_CLAIM_ID, internalClaims } from '@documenso/lib/types/subscription';
 
 import { authenticatedProcedure } from '../trpc';
 import {
@@ -23,12 +22,10 @@ export const createOrganisationRoute = authenticatedProcedure
       },
     });
 
-    // Billing is disabled - always create organisation as ORGANISATION type
     await createOrganisation({
       userId: user.id,
       name,
       type: OrganisationType.ORGANISATION,
-      claim: internalClaims[INTERNAL_CLAIM_ID.FREE],
     });
 
     return {

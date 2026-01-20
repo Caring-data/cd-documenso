@@ -35,13 +35,39 @@ export const createDocumentRoute = authenticatedProcedure
       attachments,
     } = payload;
 
+    const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+    const isLargeFile = file.size > 100 * 1024 * 1024; // 100MB - log for monitoring large files
+
+    if (isLargeFile) {
+      ctx.logger.info({
+        message: `Processing large file: ${file.name}`,
+        fileSizeMB: parseFloat(fileSizeMB),
+        fileSizeBytes: file.size,
+      });
+    }
+
     let pdf = Buffer.from(await file.arrayBuffer());
 
     if (formValues) {
+      if (isLargeFile) {
+        ctx.logger.info({
+          message: `Inserting form values into large PDF: ${file.name}`,
+          fileSizeMB: parseFloat(fileSizeMB),
+        });
+      }
+
       // eslint-disable-next-line require-atomic-updates
       pdf = await insertFormValuesInPdf({
         pdf,
         formValues,
+      });
+    }
+
+    if (isLargeFile) {
+      ctx.logger.info({
+        message: `Uploading large file to storage: ${file.name}`,
+        fileSizeMB: parseFloat(fileSizeMB),
+        pdfSizeMB: (pdf.length / (1024 * 1024)).toFixed(2),
       });
     }
 
@@ -50,6 +76,14 @@ export const createDocumentRoute = authenticatedProcedure
       type: 'application/pdf',
       arrayBuffer: async () => Promise.resolve(pdf),
     });
+
+    if (isLargeFile) {
+      ctx.logger.info({
+        message: `Successfully processed large file: ${file.name}`,
+        fileSizeMB: parseFloat(fileSizeMB),
+        documentDataId,
+      });
+    }
 
     ctx.logger.info({
       input: {

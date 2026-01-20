@@ -1,7 +1,6 @@
 import { OrganisationType } from '@prisma/client';
 
 import { createOrganisation } from '@documenso/lib/server-only/organisation/create-organisation';
-import { internalClaims } from '@documenso/lib/types/subscription';
 
 import { adminProcedure } from '../trpc';
 import {
@@ -25,7 +24,6 @@ export const createAdminOrganisationRoute = adminProcedure
       userId: ownerUserId,
       name: data.name,
       type: OrganisationType.ORGANISATION,
-      claim: internalClaims.free,
     });
 
     return {

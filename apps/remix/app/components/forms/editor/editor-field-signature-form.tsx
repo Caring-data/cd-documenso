@@ -9,10 +9,14 @@ import { DEFAULT_SIGNATURE_TEXT_FONT_SIZE } from '@documenso/lib/constants/pdf';
 import { type TSignatureFieldMeta, ZSignatureFieldMeta } from '@documenso/lib/types/field-meta';
 import { Form } from '@documenso/ui/primitives/form/form';
 
-import { EditorGenericFontSizeField } from './editor-field-generic-field-forms';
+import {
+  EditorGenericFontSizeField,
+  EditorGenericRequiredField,
+} from './editor-field-generic-field-forms';
 
 const ZSignatureFieldFormSchema = ZSignatureFieldMeta.pick({
   fontSize: true,
+  required: true,
 });
 
 type TSignatureFieldFormSchema = z.infer<typeof ZSignatureFieldFormSchema>;
@@ -33,6 +37,7 @@ export const EditorFieldSignatureForm = ({
     mode: 'onChange',
     defaultValues: {
       fontSize: value.fontSize || DEFAULT_SIGNATURE_TEXT_FONT_SIZE,
+      required: value.required ?? true,
     },
   });
 
@@ -52,7 +57,7 @@ export const EditorFieldSignatureForm = ({
         ...validatedFormValues.data,
       });
     }
-  }, [formValues]);
+  }, [formValues, onValueChange]);
 
   return (
     <Form {...form}>
@@ -60,9 +65,12 @@ export const EditorFieldSignatureForm = ({
         <fieldset className="flex flex-col gap-2">
           <div>
             <EditorGenericFontSizeField formControl={form.control} />
-            <p className="text-muted-foreground mt-0.5 text-xs">
+            <p className="mt-0.5 text-xs text-muted-foreground">
               <Trans>The typed signature font size</Trans>
             </p>
+          </div>
+          <div className="mt-1">
+            <EditorGenericRequiredField formControl={form.control} />
           </div>
         </fieldset>
       </form>

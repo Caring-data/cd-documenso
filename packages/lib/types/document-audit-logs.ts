@@ -287,6 +287,10 @@ export const ZDocumentAuditLogEventDocumentFieldInsertedSchema = z.object({
         data: z.string(),
       }),
       z.object({
+        type: z.literal(FieldType.CALENDAR),
+        data: z.string(),
+      }),
+      z.object({
         type: z.literal(FieldType.NAME),
         data: z.string(),
       }),
@@ -312,6 +316,46 @@ export const ZDocumentAuditLogEventDocumentFieldInsertedSchema = z.object({
       }),
       z.object({
         type: z.literal(FieldType.NUMBER),
+        data: z.string(),
+      }),
+      z.object({
+        type: z.literal(FieldType.RESIDENT_FIRST_NAME),
+        data: z.string(),
+      }),
+      z.object({
+        type: z.literal(FieldType.RESIDENT_LAST_NAME),
+        data: z.string(),
+      }),
+      z.object({
+        type: z.literal(FieldType.RESIDENT_DOB),
+        data: z.string(),
+      }),
+      z.object({
+        type: z.literal(FieldType.RESIDENT_GENDER_IDENTITY),
+        data: z.string(),
+      }),
+      z.object({
+        type: z.literal(FieldType.RESIDENT_LOCATION_NAME),
+        data: z.string(),
+      }),
+      z.object({
+        type: z.literal(FieldType.RESIDENT_LOCATION_STATE),
+        data: z.string(),
+      }),
+      z.object({
+        type: z.literal(FieldType.RESIDENT_LOCATION_ADDRESS),
+        data: z.string(),
+      }),
+      z.object({
+        type: z.literal(FieldType.RESIDENT_LOCATION_CITY),
+        data: z.string(),
+      }),
+      z.object({
+        type: z.literal(FieldType.RESIDENT_LOCATION_ZIP_CODE),
+        data: z.string(),
+      }),
+      z.object({
+        type: z.literal(FieldType.RESIDENT_LOCATION_COUNTRY),
         data: z.string(),
       }),
     ]),
@@ -388,6 +432,10 @@ export const ZDocumentAuditLogEventDocumentFieldPrefilledSchema = z.object({
       }),
       z.object({
         type: z.literal(FieldType.DATE),
+        data: z.string(),
+      }),
+      z.object({
+        type: z.literal(FieldType.CALENDAR),
         data: z.string(),
       }),
       z.object({

@@ -99,6 +99,20 @@ export const EnvelopeEditorPreviewPage = () => {
               customText: date.customText,
             };
           })
+          .with({ type: FieldType.CALENDAR }, () => {
+            const date = extractFieldInsertionValues({
+              fieldValue: {
+                type: FieldType.CALENDAR,
+                value: new Date().toISOString(),
+              },
+              field,
+              documentMeta: envelope.documentMeta,
+            });
+
+            return {
+              customText: date.customText,
+            };
+          })
           .with({ type: FieldType.EMAIL }, () => {
             return {
               customText: recipientEmail,
@@ -185,6 +199,21 @@ export const EnvelopeEditorPreviewPage = () => {
               customText: '',
             };
           })
+          .with(
+            { type: FieldType.RESIDENT_FIRST_NAME },
+            { type: FieldType.RESIDENT_LAST_NAME },
+            { type: FieldType.RESIDENT_DOB },
+            { type: FieldType.RESIDENT_GENDER_IDENTITY },
+            { type: FieldType.RESIDENT_LOCATION_NAME },
+            { type: FieldType.RESIDENT_LOCATION_STATE },
+            { type: FieldType.RESIDENT_LOCATION_ADDRESS },
+            { type: FieldType.RESIDENT_LOCATION_CITY },
+            { type: FieldType.RESIDENT_LOCATION_ZIP_CODE },
+            { type: FieldType.RESIDENT_LOCATION_COUNTRY },
+            () => ({
+              customText: '',
+            }),
+          )
           .exhaustive(),
       };
     });

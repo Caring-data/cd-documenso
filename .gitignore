@@ -63,3 +63,10 @@ CLAUDE.md
 
 # scripts
 scripts/output*
+
+
+# docs
+docs/
+
+# cursor
+.cursor

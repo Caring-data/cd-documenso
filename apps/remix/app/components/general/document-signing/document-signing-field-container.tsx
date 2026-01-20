@@ -42,6 +42,7 @@ export type DocumentSigningFieldContainerProps = {
   onRemove?: (fieldType?: string) => Promise<void> | void;
   type?:
     | 'Date'
+    | 'Calendar'
     | 'Initials'
     | 'Email'
     | 'Name'
@@ -133,7 +134,7 @@ export const DocumentSigningFieldContainer = ({
     <div className={cn('[container-type:size]')}>
       <FieldRootContainer
         color={
-          field.fieldMeta?.readOnly ? RECIPIENT_COLOR_STYLES.readOnly : RECIPIENT_COLOR_STYLES.green
+          field.fieldMeta?.readOnly ? RECIPIENT_COLOR_STYLES.readOnly : RECIPIENT_COLOR_STYLES.blue
         }
         field={field}
       >

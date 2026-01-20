@@ -26,8 +26,6 @@ export const leaveOrganisationRoute = authenticatedProcedure
     const organisation = await prisma.organisation.findFirst({
       where: buildOrganisationWhereQuery({ organisationId, userId }),
       include: {
-        organisationClaim: true,
-        subscription: true,
         invites: {
           where: {
             status: OrganisationMemberInviteStatus.PENDING,

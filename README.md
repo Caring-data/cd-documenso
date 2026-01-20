@@ -120,7 +120,6 @@ git clone https://github.com/<your-username>/documenso
 2. Set up your `.env` file using the recommendations in the `.env.example` file. Alternatively, just run `cp .env.example .env` to get started with our handpicked defaults.
 
 3. Run `npm run dx` in the root directory
-
    - This will spin up a postgres database and inbucket mailserver in a docker container.
 
 4. Run `npm run dev` in the root directory
@@ -133,10 +132,9 @@ npm run d
 
 #### Access Points for Your Application
 
-1. **App** - http://localhost:4000
+1. **App** - http://localhost:3002
 2. **Incoming Mail Access** - http://localhost:9000
 3. **Database Connection Details**
-
    - **Port**: 54320
    - **Connection**: Use your favorite database client to connect using the provided port.
 
@@ -161,13 +159,10 @@ git clone https://github.com/<your-username>/documenso
 3. Create your `.env` from the `.env.example`. You can use `cp .env.example .env` to get started with our handpicked defaults.
 
 4. Set the following environment variables:
-
    - NEXTAUTH_SECRET
    - NEXT_PUBLIC_WEBAPP_URL
    - NEXT_PRIVATE_DATABASE_URL
    - NEXT_PRIVATE_DIRECT_DATABASE_URL
-   - NEXT_PRIVATE_SMTP_FROM_NAME
-   - NEXT_PRIVATE_SMTP_FROM_ADDRESS
 
 5. Create the database schema by running `npm run prisma:migrate-dev`
 
@@ -175,7 +170,7 @@ git clone https://github.com/<your-username>/documenso
 
 7. Run `npm run dev` in the root directory to start
 
-8. Register a new user at http://localhost:4000/signup
+8. Register a new user at http://localhost:3002/signup
 
 ---
 
@@ -256,13 +251,13 @@ cd apps/remix
 npm run start
 ```
 
-This will start the server on `localhost:4000`. For now, any reverse proxy can then do the frontend and SSL termination.
+This will start the server on `localhost:3002`. For now, any reverse proxy can then do the frontend and SSL termination.
 
-> If you want to run with another port than 4000, you can start the application with `next -p <ANY PORT>` from the `apps/remix` folder.
+> If you want to run with another port than 3002, you can start the application with `next -p <ANY PORT>` from the `apps/remix` folder.
 
 ### Run as a service
 
-You can use a systemd service file to run the app. Here is a simple example of the service running on port 3500 (using 4000 by default):
+You can use a systemd service file to run the app. Here is a simple example of the service running on port 3500 (using 3002 by default):
 
 ```bash
 [Unit]

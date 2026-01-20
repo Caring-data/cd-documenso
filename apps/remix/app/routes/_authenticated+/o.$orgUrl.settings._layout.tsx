@@ -93,19 +93,7 @@ export default function SettingsLayout() {
       return false;
     }
 
-    if (
-      (!isBillingEnabled || !organisation.organisationClaim.flags.emailDomains) &&
-      route.path.includes('/email-domains')
-    ) {
-      return false;
-    }
-
-    if (
-      (!isBillingEnabled || !organisation.organisationClaim.flags.authenticationPortal) &&
-      route.path.includes('/sso')
-    ) {
-      return false;
-    }
+    // Feature flags removed - all settings are now available
 
     return true;
   });

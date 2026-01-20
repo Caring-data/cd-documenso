@@ -112,6 +112,17 @@ export const getClientSideFieldTranslations = ({ t }: I18n): Record<FieldType, s
     [FieldType.NAME]: t(msg`Name`),
     [FieldType.NUMBER]: t(msg`Number`),
     [FieldType.DATE]: t(msg`Date`),
+    [FieldType.CALENDAR]: t(msg`Calendar`),
     [FieldType.EMAIL]: t(msg`Email`),
+    [FieldType.RESIDENT_FIRST_NAME]: t(msg`Resident First Name`),
+    [FieldType.RESIDENT_LAST_NAME]: t(msg`Resident Last Name`),
+    [FieldType.RESIDENT_DOB]: t(msg`Date of Birth`),
+    [FieldType.RESIDENT_GENDER_IDENTITY]: t(msg`Gender Identity`),
+    [FieldType.RESIDENT_LOCATION_NAME]: t(msg`Location Name`),
+    [FieldType.RESIDENT_LOCATION_STATE]: t(msg`State`),
+    [FieldType.RESIDENT_LOCATION_ADDRESS]: t(msg`Address`),
+    [FieldType.RESIDENT_LOCATION_CITY]: t(msg`City`),
+    [FieldType.RESIDENT_LOCATION_ZIP_CODE]: t(msg`ZIP Code`),
+    [FieldType.RESIDENT_LOCATION_COUNTRY]: t(msg`Country`),
   };
 };

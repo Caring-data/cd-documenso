@@ -4,7 +4,7 @@ import { msg } from '@lingui/core/macro';
 import { OrganisationGroupType, type Team } from '@prisma/client';
 import { uniqueBy } from 'remeda';
 
-import { mailer } from '@documenso/email/mailer';
+import { sendEmailWithNotify } from '@documenso/email/notify';
 import { TeamDeleteEmailTemplate } from '@documenso/email/templates/team-delete';
 import { NEXT_PUBLIC_WEBAPP_URL } from '@documenso/lib/constants/app';
 import { AppError, AppErrorCode } from '@documenso/lib/errors/app-error';
@@ -129,7 +129,7 @@ export const sendTeamDeleteEmail = async ({
     teamUrl: team.url,
   });
 
-  const { branding, emailLanguage, senderEmail } = await getEmailContext({
+  const { branding, emailLanguage } = await getEmailContext({
     emailType: 'INTERNAL',
     source: {
       type: 'organisation',
@@ -137,18 +137,18 @@ export const sendTeamDeleteEmail = async ({
     },
   });
 
-  const [html, text] = await Promise.all([
+  const [html] = await Promise.all([
     renderEmailWithI18N(template, { lang: emailLanguage, branding }),
     renderEmailWithI18N(template, { lang: emailLanguage, branding, plainText: true }),
   ]);
 
   const i18n = await getI18nInstance(emailLanguage);
 
-  await mailer.sendMail({
-    to: email,
-    from: senderEmail,
-    subject: i18n._(msg`Team "${team.name}" has been deleted on Documenso`),
+  await sendEmailWithNotify(
+    {
+      email: email,
+    },
+    i18n._(msg`Team "${team.name}" has been deleted on Documenso`),
     html,
-    text,
-  });
+  );
 };

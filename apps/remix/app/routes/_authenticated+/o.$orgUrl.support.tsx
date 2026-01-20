@@ -25,7 +25,7 @@ export default function SupportPage() {
 
   const teamId = searchParams.get('team');
 
-  const subscriptionStatus = organisation.subscription?.status;
+  const subscriptionStatus = undefined; // Subscriptions removed
 
   const handleSuccess = () => {
     setShowForm(false);

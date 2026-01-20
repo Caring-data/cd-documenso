@@ -1,4 +1,4 @@
-import { DocumentDataType, EnvelopeType, SigningStatus } from '@prisma/client';
+import { DocumentDataType, EnvelopeType, SigningStatus, TemplateType } from '@prisma/client';
 import { tsr } from '@ts-rest/serverless/fetch';
 import { match } from 'ts-pattern';
 
@@ -40,7 +40,10 @@ import {
   ZTextFieldMeta,
 } from '@documenso/lib/types/field-meta';
 import { getFileServerSide } from '@documenso/lib/universal/upload/get-file.server';
-import { putPdfFileServerSide } from '@documenso/lib/universal/upload/put-file.server';
+import {
+  putNormalizedPdfFileServerSide,
+  putPdfFileServerSide,
+} from '@documenso/lib/universal/upload/put-file.server';
 import {
   getPresignGetUrl,
   getPresignPostUrl,
@@ -478,6 +481,7 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
     const {
       title,
       folderId,
+      folderName,
       externalId,
       visibility,
       globalAccessAuth,
@@ -550,6 +554,7 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
           templateType: type,
           title,
           folderId,
+          folderName,
           externalId: externalId ?? undefined,
           visibility,
           globalAccessAuth,
@@ -585,6 +590,96 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
           message: 'An error has occured while creating the template',
         },
       };
+    }
+  }),
+
+  createEmbebedTemplate: authenticatedMiddleware(async (args, user, team, { logger, metadata }) => {
+    const { body } = args;
+    const { title, data, key, externalId } = body;
+
+    try {
+      logger.info({
+        input: {
+          title,
+          key,
+          externalId,
+        },
+      });
+
+      // Normalize filename
+      const fileName = title.endsWith('.pdf') ? title : `${title}.pdf`;
+
+      // Always use BYTES_64 regardless of the type field in request
+      const bytes = await getFileServerSide({
+        type: DocumentDataType.BYTES_64,
+        data,
+      });
+
+      // Convert Uint8Array to Buffer and then to ArrayBuffer
+      const buffer = Buffer.from(bytes);
+      const arrayBuffer = buffer.buffer.slice(
+        buffer.byteOffset,
+        buffer.byteOffset + buffer.byteLength,
+      );
+
+      // Create File-like object for putNormalizedPdfFileServerSide
+      const file = {
+        name: fileName,
+        type: 'application/pdf',
+        arrayBuffer: async () => Promise.resolve(arrayBuffer),
+      };
+
+      // Normalize PDF and create DocumentData
+      const { id: templateDocumentDataId } = await putNormalizedPdfFileServerSide(file);
+
+      // Create envelope type TEMPLATE
+      const createdTemplate = await createEnvelope({
+        userId: user.id,
+        teamId: team.id,
+        internalVersion: 2,
+        data: {
+          type: EnvelopeType.TEMPLATE,
+          title: fileName,
+          envelopeItems: [
+            {
+              documentDataId: templateDocumentDataId,
+            },
+          ],
+          externalId: externalId ?? undefined,
+          templateType: TemplateType.PRIVATE,
+        },
+        requestMetadata: metadata,
+      });
+
+      // Get full template data
+      const fullTemplate = await getTemplateById({
+        id: {
+          type: 'envelopeId',
+          id: createdTemplate.id,
+        },
+        userId: user.id,
+        teamId: team.id,
+      });
+
+      return {
+        status: 200,
+        body: {
+          ...fullTemplate,
+          templateMeta: fullTemplate.templateMeta
+            ? {
+                ...fullTemplate.templateMeta,
+                templateId: fullTemplate.id,
+              }
+            : null,
+          Field: fullTemplate.fields.map((field) => ({
+            ...field,
+            fieldMeta: field.fieldMeta ? ZFieldMetaSchema.parse(field.fieldMeta) : null,
+          })),
+          Recipient: fullTemplate.recipients,
+        },
+      };
+    } catch (err) {
+      return AppError.toRestAPIError(err);
     }
   }),
 
@@ -1439,10 +1534,28 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
               .with('DROPDOWN', () => ZDropdownFieldMeta.safeParse(fieldMeta))
               .with('NUMBER', () => ZNumberFieldMeta.safeParse(fieldMeta))
               .with('TEXT', () => ZTextFieldMeta.safeParse(fieldMeta))
-              .with('SIGNATURE', 'INITIALS', 'DATE', 'EMAIL', 'NAME', () => ({
-                success: true,
-                data: undefined,
-              }))
+              .with(
+                'SIGNATURE',
+                'INITIALS',
+                'DATE',
+                'CALENDAR',
+                'EMAIL',
+                'NAME',
+                'RESIDENT_FIRST_NAME',
+                'RESIDENT_LAST_NAME',
+                'RESIDENT_DOB',
+                'RESIDENT_GENDER_IDENTITY',
+                'RESIDENT_LOCATION_NAME',
+                'RESIDENT_LOCATION_STATE',
+                'RESIDENT_LOCATION_ADDRESS',
+                'RESIDENT_LOCATION_CITY',
+                'RESIDENT_LOCATION_ZIP_CODE',
+                'RESIDENT_LOCATION_COUNTRY',
+                () => ({
+                  success: true,
+                  data: undefined,
+                }),
+              )
               .with('FREE_SIGNATURE', () => ({
                 success: false,
                 error: 'FREE_SIGNATURE is not supported',

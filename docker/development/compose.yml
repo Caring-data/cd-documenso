@@ -11,4 +11,10 @@ services:
       timeout: 5s
       retries: 5
     ports:
-      - 54320:5432
+      - 15432:5432
+    volumes:
+      - ./data:/var/lib/postgresql/data
+
+volumes:
+  documenso-data:
+    driver: local

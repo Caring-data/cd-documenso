@@ -25,7 +25,7 @@ import type {
 } from '../../types/document-auth';
 import type { TDocumentFormValues } from '../../types/document-form-values';
 import type { TEnvelopeAttachmentType } from '../../types/envelope-attachment';
-import type { TFieldAndMeta } from '../../types/field-meta';
+import type { TEnvelopeFieldAndMeta, TFieldAndMeta } from '../../types/field-meta';
 import {
   ZWebhookDocumentSchema,
   mapEnvelopeToWebhookDocumentPayload,
@@ -39,7 +39,7 @@ import { incrementDocumentId, incrementTemplateId } from '../envelope/increment-
 import { getTeamSettings } from '../team/get-team-settings';
 import { triggerWebhook } from '../webhooks/trigger/trigger-webhook';
 
-type CreateEnvelopeRecipientFieldOptions = TFieldAndMeta & {
+type CreateEnvelopeRecipientFieldOptions = (TEnvelopeFieldAndMeta | TFieldAndMeta) & {
   documentDataId: string;
   page: number;
   positionX: number;
@@ -81,6 +81,7 @@ export type CreateEnvelopeOptions = {
     globalActionAuth?: TDocumentActionAuthTypes[];
     recipients?: CreateEnvelopeRecipientOptions[];
     folderId?: string;
+    folderName?: string;
   };
   attachments?: Array<{
     label: string;
@@ -108,6 +109,7 @@ export const createEnvelope = async ({
     formValues,
     userTimezone,
     folderId,
+    folderName,
     templateType,
     globalAccessAuth,
     globalActionAuth,
@@ -121,7 +123,7 @@ export const createEnvelope = async ({
     include: {
       organisation: {
         select: {
-          organisationClaim: true,
+          id: true,
         },
       },
     },
@@ -147,6 +149,20 @@ export const createEnvelope = async ({
       throw new AppError(AppErrorCode.NOT_FOUND, {
         message: 'Folder not found',
       });
+    }
+  }
+
+  if (folderName && !folderId) {
+    const folder = await prisma.folder.findFirst({
+      where: {
+        name: folderName,
+        team: buildTeamWhereQuery({ teamId, userId }),
+        type: FolderType.TEMPLATE,
+      },
+    });
+
+    if (!folder) {
+      throw new AppError(AppErrorCode.NOT_FOUND, { message: 'Folder not found' });
     }
   }
 
@@ -210,15 +226,7 @@ export const createEnvelope = async ({
     (recipient) => recipient.actionAuth && recipient.actionAuth.length > 0,
   );
 
-  // Check if user has permission to set the global action auth.
-  if (
-    (authOptions.globalActionAuth.length > 0 || recipientsHaveActionAuth) &&
-    !team.organisation.organisationClaim.flags.cfr21
-  ) {
-    throw new AppError(AppErrorCode.UNAUTHORIZED, {
-      message: 'You do not have permission to set the action auth',
-    });
-  }
+  // Feature flag checks removed - action auth is now always available
 
   const visibility = visibilityOverride || settings.documentVisibility;
 

@@ -34,6 +34,7 @@ import { PDFViewerLazy } from '@documenso/ui/primitives/pdf-viewer/lazy';
 
 import { DocumentSigningAttachmentsPopover } from '~/components/general/document-signing/document-signing-attachments-popover';
 import { DocumentSigningAutoSign } from '~/components/general/document-signing/document-signing-auto-sign';
+import { DocumentSigningCalendarField } from '~/components/general/document-signing/document-signing-calendar-field';
 import { DocumentSigningCheckboxField } from '~/components/general/document-signing/document-signing-checkbox-field';
 import { DocumentSigningDateField } from '~/components/general/document-signing/document-signing-date-field';
 import { DocumentSigningDropdownField } from '~/components/general/document-signing/document-signing-dropdown-field';
@@ -433,6 +434,9 @@ export const DocumentSigningPageViewV1 = ({
                     dateFormat={documentMeta?.dateFormat ?? DEFAULT_DOCUMENT_DATE_FORMAT}
                     timezone={documentMeta?.timezone ?? DEFAULT_DOCUMENT_TIME_ZONE}
                   />
+                ))
+                .with(FieldType.CALENDAR, () => (
+                  <DocumentSigningCalendarField key={field.id} field={field} />
                 ))
                 .with(FieldType.EMAIL, () => (
                   <DocumentSigningEmailField key={field.id} field={field} />

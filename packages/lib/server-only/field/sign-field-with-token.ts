@@ -9,6 +9,7 @@ import { validateNumberField } from '@documenso/lib/advanced-fields-validation/v
 import { validateRadioField } from '@documenso/lib/advanced-fields-validation/validate-radio';
 import { validateTextField } from '@documenso/lib/advanced-fields-validation/validate-text';
 import { fromCheckboxValue } from '@documenso/lib/universal/field-checkbox';
+import { isRequiredField } from '@documenso/lib/utils/advanced-fields-helpers';
 import { prisma } from '@documenso/prisma';
 
 import { AUTO_SIGNABLE_FIELD_TYPES } from '../../constants/autosign';
@@ -202,7 +203,9 @@ export const signFieldWithToken = async ({
   }
 
   if (isSignatureField && !signatureImageAsBase64 && !typedSignature) {
-    throw new Error('Signature field must have a signature');
+    if (isRequiredField(field)) {
+      throw new Error('Signature field must have a signature');
+    }
   }
 
   if (isSignatureField && documentMeta?.typedSignatureEnabled === false && typedSignature) {
@@ -293,6 +296,7 @@ export const signFieldWithToken = async ({
             }))
             .with(
               FieldType.DATE,
+              FieldType.CALENDAR,
               FieldType.EMAIL,
               FieldType.NAME,
               FieldType.TEXT,
@@ -307,6 +311,22 @@ export const signFieldWithToken = async ({
               FieldType.RADIO,
               FieldType.CHECKBOX,
               FieldType.DROPDOWN,
+              (type) => ({
+                type,
+                data: updatedField.customText,
+              }),
+            )
+            .with(
+              FieldType.RESIDENT_FIRST_NAME,
+              FieldType.RESIDENT_LAST_NAME,
+              FieldType.RESIDENT_DOB,
+              FieldType.RESIDENT_GENDER_IDENTITY,
+              FieldType.RESIDENT_LOCATION_NAME,
+              FieldType.RESIDENT_LOCATION_STATE,
+              FieldType.RESIDENT_LOCATION_ADDRESS,
+              FieldType.RESIDENT_LOCATION_CITY,
+              FieldType.RESIDENT_LOCATION_ZIP_CODE,
+              FieldType.RESIDENT_LOCATION_COUNTRY,
               (type) => ({
                 type,
                 data: updatedField.customText,

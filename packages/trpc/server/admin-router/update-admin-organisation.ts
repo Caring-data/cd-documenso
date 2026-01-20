@@ -23,16 +23,13 @@ export const updateAdminOrganisationRoute = adminProcedure
       where: {
         id: organisationId,
       },
-      include: {
-        organisationClaim: true,
-      },
     });
 
     if (!organisation) {
       throw new AppError(AppErrorCode.NOT_FOUND);
     }
 
-    const { name, url, customerId, claims, originalSubscriptionClaimId } = data;
+    const { name, url } = data;
 
     await prisma.organisation.update({
       where: {
@@ -41,17 +38,6 @@ export const updateAdminOrganisationRoute = adminProcedure
       data: {
         name,
         url,
-        customerId: customerId ? customerId : undefined,
-      },
-    });
-
-    await prisma.organisationClaim.update({
-      where: {
-        id: organisation.organisationClaimId,
-      },
-      data: {
-        ...claims,
-        originalSubscriptionClaimId,
       },
     });
   });

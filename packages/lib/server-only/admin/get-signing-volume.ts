@@ -8,8 +8,6 @@ export type OrganisationInsights = {
   name: string;
   signingVolume: number;
   createdAt: Date;
-  customerId: string | null;
-  subscriptionStatus?: string;
   teamCount?: number;
   memberCount?: number;
 };
@@ -47,7 +45,6 @@ export async function getSigningVolume({
     .select((eb) => [
       'o.id as id',
       'o.createdAt as createdAt',
-      'o.customerId as customerId',
       sql<string>`COALESCE(o.name, 'Unknown')`.as('name'),
       eb
         .selectFrom('Envelope as e')
@@ -148,7 +145,6 @@ export async function getOrganisationInsights({
 
   let findQuery = kyselyPrisma.$kysely
     .selectFrom('Organisation as o')
-    .leftJoin('Subscription as s', 'o.id', 's.organisationId')
     .where((eb) =>
       eb.or([
         eb('o.name', 'ilike', `%${search}%`),
@@ -163,11 +159,7 @@ export async function getOrganisationInsights({
     .select((eb) => [
       'o.id as id',
       'o.createdAt as createdAt',
-      'o.customerId as customerId',
       sql<string>`COALESCE(o.name, 'Unknown')`.as('name'),
-      sql<string>`CASE WHEN s.status IS NOT NULL THEN s.status ELSE NULL END`.as(
-        'subscriptionStatus',
-      ),
       eb
         .selectFrom('Team as t')
         .whereRef('t.organisationId', '=', 'o.id')

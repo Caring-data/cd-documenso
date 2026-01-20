@@ -7,6 +7,7 @@ import { enterpriseRouter } from './enterprise-router/router';
 import { envelopeRouter } from './envelope-router/router';
 import { fieldRouter } from './field-router/router';
 import { folderRouter } from './folder-router/router';
+import { logRouter } from './log-router/router';
 import { organisationRouter } from './organisation-router/router';
 import { profileRouter } from './profile-router/router';
 import { recipientRouter } from './recipient-router/router';
@@ -31,6 +32,7 @@ export const appRouter = router({
   template: templateRouter,
   webhook: webhookRouter,
   embeddingPresign: embeddingPresignRouter,
+  log: logRouter,
 });
 
 export type AppRouter = typeof appRouter;

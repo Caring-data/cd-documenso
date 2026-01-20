@@ -52,7 +52,7 @@ export const createEnvelopeItemsRoute = authenticatedProcedure
           select: {
             organisation: {
               select: {
-                organisationClaim: true,
+                id: true,
               },
             },
           },
@@ -72,17 +72,7 @@ export const createEnvelopeItemsRoute = authenticatedProcedure
       });
     }
 
-    const organisationClaim = envelope.team.organisation.organisationClaim;
-
-    const remainingEnvelopeItems =
-      organisationClaim.envelopeItemCount - envelope.envelopeItems.length - files.length;
-
-    if (remainingEnvelopeItems < 0) {
-      throw new AppError('ENVELOPE_ITEM_LIMIT_EXCEEDED', {
-        message: `You cannot upload more than ${organisationClaim.envelopeItemCount} envelope items`,
-        statusCode: 400,
-      });
-    }
+    // Envelope item limits removed - unlimited items now allowed
 
     // For each file, stream to s3 and create the document data.
     const envelopeItems = await Promise.all(

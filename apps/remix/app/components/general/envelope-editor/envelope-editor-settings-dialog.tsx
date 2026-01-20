@@ -638,8 +638,7 @@ export const EnvelopeEditorSettingsDialog = ({
                   ))
                   .with('email', () => (
                     <>
-                      {organisation.organisationClaim.flags.emailDomains && (
-                        <FormField
+                      <FormField
                           control={form.control}
                           name="meta.emailId"
                           render={({ field }) => (
@@ -679,7 +678,6 @@ export const EnvelopeEditorSettingsDialog = ({
                             </FormItem>
                           )}
                         />
-                      )}
 
                       <FormField
                         control={form.control}
@@ -758,7 +756,7 @@ export const EnvelopeEditorSettingsDialog = ({
                   ))
                   .with('security', () => (
                     <>
-                      {organisation.organisationClaim.flags.cfr21 && (
+                      {true && (
                         <FormField
                           control={form.control}
                           name="globalActionAuth"

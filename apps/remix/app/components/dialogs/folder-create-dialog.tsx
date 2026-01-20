@@ -10,6 +10,7 @@ import { useParams } from 'react-router';
 import { z } from 'zod';
 
 import { trpc } from '@documenso/trpc/react';
+import { ClientOnly } from '@documenso/ui/components/client-only';
 import { Button } from '@documenso/ui/primitives/button';
 import {
   Dialog,
@@ -40,9 +41,15 @@ type TCreateFolderFormSchema = z.infer<typeof ZCreateFolderFormSchema>;
 export type FolderCreateDialogProps = {
   type: FolderType;
   trigger?: React.ReactNode;
+  id?: string;
 } & Omit<DialogPrimitive.DialogProps, 'children'>;
 
-export const FolderCreateDialog = ({ type, trigger, ...props }: FolderCreateDialogProps) => {
+export const FolderCreateDialog = ({
+  type,
+  trigger,
+  id = 'folder-create-dialog',
+  ...props
+}: FolderCreateDialogProps) => {
   const { t } = useLingui();
   const { toast } = useToast();
   const { folderId } = useParams();
@@ -91,6 +98,7 @@ export const FolderCreateDialog = ({ type, trigger, ...props }: FolderCreateDial
       <DialogTrigger asChild>
         {trigger ?? (
           <Button
+            id={`${id}-trigger`}
             variant="outline"
             className="flex items-center"
             data-testid="folder-create-button"
@@ -101,7 +109,7 @@ export const FolderCreateDialog = ({ type, trigger, ...props }: FolderCreateDial
         )}
       </DialogTrigger>
 
-      <DialogContent>
+      <DialogContent id={`${id}-content`}>
         <DialogHeader>
           <DialogTitle>
             <Trans>Create New Folder</Trans>

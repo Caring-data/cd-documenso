@@ -266,6 +266,7 @@ export const signEnvelopeFieldRoute = procedure
               }))
               .with(
                 FieldType.DATE,
+                FieldType.CALENDAR,
                 FieldType.EMAIL,
                 FieldType.NAME,
                 FieldType.TEXT,
@@ -280,6 +281,22 @@ export const signEnvelopeFieldRoute = procedure
                 FieldType.RADIO,
                 FieldType.CHECKBOX,
                 FieldType.DROPDOWN,
+                (type) => ({
+                  type,
+                  data: updatedField.customText,
+                }),
+              )
+              .with(
+                FieldType.RESIDENT_FIRST_NAME,
+                FieldType.RESIDENT_LAST_NAME,
+                FieldType.RESIDENT_DOB,
+                FieldType.RESIDENT_GENDER_IDENTITY,
+                FieldType.RESIDENT_LOCATION_NAME,
+                FieldType.RESIDENT_LOCATION_STATE,
+                FieldType.RESIDENT_LOCATION_ADDRESS,
+                FieldType.RESIDENT_LOCATION_CITY,
+                FieldType.RESIDENT_LOCATION_ZIP_CODE,
+                FieldType.RESIDENT_LOCATION_COUNTRY,
                 (type) => ({
                   type,
                   data: updatedField.customText,

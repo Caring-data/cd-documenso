@@ -18,9 +18,9 @@ import { useAnalytics } from '@documenso/lib/client-only/hooks/use-analytics';
 import { useCurrentOrganisation } from '@documenso/lib/client-only/providers/organisation';
 import { useSession } from '@documenso/lib/client-only/providers/session';
 import { APP_DOCUMENT_UPLOAD_SIZE_LIMIT, IS_BILLING_ENABLED } from '@documenso/lib/constants/app';
+import { megabytesToBytes } from '@documenso/lib/universal/unit-convertions';
 import { DEFAULT_DOCUMENT_TIME_ZONE, TIME_ZONES } from '@documenso/lib/constants/time-zones';
 import { AppError, AppErrorCode } from '@documenso/lib/errors/app-error';
-import { megabytesToBytes } from '@documenso/lib/universal/unit-convertions';
 import { formatDocumentsPath, formatTemplatesPath } from '@documenso/lib/utils/teams';
 import { trpc } from '@documenso/trpc/react';
 import type { TCreateEnvelopePayload } from '@documenso/trpc/server/envelope-router/create-envelope.types';
@@ -142,23 +142,6 @@ export const EnvelopeDropZoneWrapper = ({
 
   const onFileDropRejected = (fileRejections: FileRejection[]) => {
     if (!fileRejections.length) {
-      return;
-    }
-
-    const maxItemsReached = fileRejections.some((fileRejection) =>
-      fileRejection.errors.some((error) => error.code === DropzoneErrorCode.TooManyFiles),
-    );
-
-    if (maxItemsReached) {
-      toast({
-        title: plural(maximumEnvelopeItemCount, {
-          one: `You cannot upload more than # item per envelope.`,
-          other: `You cannot upload more than # items per envelope.`,
-        }),
-        duration: 5000,
-        variant: 'destructive',
-      });
-
       return;
     }
 
