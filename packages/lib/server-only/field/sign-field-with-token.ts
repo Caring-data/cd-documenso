@@ -296,6 +296,7 @@ export const signFieldWithToken = async ({
             }))
             .with(
               FieldType.DATE,
+              FieldType.CALENDAR,
               FieldType.EMAIL,
               FieldType.NAME,
               FieldType.TEXT,

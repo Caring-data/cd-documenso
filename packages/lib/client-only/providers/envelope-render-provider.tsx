@@ -1,4 +1,13 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import {
+  createContext,
+  startTransition,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import React from 'react';
 
 import type { Field, Recipient } from '@prisma/client';
@@ -29,6 +38,7 @@ type EnvelopeRenderItem = TEnvelope['envelopeItems'][number];
 
 type EnvelopeRenderProviderValue = {
   getPdfBuffer: (envelopeItemId: string) => FileData | null;
+  filesVersion: number;
   envelopeItems: EnvelopeRenderItem[];
   envelopeStatus: TEnvelope['status'];
   envelopeType: TEnvelope['type'];
@@ -99,8 +109,9 @@ export const EnvelopeRenderProvider = ({
   recipients = [],
   overrideSettings,
 }: EnvelopeRenderProviderProps) => {
-  // Indexed by documentDataId.
-  const [files, setFiles] = useState<Record<string, FileData>>({});
+  // Indexed by documentDataId - using ref for stable references.
+  const filesRef = useRef<Record<string, FileData>>({});
+  const [filesVersion, setFilesVersion] = useState(0);
 
   const [currentItem, setCurrentItem] = useState<EnvelopeRenderItem | null>(null);
 
@@ -112,17 +123,13 @@ export const EnvelopeRenderProvider = ({
   );
 
   const loadEnvelopeItemPdfFile = async (envelopeItem: EnvelopeRenderItem) => {
-    if (files[envelopeItem.id]?.status === 'loading') {
+    if (filesRef.current[envelopeItem.id]?.status === 'loading') {
       return;
     }
 
-    if (!files[envelopeItem.id]) {
-      setFiles((prev) => ({
-        ...prev,
-        [envelopeItem.id]: {
-          status: 'loading',
-        },
-      }));
+    if (!filesRef.current[envelopeItem.id]) {
+      filesRef.current[envelopeItem.id] = { status: 'loading' };
+      startTransition(() => setFilesVersion((v) => v + 1));
     }
 
     try {
@@ -132,35 +139,30 @@ export const EnvelopeRenderProvider = ({
         token,
       });
 
-      const blob = await fetch(downloadUrl).then(async (res) => await res.blob());
-
+      const blob = await fetch(downloadUrl).then(async (res) => res.blob());
       const file = await blob.arrayBuffer();
 
-      setFiles((prev) => ({
-        ...prev,
+      filesRef.current = {
+        ...filesRef.current,
         [envelopeItem.id]: {
           file: new Uint8Array(file),
           status: 'loaded',
         },
-      }));
+      };
+      startTransition(() => setFilesVersion((v) => v + 1));
     } catch (error) {
       console.error(error);
-
-      setFiles((prev) => ({
-        ...prev,
-        [envelopeItem.id]: {
-          status: 'error',
-        },
-      }));
+      filesRef.current = {
+        ...filesRef.current,
+        [envelopeItem.id]: { status: 'error' },
+      };
+      startTransition(() => setFilesVersion((v) => v + 1));
     }
   };
 
-  const getPdfBuffer = useCallback(
-    (envelopeItemId: string) => {
-      return files[envelopeItemId] || null;
-    },
-    [files],
-  );
+  const getPdfBuffer = useCallback((envelopeItemId: string) => {
+    return filesRef.current[envelopeItemId] || null;
+  }, []);
 
   const setCurrentEnvelopeItem = (envelopeItemId: string) => {
     const foundItem = envelope.envelopeItems.find((item) => item.id === envelopeItemId);
@@ -181,11 +183,15 @@ export const EnvelopeRenderProvider = ({
 
   // Look for any missing pdf files and load them.
   useEffect(() => {
-    const missingFiles = envelope.envelopeItems.filter((item) => !files[item.id]);
+    const missingFiles = envelope.envelopeItems.filter((item) => !filesRef.current[item.id]);
 
-    for (const item of missingFiles) {
-      void loadEnvelopeItemPdfFile(item);
-    }
+    if (missingFiles.length === 0) return;
+
+    startTransition(() => {
+      for (const item of missingFiles) {
+        void loadEnvelopeItemPdfFile(item);
+      }
+    });
   }, [envelope.envelopeItems]);
 
   const recipientIds = useMemo(
@@ -208,6 +214,7 @@ export const EnvelopeRenderProvider = ({
     <EnvelopeRenderContext.Provider
       value={{
         getPdfBuffer,
+        filesVersion,
         envelopeItems,
         envelopeStatus: envelope.status,
         envelopeType: envelope.type,

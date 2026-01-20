@@ -101,6 +101,7 @@ export const FieldItem = ({
     'INITIALS',
     'EMAIL',
     'DATE',
+    'CALENDAR',
     'NAME',
   ].includes(field.type);
 

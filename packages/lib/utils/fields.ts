@@ -112,6 +112,7 @@ export const getClientSideFieldTranslations = ({ t }: I18n): Record<FieldType, s
     [FieldType.NAME]: t(msg`Name`),
     [FieldType.NUMBER]: t(msg`Number`),
     [FieldType.DATE]: t(msg`Date`),
+    [FieldType.CALENDAR]: t(msg`Calendar`),
     [FieldType.EMAIL]: t(msg`Email`),
     [FieldType.RESIDENT_FIRST_NAME]: t(msg`Resident First Name`),
     [FieldType.RESIDENT_LAST_NAME]: t(msg`Resident Last Name`),

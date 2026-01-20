@@ -373,6 +373,7 @@ export const insertFieldInPDFV1 = async (pdf: PDFDocument, field: FieldWithSigna
         [FieldType.TEXT]: ZTextFieldMeta,
         [FieldType.NUMBER]: ZNumberFieldMeta,
         [FieldType.DATE]: ZDateFieldMeta,
+        [FieldType.CALENDAR]: ZDateFieldMeta,
         [FieldType.EMAIL]: ZEmailFieldMeta,
         [FieldType.NAME]: ZNameFieldMeta,
         [FieldType.INITIALS]: ZInitialsFieldMeta,

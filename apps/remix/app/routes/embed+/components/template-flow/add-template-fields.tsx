@@ -7,6 +7,7 @@ import { msg } from '@lingui/core/macro';
 import { useLingui } from '@lingui/react';
 import { Trans } from '@lingui/react/macro';
 import { FieldType, RecipientRole } from '@prisma/client';
+
 import {
   CalendarDays,
   CheckSquare,
@@ -70,6 +71,10 @@ import { EditorFieldSignatureForm } from '~/components/forms/editor/editor-field
 import { EditorFieldTextForm } from '~/components/forms/editor/editor-field-text-form';
 
 import { useCurrentEmbedTemplateEditor } from '../providers/embed-template-editor-provider';
+import { Accordion } from '@documenso/ui/primitives/accordion';
+import { AccordionItem, AccordionTrigger, AccordionContent } from '@documenso/ui/primitives/accordion';
+import { Input } from '@documenso/ui/primitives/input';
+import { Label } from '@documenso/ui/primitives/label';
 
 const MIN_HEIGHT_PX = 12;
 const MIN_WIDTH_PX = 36;
@@ -82,6 +87,7 @@ const FieldSettingsTypeTranslations: Record<FieldType, MessageDescriptor> = {
   [FieldType.FREE_SIGNATURE]: msg`Free Signature Settings`,
   [FieldType.TEXT]: msg`Text Settings`,
   [FieldType.DATE]: msg`Date Settings`,
+  [FieldType.CALENDAR]: msg`Calendar Settings`,
   [FieldType.EMAIL]: msg`Email Settings`,
   [FieldType.NAME]: msg`Name Settings`,
   [FieldType.INITIALS]: msg`Initials Settings`,
@@ -442,6 +448,14 @@ export const EmbedAddTemplateFieldsFormPartial = ({
               />
 
               <FieldButton
+                type={FieldType.CALENDAR}
+                selectedField={selectedField}
+                onSelect={setSelectedField}
+                icon={CalendarDays}
+                label={<Trans>Calendar</Trans>}
+              />
+
+              <FieldButton
                 type={FieldType.TEXT}
                 selectedField={selectedField}
                 onSelect={setSelectedField}
@@ -481,86 +495,117 @@ export const EmbedAddTemplateFieldsFormPartial = ({
                 label={<Trans>Dropdown</Trans>}
               />
 
-              <FieldButton
-                type={FieldType.RESIDENT_FIRST_NAME}
-                selectedField={selectedField}
-                onSelect={setSelectedField}
-                icon={UserCircle}
-                label={<Trans>Resident First Name</Trans>}
-              />
-
-              <FieldButton
-                type={FieldType.RESIDENT_LAST_NAME}
-                selectedField={selectedField}
-                onSelect={setSelectedField}
-                icon={UserCircle}
-                label={<Trans>Resident Last Name</Trans>}
-              />
-
-              <FieldButton
-                type={FieldType.RESIDENT_DOB}
-                selectedField={selectedField}
-                onSelect={setSelectedField}
-                icon={CalendarDays}
-                label={<Trans>Resident DOB</Trans>}
-              />
-
-              <FieldButton
-                type={FieldType.RESIDENT_GENDER_IDENTITY}
-                selectedField={selectedField}
-                onSelect={setSelectedField}
-                icon={User}
-                label={<Trans>Resident Gender</Trans>}
-              />
-
-              <FieldButton
-                type={FieldType.RESIDENT_LOCATION_NAME}
-                selectedField={selectedField}
-                onSelect={setSelectedField}
-                icon={MapPin}
-                label={<Trans>Location Name</Trans>}
-              />
-
-              <FieldButton
-                type={FieldType.RESIDENT_LOCATION_STATE}
-                selectedField={selectedField}
-                onSelect={setSelectedField}
-                icon={MapPin}
-                label={<Trans>Location State</Trans>}
-              />
-
-              <FieldButton
-                type={FieldType.RESIDENT_LOCATION_ADDRESS}
-                selectedField={selectedField}
-                onSelect={setSelectedField}
-                icon={MapPin}
-                label={<Trans>Location Address</Trans>}
-              />
-
-              <FieldButton
-                type={FieldType.RESIDENT_LOCATION_CITY}
-                selectedField={selectedField}
-                onSelect={setSelectedField}
-                icon={MapPin}
-                label={<Trans>Location City</Trans>}
-              />
-
-              <FieldButton
-                type={FieldType.RESIDENT_LOCATION_ZIP_CODE}
-                selectedField={selectedField}
-                onSelect={setSelectedField}
-                icon={MapPin}
-                label={<Trans>Location Zip Code</Trans>}
-              />
-
-              <FieldButton
-                type={FieldType.RESIDENT_LOCATION_COUNTRY}
-                selectedField={selectedField}
-                onSelect={setSelectedField}
-                icon={MapPin}
-                label={<Trans>Location Country</Trans>}
-              />
             </fieldset>
+
+
+            <div className="mt-4 flex flex-col gap-2">
+              <Separator />
+              <Accordion type="single" collapsible>
+                <AccordionItem value="resident-fields">
+                  <AccordionTrigger>
+                    <Label>Resident Fields</Label>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <fieldset disabled={isFieldsDisabled} className="grid grid-cols-3 gap-4">
+                      <FieldButton
+                        type={FieldType.RESIDENT_FIRST_NAME}
+                        selectedField={selectedField}
+                        onSelect={setSelectedField}
+                        icon={UserCircle}
+                        label={<Trans>First Name</Trans>}
+                      />
+
+                      <FieldButton
+                        type={FieldType.RESIDENT_LAST_NAME}
+                        selectedField={selectedField}
+                        onSelect={setSelectedField}
+                        icon={UserCircle}
+                        label={<Trans>Last Name</Trans>}
+                      />
+
+                      <FieldButton
+                        type={FieldType.RESIDENT_DOB}
+                        selectedField={selectedField}
+                        onSelect={setSelectedField}
+                        icon={CalendarDays}
+                        label={<Trans>Date of Birth</Trans>}
+                      />
+
+                      <FieldButton
+                        type={FieldType.RESIDENT_GENDER_IDENTITY}
+                        selectedField={selectedField}
+                        onSelect={setSelectedField}
+                        icon={User}
+                        label={<Trans>Gender Identity</Trans>}
+                      />
+                    </fieldset>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </div>
+
+
+            <div className="mt-4 flex flex-col gap-2">
+              <Separator />
+              <Accordion type="single" collapsible>
+                <AccordionItem value="resident-location-fields">
+                  <AccordionTrigger>
+                    <Label>Resident Location Fields</Label>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <fieldset disabled={isFieldsDisabled} className="grid grid-cols-3 gap-4">
+                      <FieldButton
+                        type={FieldType.RESIDENT_LOCATION_NAME}
+                        selectedField={selectedField}
+                        onSelect={setSelectedField}
+                        icon={MapPin}
+                        label={<Trans>Location Name</Trans>}
+                      />
+
+                      <FieldButton
+                        type={FieldType.RESIDENT_LOCATION_STATE}
+                        selectedField={selectedField}
+                        onSelect={setSelectedField}
+                        icon={MapPin}
+                        label={<Trans>State</Trans>}
+                      />
+
+                      <FieldButton
+                        type={FieldType.RESIDENT_LOCATION_ADDRESS}
+                        selectedField={selectedField}
+                        onSelect={setSelectedField}
+                        icon={MapPin}
+                        label={<Trans>Address</Trans>}
+                      />
+
+                      <FieldButton
+                        type={FieldType.RESIDENT_LOCATION_CITY}
+                        selectedField={selectedField}
+                        onSelect={setSelectedField}
+                        icon={MapPin}
+                        label={<Trans>City</Trans>}
+                      />
+
+                      <FieldButton
+                        type={FieldType.RESIDENT_LOCATION_ZIP_CODE}
+                        selectedField={selectedField}
+                        onSelect={setSelectedField}
+                        icon={MapPin}
+                        label={<Trans>ZIP Code</Trans>}
+                      />
+
+                      <FieldButton
+                        type={FieldType.RESIDENT_LOCATION_COUNTRY}
+                        selectedField={selectedField}
+                        onSelect={setSelectedField}
+                        icon={MapPin}
+                        label={<Trans>Country</Trans>}
+                      />
+                    </fieldset>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </div>
           </div>
 
           <AnimateGenericFadeInOut key={editorFields.selectedField?.formId}>
@@ -587,6 +632,12 @@ export const EmbedAddTemplateFieldsFormPartial = ({
                       />
                     ))
                     .with(FieldType.DATE, () => (
+                      <EditorFieldDateForm
+                        value={selectedFieldFromEditor?.fieldMeta as TDateFieldMeta | undefined}
+                        onValueChange={(value) => updateSelectedFieldMeta(value)}
+                      />
+                    ))
+                    .with(FieldType.CALENDAR, () => (
                       <EditorFieldDateForm
                         value={selectedFieldFromEditor?.fieldMeta as TDateFieldMeta | undefined}
                         onValueChange={(value) => updateSelectedFieldMeta(value)}
@@ -750,8 +801,14 @@ const FieldButton = ({ type, selectedField, onSelect, icon: Icon, label, classNa
     <button
       type="button"
       className="group h-full w-full"
-      onClick={() => onSelect(type)}
-      onMouseDown={() => onSelect(type)}
+      onClick={() => {
+        console.log('FieldButton clicked:', type);
+        onSelect(type);
+      }}
+      onMouseDown={() => {
+        console.log('FieldButton mousedown:', type);
+        onSelect(type);
+      }}
       data-selected={selectedField === type ? true : undefined}
     >
       <Card

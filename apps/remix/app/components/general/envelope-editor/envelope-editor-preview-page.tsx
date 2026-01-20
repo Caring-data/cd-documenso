@@ -99,6 +99,20 @@ export const EnvelopeEditorPreviewPage = () => {
               customText: date.customText,
             };
           })
+          .with({ type: FieldType.CALENDAR }, () => {
+            const date = extractFieldInsertionValues({
+              fieldValue: {
+                type: FieldType.CALENDAR,
+                value: new Date().toISOString(),
+              },
+              field,
+              documentMeta: envelope.documentMeta,
+            });
+
+            return {
+              customText: date.customText,
+            };
+          })
           .with({ type: FieldType.EMAIL }, () => {
             return {
               customText: recipientEmail,

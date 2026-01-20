@@ -22,6 +22,7 @@ import { SignFieldNameDialog } from '~/components/dialogs/sign-field-name-dialog
 import { SignFieldNumberDialog } from '~/components/dialogs/sign-field-number-dialog';
 import { SignFieldSignatureDialog } from '~/components/dialogs/sign-field-signature-dialog';
 import { SignFieldTextDialog } from '~/components/dialogs/sign-field-text-dialog';
+import { SignFieldCalendarDialog } from '~/components/dialogs/sign-field-calendar-dialog';
 import { useEmbedSigningContext } from '~/components/embed/embed-signing-context';
 
 import { BrandingLogo } from '../branding-logo';
@@ -80,6 +81,7 @@ export const DocumentSigningPageViewV2 = () => {
       <SignFieldDropdownDialog.Root />
       <SignFieldSignatureDialog.Root />
       <SignFieldCheckboxDialog.Root />
+      <SignFieldCalendarDialog.Root />
 
       <EnvelopeSignerHeader />
 

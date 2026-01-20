@@ -266,6 +266,7 @@ export const signEnvelopeFieldRoute = procedure
               }))
               .with(
                 FieldType.DATE,
+                FieldType.CALENDAR,
                 FieldType.EMAIL,
                 FieldType.NAME,
                 FieldType.TEXT,

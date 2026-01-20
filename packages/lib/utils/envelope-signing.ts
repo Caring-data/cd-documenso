@@ -255,5 +255,73 @@ export const extractFieldInsertionValues = ({
         inserted: true,
       };
     })
+    // Resident fields - most behave like text fields
+    .with(
+      {
+        type: P.union(
+          FieldType.RESIDENT_FIRST_NAME,
+          FieldType.RESIDENT_LAST_NAME,
+          FieldType.RESIDENT_GENDER_IDENTITY,
+          FieldType.RESIDENT_LOCATION_NAME,
+          FieldType.RESIDENT_LOCATION_STATE,
+          FieldType.RESIDENT_LOCATION_ADDRESS,
+          FieldType.RESIDENT_LOCATION_CITY,
+          FieldType.RESIDENT_LOCATION_ZIP_CODE,
+          FieldType.RESIDENT_LOCATION_COUNTRY,
+        ),
+      },
+      (fieldValue) => {
+        if (fieldValue.value === null) {
+          return {
+            customText: '',
+            inserted: false,
+          };
+        }
+
+        const parsedTextFieldMeta = ZTextFieldMeta.parse(field.fieldMeta);
+        const errors = validateTextField(fieldValue.value, parsedTextFieldMeta, true);
+
+        if (errors.length > 0) {
+          throw new AppError(AppErrorCode.INVALID_BODY, {
+            message: 'Invalid text value',
+          });
+        }
+
+        return {
+          customText: fieldValue.value,
+          inserted: true,
+        };
+      },
+    )
+    // CALENDAR behaves like a date field - the value comes as YYYY-MM-DD
+    .with({ type: FieldType.CALENDAR }, (fieldValue) => {
+      if (!fieldValue.value) {
+        return {
+          customText: '',
+          inserted: false,
+        };
+      }
+
+      // The value comes as YYYY-MM-DD from the calendar picker, we just use it as-is
+      return {
+        customText: fieldValue.value,
+        inserted: true,
+      };
+    })
+    // RESIDENT_DOB behaves like a date field - format the value as date
+    .with({ type: FieldType.RESIDENT_DOB }, (fieldValue) => {
+      if (!fieldValue.value) {
+        return {
+          customText: '',
+          inserted: false,
+        };
+      }
+
+      // The value comes as YYYY-MM-DD from the date input, we just use it as-is
+      return {
+        customText: fieldValue.value,
+        inserted: true,
+      };
+    })
     .exhaustive();
 };

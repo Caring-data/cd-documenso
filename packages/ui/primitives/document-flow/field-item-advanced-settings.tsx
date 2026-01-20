@@ -90,6 +90,12 @@ const getDefaultState = (fieldType: FieldType): FieldMeta => {
         fontSize: 14,
         textAlign: 'left',
       };
+    case FieldType.CALENDAR:
+      return {
+        type: 'date',
+        fontSize: 14,
+        textAlign: 'left',
+      };
     case FieldType.TEXT:
       return {
         type: 'text',
@@ -298,6 +304,13 @@ export const FieldAdvancedSettings = forwardRef<HTMLDivElement, FieldAdvancedSet
               />
             ))
             .with(FieldType.DATE, () => (
+              <DateFieldAdvancedSettings
+                fieldState={fieldState}
+                handleFieldChange={handleFieldChange}
+                handleErrors={setErrors}
+              />
+            ))
+            .with(FieldType.CALENDAR, () => (
               <DateFieldAdvancedSettings
                 fieldState={fieldState}
                 handleFieldChange={handleFieldChange}
