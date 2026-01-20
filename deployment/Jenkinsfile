@@ -49,16 +49,14 @@ pipeline {
             steps {
                 sh """
                     set -e
-                    ENV_FILE_PATH="/home/caringdata/${DEPLOY_ENV}/caring_data_documenso/.env.${DEPLOY_ENV}"
-                    WORKSPACE_ENV_FILE=".env.${DEPLOY_ENV}"
+                    ENV_FILE_PATH="/home/caringdata/${DEPLOY_ENV}/caring_data_documenso/.env"
 
                     if [ ! -f "\$ENV_FILE_PATH" ]; then
                         echo "ERROR: Environment file not found at \$ENV_FILE_PATH"
                         exit 1
                     fi
 
-                    cp "\$ENV_FILE_PATH" "\$WORKSPACE_ENV_FILE"
-                    cp "\$WORKSPACE_ENV_FILE" .env
+                    cp "\$ENV_FILE_PATH" .env
                     echo "Environment file prepared from \$ENV_FILE_PATH"
                 """
             }
