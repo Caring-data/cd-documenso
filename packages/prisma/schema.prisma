@@ -391,7 +391,7 @@ model Envelope {
   documentMetaId String       @unique
   documentMeta   DocumentMeta @relation(fields: [documentMetaId], references: [id])
 
-  residentId String? @db.Uuid
+  ownerId String? @db.Uuid
   formKey    String? @db.VarChar(255)
 
   envelopeAttachments EnvelopeAttachment[]
