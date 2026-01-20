@@ -29,6 +29,7 @@ import {
   ZTemplateManySchema,
   ZTemplateSchema,
 } from '@documenso/lib/types/template';
+import EnvelopeItemSchema from '@documenso/prisma/generated/zod/modelSchema/EnvelopeItemSchema';
 import { LegacyTemplateDirectLinkSchema } from '@documenso/prisma/types/template-legacy-schema';
 import { ZDocumentExternalIdSchema } from '@documenso/trpc/server/document-router/schema';
 
@@ -263,6 +264,40 @@ export const ZCreateTemplatePayloadSchema = ZCreateTemplateV2RequestSchema;
 export const ZCreateTemplateMutationSchema = zodFormData({
   payload: zfd.json(ZCreateTemplatePayloadSchema),
   file: zfd.file(),
+});
+
+export const ZCreateTemplateBase64RequestSchema = z.object({
+  title: ZTemplateTitleSchema,
+  data: z.string().min(1, 'PDF base64 data is required'),
+  folderId: z.string().optional(),
+  folderName: z.string().optional(),
+  envelopeId: z.string().optional(),
+  envelopeItemId: z.string().optional(),
+  externalId: z.string().nullish(),
+  visibility: z.nativeEnum(DocumentVisibility).optional(),
+  globalAccessAuth: z.array(ZDocumentAccessAuthTypesSchema).optional().default([]),
+  globalActionAuth: z.array(ZDocumentActionAuthTypesSchema).optional().default([]),
+  publicTitle: ZTemplatePublicTitleSchema.optional(),
+  publicDescription: ZTemplatePublicDescriptionSchema.optional(),
+  meta: ZTemplateMetaUpsertSchema.optional(),
+  attachments: z
+    .array(
+      z.object({
+        label: z.string().min(1, 'Label is required'),
+        data: z.string().url('Must be a valid URL'),
+        type: ZEnvelopeAttachmentTypeSchema.optional().default('link'),
+      }),
+    )
+    .optional(),
+});
+
+export const ZCreateTemplateBase64ResponseSchema = z.object({
+  template: EnvelopeItemSchema.pick({
+    id: true,
+    envelopeId: true,
+  }).array(),
+  folderId: z.string().nullish(),
+  message: z.string().optional(),
 });
 
 export const ZUpdateTemplateRequestSchema = z.object({
