@@ -325,16 +325,18 @@ export const ZGenerateDocumentFromTemplateMutationSchema = z.object({
         email: z.string().email(),
         name: z.string().optional(),
         signingOrder: z.number().optional(),
+        expired: z
+          .union([z.date(), z.string().transform((val) => new Date(val))])
+          .nullable()
+          .optional(),
       }),
     )
-    .refine(
-      (schema) => {
-        const ids = schema.map((signer) => signer.id);
+    .describe('Recipients used to create the document')
+    .refine((recipients) => {
+      const keys = recipients.map((r) => `${r.email}-${r.signingOrder ?? 'null'}`);
 
-        return new Set(ids).size === ids.length;
-      },
-      { message: 'Recipient IDs must be unique' },
-    ),
+      return new Set(keys).size === recipients.length;
+    }, 'Recipients must have a unique combination of id and signingOrder'),
   meta: z
     .object({
       subject: z.string(),
@@ -373,6 +375,33 @@ export const ZGenerateDocumentFromTemplateMutationSchema = z.object({
 
 export type TGenerateDocumentFromTemplateMutationSchema = z.infer<
   typeof ZGenerateDocumentFromTemplateMutationSchema
+>;
+
+export const ZGenerateDocumentFromTemplateBase64MutationSchema =
+  ZGenerateDocumentFromTemplateMutationSchema.extend({
+    type: z.literal('BYTES_64').optional(),
+    data: z.string().min(1).optional(),
+    ownerId: z.string().optional(),
+    formKey: z.string().optional(),
+    folderName: z
+      .string()
+      .describe('Target folder name where the document will be created')
+      .optional(),
+    signingContext: z
+      .object({
+        companyName: z.string().optional(),
+        facilityAdministrator: z.string().optional(),
+        documentName: z.string().optional(),
+        ownerName: z.string().optional(),
+        locationName: z.string().optional(),
+        formType: z.enum(['custom', 'standard', 'custom_default']).optional(),
+        module: z.enum(['resident', 'staff', 'facility']).optional(),
+      })
+      .optional(),
+  });
+
+export type TGenerateDocumentFromTemplateBase64MutationSchema = z.infer<
+  typeof ZGenerateDocumentFromTemplateBase64MutationSchema
 >;
 
 export const ZGenerateDocumentFromTemplateMutationResponseSchema = z.object({

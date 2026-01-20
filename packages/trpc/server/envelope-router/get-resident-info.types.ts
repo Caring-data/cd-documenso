@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { TrpcRouteMeta } from '../trpc';
 
 export const ZGetResidentInfoRequestSchema = z.object({
   token: z.string(),
@@ -16,4 +17,4 @@ export const getResidentInfoMeta = {
     description: 'Get residentId from envelope by recipient token',
     tags: ['Envelope'],
   },
-};
+} satisfies TrpcRouteMeta;

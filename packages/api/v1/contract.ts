@@ -1,6 +1,8 @@
 import { initContract } from '@ts-rest/core';
 
 import {
+  ZCreateTemplateBase64RequestSchema,
+  ZCreateTemplateBase64ResponseSchema,
   ZCreateTemplateV2RequestSchema,
   ZCreateTemplateV2ResponseSchema,
 } from '@documenso/trpc/server/template-router/schema';
@@ -22,6 +24,7 @@ import {
   ZDeleteRecipientMutationSchema,
   ZDownloadDocumentQuerySchema,
   ZDownloadDocumentSuccessfulSchema,
+  ZGenerateDocumentFromTemplateBase64MutationSchema,
   ZGenerateDocumentFromTemplateMutationResponseSchema,
   ZGenerateDocumentFromTemplateMutationSchema,
   ZGetDocumentsQuerySchema,
@@ -112,6 +115,21 @@ export const ApiContractV1 = c.router(
       summary: 'Create a new template and get a presigned URL',
     },
 
+    createTemplateBase64: {
+      method: 'POST',
+      path: '/api/v1/templates/base64',
+      body: ZCreateTemplateBase64RequestSchema,
+      responses: {
+        200: ZCreateTemplateBase64ResponseSchema,
+        400: ZUnsuccessfulResponseSchema,
+        401: ZUnsuccessfulResponseSchema,
+        500: ZUnsuccessfulResponseSchema,
+      },
+      summary: 'Create a new template with base64 PDF data',
+      description:
+        'Create a template by directly uploading base64 encoded PDF data. Does not require S3 configuration.',
+    },
+
     createEmbebedTemplate: {
       method: 'POST',
       path: '/api/v1/templates/embed',
@@ -190,6 +208,22 @@ export const ApiContractV1 = c.router(
       summary: 'Create a new document from an existing template',
       description:
         'Create a new document from an existing template. Passing in values for title and meta will override the original values defined in the template. If you do not pass in values for recipients, it will use the values defined in the template.',
+    },
+
+    generateDocumentFromTemplateBase64: {
+      method: 'POST',
+      path: '/api/v1/templates/:templateId/generate-document-base64',
+      body: ZGenerateDocumentFromTemplateBase64MutationSchema,
+      responses: {
+        200: ZGenerateDocumentFromTemplateMutationResponseSchema,
+        400: ZUnsuccessfulResponseSchema,
+        401: ZUnsuccessfulResponseSchema,
+        404: ZUnsuccessfulResponseSchema,
+        500: ZUnsuccessfulResponseSchema,
+      },
+      summary: 'Create a document from a template using a dynamic PDF',
+      description:
+        'Creates a new document using the configuration from the template but replaces the template PDF with a dynamically provided base64 encoded PDF. Useful when the document content is generated at runtime.',
     },
 
     sendDocument: {

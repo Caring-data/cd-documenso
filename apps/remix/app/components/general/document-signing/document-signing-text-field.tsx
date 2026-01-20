@@ -91,9 +91,6 @@ export const DocumentSigningTextField = ({
   const [showCustomTextModal, setShowCustomTextModal] = useState(false);
   const [localText, setLocalCustomText] = useState(parsedFieldMeta?.text ?? '');
 
-  // Check if this is RESIDENT_DOB without a value - should use calendar picker
-  const isResidentDobWithoutValue = field.type === FieldType.RESIDENT_DOB && !residentValue && !isAssistantMode;
-
   // Resident field logic - automatically fetch when component mounts if it's a resident field
   const isResidentField = isResidentFieldType(field.type);
 
@@ -112,6 +109,9 @@ export const DocumentSigningTextField = ({
   const residentValue = isResidentField && residentInfo
     ? getResidentValue(field.type, residentInfo)
     : '';
+
+  // Check if this is RESIDENT_DOB without a value - should use calendar picker
+  const isResidentDobWithoutValue = field.type === FieldType.RESIDENT_DOB && !residentValue && !isAssistantMode;
 
   useEffect(() => {
     if (!showCustomTextModal) {
@@ -181,7 +181,7 @@ export const DocumentSigningTextField = ({
       // If RESIDENT_DOB without value, show calendar picker
       if (isResidentDobWithoutValue) {
         const safeDateFieldMeta = ZDateFieldMeta.safeParse(field.fieldMeta);
-        const parsedDateFieldMeta = safeDateFieldMeta.success ? safeDateFieldMeta.data : null;
+        const parsedDateFieldMeta = safeDateFieldMeta.success ? safeDateFieldMeta.data : undefined;
 
         const selectedDate = await SignFieldCalendarDialog.call({
           fieldMeta: parsedDateFieldMeta,

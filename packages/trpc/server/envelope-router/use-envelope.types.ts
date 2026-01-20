@@ -108,7 +108,7 @@ export const ZUseEnvelopePayloadSchema = z.object({
       }),
     )
     .optional(),
-  residentId: z
+  ownerId: z
     .string()
     .uuid()
     .describe('The UUID of the resident to associate with this document.')

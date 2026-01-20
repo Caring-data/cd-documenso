@@ -33,7 +33,7 @@ const ZSignFieldCalendarFormSchema = z.object({
 type TSignFieldCalendarFormSchema = z.infer<typeof ZSignFieldCalendarFormSchema>;
 
 export type SignFieldCalendarDialogProps = {
-  fieldMeta?: TDateFieldMeta;
+  fieldMeta?: TDateFieldMeta | undefined;
 };
 
 export const SignFieldCalendarDialog = createCallable<SignFieldCalendarDialogProps, string | null>(
