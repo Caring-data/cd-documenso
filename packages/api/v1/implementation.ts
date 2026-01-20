@@ -604,6 +604,7 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
     const { body } = args;
     const {
       title,
+      formKey,
       data,
       folderId,
       folderName,
@@ -779,6 +780,7 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
           globalActionAuth,
           publicTitle,
           publicDescription,
+          formKey,
         },
         meta,
         attachments,
@@ -1193,6 +1195,127 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
             ...body.meta,
           },
           requestMetadata: metadata,
+        });
+      } catch (err) {
+        return AppError.toRestAPIError(err);
+      }
+
+      if (envelope.envelopeItems.length !== 1) {
+        throw new Error('API V1 does not support envelopes');
+      }
+
+      const firstEnvelopeDocumentData = await prisma.envelopeItem.findFirstOrThrow({
+        where: {
+          envelopeId: envelope.id,
+        },
+        include: {
+          documentData: true,
+        },
+      });
+
+      if (body.formValues) {
+        const fileName = envelope.title.endsWith('.pdf') ? envelope.title : `${envelope.title}.pdf`;
+
+        const pdf = await getFileServerSide(firstEnvelopeDocumentData.documentData);
+
+        const prefilled = await insertFormValuesInPdf({
+          pdf: Buffer.from(pdf),
+          formValues: body.formValues,
+        });
+
+        const newDocumentData = await putPdfFileServerSide({
+          name: fileName,
+          type: 'application/pdf',
+          arrayBuffer: async () => Promise.resolve(prefilled),
+        });
+
+        await prisma.envelope.update({
+          where: {
+            id: envelope.id,
+          },
+          data: {
+            formValues: body.formValues,
+            envelopeItems: {
+              update: {
+                where: {
+                  id: firstEnvelopeDocumentData.id,
+                },
+                data: {
+                  documentDataId: newDocumentData.id,
+                },
+              },
+            },
+          },
+        });
+      }
+
+      if (body.authOptions) {
+        await prisma.envelope.update({
+          where: {
+            id: envelope.id,
+          },
+          data: {
+            authOptions: body.authOptions,
+          },
+        });
+      }
+
+      const legacyDocumentId = mapSecondaryIdToDocumentId(envelope.secondaryId);
+
+      return {
+        status: 200,
+        body: {
+          documentId: legacyDocumentId,
+          recipients: envelope.recipients.map((recipient) => ({
+            recipientId: recipient.id,
+            name: recipient.name,
+            email: recipient.email,
+            token: recipient.token,
+            role: recipient.role,
+            signingOrder: recipient.signingOrder,
+            signingUrl: `${NEXT_PUBLIC_WEBAPP_URL()}/sign/${recipient.token}`,
+          })),
+        },
+      };
+    },
+  ),
+
+  generateDocumentFromTemplateBase64: authenticatedMiddleware(
+    async (args, user, team, { logger, metadata }) => {
+      const { body, params } = args;
+
+      logger.info({
+        input: {
+          templateId: params.templateId,
+        },
+      });
+
+      const templateId = Number(params.templateId);
+      // const formType = body.signingContext?.formType ?? 'standard';
+
+      let envelope: Awaited<ReturnType<typeof createDocumentFromTemplate>> | null = null;
+
+      try {
+        envelope = await createDocumentFromTemplate({
+          id: {
+            type: 'templateId',
+            id: templateId,
+          },
+          externalId: body.externalId || null,
+          userId: user.id,
+          teamId: team.id,
+          recipients: body.recipients,
+          prefillFields: body.prefillFields,
+          folderId: body.folderId,
+          folderName: body.folderName,
+          override: {
+            title: body.title,
+            ...body.meta,
+          },
+          requestMetadata: metadata,
+          ownerId: body.ownerId,
+          formKey: body.formKey,
+          signingContext: body.signingContext,
         });
       } catch (err) {
         return AppError.toRestAPIError(err);

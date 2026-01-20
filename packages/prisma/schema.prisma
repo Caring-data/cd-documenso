@@ -393,6 +393,7 @@ model Envelope {
 
   ownerId String? @db.Uuid
   formKey    String? @db.VarChar(255)
+  signingContext Json? /// Contextual business information used during electronic signature flows
 
   envelopeAttachments EnvelopeAttachment[]
 

@@ -78,8 +78,19 @@ export type CreateDocumentFromTemplateOptions = {
     signingOrder?: number | null;
   }[];
   folderId?: string;
+  folderName?: string;
   prefillFields?: TFieldMetaPrefillFieldsSchema[];
   ownerId?: string;
+  formKey?: string;
+  signingContext?: {
+    companyName?: string;
+    facilityAdministrator?: string;
+    documentName?: string;
+    ownerName?: string;
+    locationName?: string;
+    formType?: 'custom' | 'standard' | 'custom_default';
+    module?: 'resident' | 'staff' | 'facility';
+  };
 
   customDocumentData?: {
     documentDataId: string;
@@ -302,9 +313,12 @@ export const createDocumentFromTemplate = async ({
   override,
   requestMetadata,
   folderId,
+  folderName,
   prefillFields,
   attachments,
   ownerId,
+  formKey,
+  signingContext,
 }: CreateDocumentFromTemplateOptions) => {
   const { envelopeWhereInput } = await getEnvelopeWhereInput({
     id,
@@ -312,6 +326,7 @@ export const createDocumentFromTemplate = async ({
     userId,
     teamId,
   });
+  let resolvedFolderId: string | undefined = folderId;
 
   const template = await prisma.envelope.findUnique({
     where: {
@@ -353,6 +368,22 @@ export const createDocumentFromTemplate = async ({
         message: 'Folder not found',
       });
     }
+  }
+
+  if (folderName && !folderId) {
+    const folder = await prisma.folder.findFirst({
+      where: {
+        name: folderName,
+        team: buildTeamWhereQuery({ teamId, userId }),
+        type: FolderType.TEMPLATE,
+      },
+    });
+
+    if (!folder) {
+      throw new AppError(AppErrorCode.NOT_FOUND, { message: 'Folder not found' });
+    }
+
+    resolvedFolderId = folder.id;
   }
 
   const legacyTemplateId = mapSecondaryIdToTemplateId(template.secondaryId);
@@ -503,7 +534,7 @@ export const createDocumentFromTemplate = async ({
         externalId: externalId || template.externalId,
         templateId: legacyTemplateId, // The template this envelope was created from.
         userId,
-        folderId,
+        folderId: resolvedFolderId,
         teamId: template.teamId,
         title: finalEnvelopeTitle,
         envelopeItems: {
@@ -519,6 +550,8 @@ export const createDocumentFromTemplate = async ({
         useLegacyFieldInsertion: template.useLegacyFieldInsertion ?? false,
         documentMetaId: documentMeta.id,
         ownerId,
+        formKey,
+        signingContext,
         recipients: {
           createMany: {
             data: finalRecipients.map((recipient) => {

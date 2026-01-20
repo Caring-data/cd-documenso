@@ -268,6 +268,7 @@ export const ZCreateTemplateMutationSchema = zodFormData({
 
 export const ZCreateTemplateBase64RequestSchema = z.object({
   title: ZTemplateTitleSchema,
+  formKey: z.string().optional(),
   data: z.string().min(1, 'PDF base64 data is required'),
   folderId: z.string().optional(),
   folderName: z.string().optional(),

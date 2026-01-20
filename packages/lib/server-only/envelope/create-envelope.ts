@@ -82,6 +82,7 @@ export type CreateEnvelopeOptions = {
     recipients?: CreateEnvelopeRecipientOptions[];
     folderId?: string;
     folderName?: string;
+    formKey?: string;
   };
   attachments?: Array<{
     label: string;
@@ -117,6 +118,8 @@ export const createEnvelope = async ({
     publicDescription,
     visibility: visibilityOverride,
   } = data;
+
+  let resolvedFolderId: string | undefined = folderId;
 
   const team = await prisma.team.findFirst({
     where: buildTeamWhereQuery({ teamId, userId }),
@@ -164,6 +167,8 @@ export const createEnvelope = async ({
     if (!folder) {
       throw new AppError(AppErrorCode.NOT_FOUND, { message: 'Folder not found' });
     }
+
+    resolvedFolderId = folder.id;
   }
 
   const settings = await getTeamSettings({
@@ -297,8 +302,9 @@ export const createEnvelope = async ({
         teamId,
         authOptions,
         visibility,
-        folderId,
+        folderId: resolvedFolderId,
         formValues,
+        formKey: data.formKey,
         source: type === EnvelopeType.DOCUMENT ? DocumentSource.DOCUMENT : DocumentSource.TEMPLATE,
         documentMetaId: documentMeta.id,
 
