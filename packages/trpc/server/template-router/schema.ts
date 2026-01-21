@@ -293,6 +293,7 @@ export const ZCreateTemplateBase64RequestSchema = z.object({
 });
 
 export const ZCreateTemplateBase64ResponseSchema = z.object({
+  documentId: z.number().nullish(),
   template: EnvelopeItemSchema.pick({
     id: true,
     envelopeId: true,
