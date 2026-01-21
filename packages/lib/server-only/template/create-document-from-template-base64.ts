@@ -4,6 +4,8 @@ import {
   EnvelopeType,
   type Field,
   FolderType,
+  LogCategory,
+  LogLevel,
   type Recipient,
   RecipientRole,
   SendStatus,
@@ -43,6 +45,7 @@ import {
 import type { ApiRequestMetadata } from '../../universal/extract-request-metadata';
 import { getFileServerSide } from '../../universal/upload/get-file.server';
 import { putPdfFileServerSide } from '../../universal/upload/put-file.server';
+import { createLog } from '../../utils/createLog';
 import { extractDerivedDocumentMeta } from '../../utils/document';
 import { createDocumentAuditLogData } from '../../utils/document-audit-logs';
 import {
@@ -66,7 +69,7 @@ type FinalRecipient = Pick<
   fields: Field[];
 };
 
-export type CreateDocumentFromTemplateOptions = {
+export type createDocumentFromTemplateBase64Options = {
   id: EnvelopeIdOptions;
   externalId?: string | null;
   userId: number;
@@ -76,10 +79,22 @@ export type CreateDocumentFromTemplateOptions = {
     name?: string;
     email: string;
     signingOrder?: number | null;
+    expired?: Date | null;
   }[];
   folderId?: string;
+  folderName?: string;
   prefillFields?: TFieldMetaPrefillFieldsSchema[];
   ownerId?: string;
+  formKey?: string;
+  signingContext?: {
+    companyName?: string;
+    facilityAdministrator?: string;
+    documentName?: string;
+    ownerName?: string;
+    locationName?: string;
+    formType?: 'custom' | 'standard' | 'custom_default';
+    module?: 'resident' | 'staff' | 'facility';
+  };
 
   customDocumentData?: {
     documentDataId: string;
@@ -292,7 +307,7 @@ const getUpdatedFieldMeta = (field: Field, prefillField?: TFieldMetaPrefillField
     .otherwise(() => field.fieldMeta);
 };
 
-export const createDocumentFromTemplate = async ({
+export const createDocumentFromTemplateBase64 = async ({
   id,
   externalId,
   userId,
@@ -302,15 +317,38 @@ export const createDocumentFromTemplate = async ({
   override,
   requestMetadata,
   folderId,
+  folderName,
   prefillFields,
   attachments,
   ownerId,
-}: CreateDocumentFromTemplateOptions) => {
+  formKey,
+  signingContext,
+}: createDocumentFromTemplateBase64Options) => {
   const { envelopeWhereInput } = await getEnvelopeWhereInput({
     id,
     type: EnvelopeType.TEMPLATE,
     userId,
     teamId,
+  });
+  let resolvedFolderId: string | undefined = folderId;
+
+  await createLog({
+    level: LogLevel.INFO,
+    category: LogCategory.DOCUMENT,
+    action: 'create_document_from_template_start',
+    message: 'Starting document generation from template',
+    data: {
+      envelopeIdOptions: id,
+      folderId,
+      folderName,
+      userId,
+      teamId,
+      ownerId,
+      formKey,
+      signingContext,
+    },
+    metadata: requestMetadata,
+    userId,
   });
 
   const template = await prisma.envelope.findUnique({
@@ -355,6 +393,37 @@ export const createDocumentFromTemplate = async ({
     }
   }
 
+  await createLog({
+    level: LogLevel.INFO,
+    category: LogCategory.DOCUMENT,
+    action: 'resolve_folder_by_name',
+    message: 'Resolving folder by name',
+    data: {
+      folderName,
+      folderType: FolderType.DOCUMENT,
+      teamId,
+      userId,
+    },
+    metadata: requestMetadata,
+    userId,
+  });
+
+  if (folderName && !folderId) {
+    const folder = await prisma.folder.findFirst({
+      where: {
+        name: folderName,
+        team: buildTeamWhereQuery({ teamId, userId }),
+        type: FolderType.DOCUMENT,
+      },
+    });
+
+    if (!folder) {
+      throw new AppError(AppErrorCode.NOT_FOUND, { message: `Folder not found` });
+    }
+
+    resolvedFolderId = folder.id;
+  }
+
   const legacyTemplateId = mapSecondaryIdToTemplateId(template.secondaryId);
   const finalEnvelopeTitle = override?.title || template.title;
 
@@ -369,15 +438,21 @@ export const createDocumentFromTemplate = async ({
     teamId,
   });
 
-  // Check that all the passed in recipient IDs can be associated with a template recipient.
+  // Validate that all provided recipients match a template recipient by signingOrder
   recipients.forEach((recipient) => {
+    if (recipient.signingOrder == null) {
+      throw new AppError(AppErrorCode.INVALID_BODY, {
+        message: 'Recipient signingOrder is required.',
+      });
+    }
+
     const foundRecipient = template.recipients.find(
-      (templateRecipient) => templateRecipient.id === recipient.id,
+      (templateRecipient) => templateRecipient.signingOrder === recipient.signingOrder,
     );
 
     if (!foundRecipient) {
       throw new AppError(AppErrorCode.INVALID_BODY, {
-        message: `Recipient with ID ${recipient.id} not found in the template.`,
+        message: `Recipient with signingOrder ${recipient.signingOrder} not found in the template.`,
       });
     }
   });
@@ -387,18 +462,35 @@ export const createDocumentFromTemplate = async ({
   });
 
   const finalRecipients: FinalRecipient[] = template.recipients.map((templateRecipient) => {
-    const foundRecipient = recipients.find((recipient) => recipient.id === templateRecipient.id);
+    const foundRecipient = recipients.find(
+      (recipient) =>
+        recipient.signingOrder != null && recipient.signingOrder === templateRecipient.signingOrder,
+    );
 
     return {
       templateRecipientId: templateRecipient.id,
       fields: templateRecipient.fields,
-      name: foundRecipient ? (foundRecipient.name ?? '') : templateRecipient.name,
-      email: foundRecipient ? foundRecipient.email : templateRecipient.email,
+      name: foundRecipient?.name ?? templateRecipient.name,
+      email: foundRecipient?.email ?? templateRecipient.email,
       role: templateRecipient.role,
       signingOrder: foundRecipient?.signingOrder ?? templateRecipient.signingOrder,
       authOptions: templateRecipient.authOptions,
       token: nanoid(),
+      expired: foundRecipient?.expired ?? templateRecipient?.expired ?? null,
     };
+  });
+
+  await createLog({
+    level: LogLevel.INFO,
+    category: LogCategory.DOCUMENT,
+    action: 'duplicate_document_data_start',
+    message: 'Duplicating document data from template',
+    data: {
+      envelopeItemsCount: template.envelopeItems.length,
+      customDocumentData,
+    },
+    metadata: requestMetadata,
+    userId,
   });
 
   // Key = original envelope item ID
@@ -491,7 +583,7 @@ export const createDocumentFromTemplate = async ({
     }),
   });
 
-  return await prisma.$transaction(async (tx) => {
+  const envelope = await prisma.$transaction(async (tx) => {
     const envelope = await tx.envelope.create({
       data: {
         id: prefixedId('envelope'),
@@ -503,7 +595,7 @@ export const createDocumentFromTemplate = async ({
         externalId: externalId || template.externalId,
         templateId: legacyTemplateId, // The template this envelope was created from.
         userId,
-        folderId,
+        folderId: resolvedFolderId,
         teamId: template.teamId,
         title: finalEnvelopeTitle,
         envelopeItems: {
@@ -519,6 +611,8 @@ export const createDocumentFromTemplate = async ({
         useLegacyFieldInsertion: template.useLegacyFieldInsertion ?? false,
         documentMetaId: documentMeta.id,
         ownerId,
+        formKey,
+        signingContext,
         recipients: {
           createMany: {
             data: finalRecipients.map((recipient) => {
@@ -733,4 +827,21 @@ export const createDocumentFromTemplate = async ({
 
     return envelope;
   });
+
+  await createLog({
+    level: LogLevel.INFO,
+    category: LogCategory.DOCUMENT,
+    action: 'envelope_created',
+    message: 'Envelope created successfully from template',
+    data: {
+      envelopeId: envelope.id,
+      folderId: resolvedFolderId,
+      title: envelope.title,
+    },
+    metadata: requestMetadata,
+    userId,
+    envelopeId: envelope.id,
+  });
+
+  return envelope;
 };

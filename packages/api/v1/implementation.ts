@@ -2,6 +2,8 @@ import {
   DocumentDataType,
   EnvelopeType,
   FolderType,
+  LogCategory,
+  LogLevel,
   SigningStatus,
   TemplateType,
 } from '@prisma/client';
@@ -32,6 +34,7 @@ import { getRecipientsForDocument } from '@documenso/lib/server-only/recipient/g
 import { setDocumentRecipients } from '@documenso/lib/server-only/recipient/set-document-recipients';
 import { updateEnvelopeRecipients } from '@documenso/lib/server-only/recipient/update-envelope-recipients';
 import { createDocumentFromTemplate } from '@documenso/lib/server-only/template/create-document-from-template';
+import { createDocumentFromTemplateBase64 } from '@documenso/lib/server-only/template/create-document-from-template-base64';
 import { deleteTemplate } from '@documenso/lib/server-only/template/delete-template';
 import { findTemplates } from '@documenso/lib/server-only/template/find-templates';
 import { getTemplateById } from '@documenso/lib/server-only/template/get-template-by-id';
@@ -54,6 +57,7 @@ import {
   getPresignGetUrl,
   getPresignPostUrl,
 } from '@documenso/lib/universal/upload/server-actions';
+import { createLog } from '@documenso/lib/utils/createLog';
 import { isDocumentCompleted } from '@documenso/lib/utils/document';
 import { createDocumentAuditLogData } from '@documenso/lib/utils/document-audit-logs';
 import {
@@ -727,9 +731,12 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
           teamId,
         });
 
+        const legacyDocumentId = mapSecondaryIdToDocumentId(envelope.secondaryId);
+
         return {
           status: 200,
           body: {
+            documentId: legacyDocumentId,
             template: fullTemplate.envelopeItems,
             folderId: fullTemplate.folderId,
             message: 'Template updated successfully with base64 data',
@@ -796,16 +803,48 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
         teamId: team.id,
       });
 
+      await createLog({
+        level: LogLevel.INFO,
+        category: LogCategory.DOCUMENT,
+        action: 'template_base64_before_map_secondary_id',
+        message: 'Mapping secondaryId to legacy documentId',
+        data: {
+          envelopeId: fullTemplate.id,
+          envelopeType: fullTemplate.type,
+          secondaryId: fullTemplate.secondaryId,
+        },
+        metadata,
+        userId,
+      });
+
+      const legacyDocumentId = mapSecondaryIdToTemplateId(fullTemplate.secondaryId);
+
       return {
         status: 200,
         body: {
+          documentId: legacyDocumentId,
           template: fullTemplate.envelopeItems,
           folderId: fullTemplate.folderId,
           message: 'Template created successfully with base64 data',
         },
       };
     } catch (err) {
-      console.error('Error creating template with base64:', err);
+      await createLog({
+        level: LogLevel.ERROR,
+        category: LogCategory.DOCUMENT,
+        action: 'template_base64_error',
+        message: 'Error creating template with base64',
+        data: {
+          error: err instanceof Error ? err.message : err,
+          envelopeId,
+          envelopeItemId,
+          folderId,
+          folderName,
+        },
+        metadata,
+        userId,
+      });
+
       return {
         status: 500,
         body: {
@@ -1291,12 +1330,69 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
       });
 
       const templateId = Number(params.templateId);
-      // const formType = body.signingContext?.formType ?? 'standard';
+
+      await createLog({
+        level: LogLevel.INFO,
+        category: LogCategory.DOCUMENT,
+        action: 'generate_document_base64_input',
+        message: 'Received generateDocumentFromTemplateBase64 request',
+        data: {
+          templateId,
+          bodyType: body.type,
+          hasData: Boolean(body.data),
+          dataLength: body.data?.length,
+          title: body.title,
+          folderId: body.folderId,
+          folderName: body.folderName,
+          formKey: body.formKey,
+          signingContext: body.signingContext,
+        },
+        metadata,
+        userId: user.id,
+      });
+
+      let customDocumentData;
+
+      if (body.type === 'BYTES_64') {
+        await createLog({
+          level: LogLevel.INFO,
+          category: LogCategory.DOCUMENT,
+          action: 'bytes64_branch_entered',
+          message: 'Processing document from BYTES_64 payload',
+          data: {
+            hasData: Boolean(body.data),
+            dataLength: body.data?.length,
+            title: body.title,
+          },
+          metadata,
+          userId: user.id,
+        });
+
+        if (!body.data) {
+          throw new AppError(AppErrorCode.INVALID_BODY, {
+            message: 'data is required when type is BYTES_64',
+          });
+        }
+
+        const buffer = Buffer.from(body.data, 'base64');
+
+        const uploaded = await putPdfFileServerSide({
+          name: body.formKey ?? 'document.pdf',
+          type: 'application/pdf',
+          arrayBuffer: async () => Promise.resolve(buffer),
+        });
+
+        customDocumentData = [
+          {
+            documentDataId: uploaded.id,
+          },
+        ];
+      }
 
       let envelope: Awaited<ReturnType<typeof createDocumentFromTemplate>> | null = null;
 
       try {
-        envelope = await createDocumentFromTemplate({
+        envelope = await createDocumentFromTemplateBase64({
           id: {
             type: 'templateId',
             id: templateId,
@@ -1316,6 +1412,7 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
           ownerId: body.ownerId,
           formKey: body.formKey,
           signingContext: body.signingContext,
+          customDocumentData,
         });
       } catch (err) {
         return AppError.toRestAPIError(err);
@@ -1380,6 +1477,17 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
           },
         });
       }
+
+      await sendDocument({
+        id: {
+          type: 'envelopeId',
+          id: envelope.id,
+        },
+        userId: user.id,
+        teamId: team.id,
+        sendEmail: true,
+        requestMetadata: metadata,
+      });
 
       const legacyDocumentId = mapSecondaryIdToDocumentId(envelope.secondaryId);
 
