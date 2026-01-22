@@ -40,8 +40,6 @@ declare namespace NodeJS {
 
     NEXT_PRIVATE_BROWSERLESS_URL?: string;
 
-    NEXT_PRIVATE_JOBS_PROVIDER?: 'inngest' | 'local';
-
     NEXT_PUBLIC_USE_INTERNAL_URL_BROWSERLESS?: string;
 
     /**
@@ -49,13 +47,6 @@ declare namespace NodeJS {
      */
     NEXT_PUBLIC_CD_SERVICE_URL?: string;
     NEXT_PUBLIC_CD_SERVICE_API_KEY?: string;
-
-    /**
-     * Inngest environment variables
-     */
-    INNGEST_EVENT_KEY?: string;
-    NEXT_PRIVATE_INNGEST_APP_ID?: string;
-    NEXT_PRIVATE_INNGEST_EVENT_KEY?: string;
 
     POSTGRES_URL?: string;
     DATABASE_URL?: string;
