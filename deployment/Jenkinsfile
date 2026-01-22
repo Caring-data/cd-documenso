@@ -103,9 +103,41 @@ pipeline {
                 dir('deployment') {
                     sh """
                         set -e
-                        echo "Starting app_${env.TARGET_SLOT} and nginx..."
+                        echo "Starting app_${env.TARGET_SLOT}..."
                         docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" \
-                            up -d app_${env.TARGET_SLOT} nginx
+                            up -d app_${env.TARGET_SLOT}
+                        
+                        # If active slot exists, start it too (for nginx to work)
+                        if docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" ps app_${env.ACTIVE_SLOT} --format '{{.Name}}' 2>/dev/null | grep -q app_${env.ACTIVE_SLOT}; then
+                            echo "Starting app_${env.ACTIVE_SLOT} (active slot)..."
+                            docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" \
+                                up -d app_${env.ACTIVE_SLOT} || true
+                        fi
+                        
+                        # Configure nginx to point to active slot before starting (if nginx is not running)
+                        if ! docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" ps nginx --format '{{.Name}}' 2>/dev/null | grep -q nginx; then
+                            echo "Configuring nginx to point to ${env.ACTIVE_SLOT}..."
+                            sed -i 's/app_blue:3002/app_${env.ACTIVE_SLOT}:3002/g' nginx/conf.d/app.conf || true
+                            sed -i 's/app_green:3002/app_${env.ACTIVE_SLOT}:3002/g' nginx/conf.d/app.conf || true
+                            echo '${env.ACTIVE_SLOT}' > nginx/conf.d/active_slot.txt || true
+                        fi
+                        
+                        echo "Starting nginx..."
+                        docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" \
+                            up -d nginx
+                        
+                        # Wait for nginx to be stable
+                        echo "Waiting for nginx to be ready..."
+                        sleep 5
+                        for i in {1..10}; do
+                            if docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" ps nginx --format '{{.Status}}' 2>/dev/null | grep -q 'Up'; then
+                                echo "Nginx is running"
+                                break
+                            fi
+                            echo "Waiting for nginx... (\$i/10)"
+                            sleep 2
+                        done
+                        
                         echo "Containers started"
                     """
                 }
@@ -157,17 +189,42 @@ pipeline {
                         set -e
                         echo "Switching traffic from ${env.ACTIVE_SLOT} to ${env.TARGET_SLOT}..."
 
+                        # Wait for nginx to be stable before executing commands
+                        echo "Waiting for nginx to be ready..."
+                        for i in {1..30}; do
+                            if docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" ps nginx --format '{{.Status}}' 2>/dev/null | grep -q 'Up' && \
+                               ! docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" ps nginx --format '{{.Status}}' 2>/dev/null | grep -q 'Restarting'; then
+                                echo "Nginx is stable"
+                                break
+                            fi
+                            if [ \$i -eq 30 ]; then
+                                echo "ERROR: Nginx did not become stable after 60 seconds"
+                                exit 1
+                            fi
+                            echo "Waiting for nginx to be stable... (\$i/30)"
+                            sleep 2
+                        done
+
                         # Update nginx config to point to new slot
                         docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" \
-                            exec -T nginx sh -c "sed -i 's/app_${env.ACTIVE_SLOT}:3002/app_${env.TARGET_SLOT}:3002/g' /etc/nginx/conf.d/app.conf"
+                            exec -T nginx sh -c "sed -i 's/app_${env.ACTIVE_SLOT}:3002/app_${env.TARGET_SLOT}:3002/g' /etc/nginx/conf.d/app.conf" || {
+                            echo "Failed to update nginx config via exec, trying direct file edit..."
+                            sed -i 's/app_${env.ACTIVE_SLOT}:3002/app_${env.TARGET_SLOT}:3002/g' nginx/conf.d/app.conf
+                            docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" restart nginx
+                        }
 
                         # Update active slot tracker
                         docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" \
-                            exec -T nginx sh -c "echo '${env.TARGET_SLOT}' > /etc/nginx/conf.d/active_slot.txt"
+                            exec -T nginx sh -c "echo '${env.TARGET_SLOT}' > /etc/nginx/conf.d/active_slot.txt" || {
+                            echo '${env.TARGET_SLOT}' > nginx/conf.d/active_slot.txt
+                        }
 
                         # Reload nginx configuration
                         docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" \
-                            exec -T nginx nginx -s reload
+                            exec -T nginx nginx -s reload || {
+                            echo "Failed to reload nginx, restarting..."
+                            docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" restart nginx
+                        }
 
                         echo "Traffic switched to ${env.TARGET_SLOT}"
                     """
