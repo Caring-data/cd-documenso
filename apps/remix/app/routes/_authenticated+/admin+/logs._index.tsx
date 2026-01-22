@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { msg } from '@lingui/core/macro';
 import { useLingui } from '@lingui/react';
 import { Trans } from '@lingui/react/macro';
-import { FileText, Loader } from 'lucide-react';
+import { Loader } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router';
 
 import { useDebouncedValue } from '@documenso/lib/client-only/hooks/use-debounced-value';
@@ -38,6 +38,7 @@ const LOG_CATEGORY_LABELS: Record<LogCategory, string> = {
   [LogCategory.INTEGRATION]: 'Integration',
   [LogCategory.SYSTEM]: 'System',
   [LogCategory.JOB]: 'Job',
+  [LogCategory.EMAIL]: 'Email',
 };
 
 export default function AdminLogsPage() {
@@ -108,11 +109,7 @@ export default function AdminLogsPage() {
         accessorKey: 'level',
         cell: ({ row }) => {
           const logLevel = row.original.level;
-          return (
-            <Badge className={LOG_LEVEL_COLORS[logLevel]}>
-              {logLevel}
-            </Badge>
-          );
+          return <Badge className={LOG_LEVEL_COLORS[logLevel]}>{logLevel}</Badge>;
         },
       },
       {
@@ -157,10 +154,7 @@ export default function AdminLogsPage() {
             return <span className="text-muted-foreground text-sm">-</span>;
           }
           return (
-            <Link
-              to={`/admin/users/${user.id}`}
-              className="hover:underline"
-            >
+            <Link to={`/admin/users/${user.id}`} className="hover:underline">
               {user.email}
             </Link>
           );
@@ -175,10 +169,7 @@ export default function AdminLogsPage() {
             return <span className="text-muted-foreground text-sm">-</span>;
           }
           return (
-            <Link
-              to={`/admin/documents/${envelope.id}`}
-              className="hover:underline"
-            >
+            <Link to={`/admin/documents/${envelope.id}`} className="hover:underline">
               {envelope.title}
             </Link>
           );
@@ -215,7 +206,7 @@ export default function AdminLogsPage() {
       </h2>
 
       <div className="mt-8">
-        <div className="mb-4 flex flex-col gap-4 md:flex-row">
+        <div className="mb-4 gap-4 md:flex-row flex flex-col">
           <div className="flex-1">
             <Input
               type="search"
@@ -226,7 +217,7 @@ export default function AdminLogsPage() {
           </div>
 
           <Select value={level || 'all'} onValueChange={onLevelChange}>
-            <SelectTrigger className="w-full md:w-[180px]">
+            <SelectTrigger className="md:w-[180px] w-full">
               <SelectValue placeholder={_(msg`All Levels`)} />
             </SelectTrigger>
             <SelectContent>
@@ -242,7 +233,7 @@ export default function AdminLogsPage() {
           </Select>
 
           <Select value={category || 'all'} onValueChange={onCategoryChange}>
-            <SelectTrigger className="w-full md:w-[180px]">
+            <SelectTrigger className="md:w-[180px] w-full">
               <SelectValue placeholder={_(msg`All Categories`)} />
             </SelectTrigger>
             <SelectContent>
@@ -267,13 +258,11 @@ export default function AdminLogsPage() {
             totalPages={results.totalPages ?? 1}
             onPaginationChange={onPaginationChange}
           >
-            {(table) => (
-              <DataTablePagination additionalInformation="VisibleCount" table={table} />
-            )}
+            {(table) => <DataTablePagination additionalInformation="VisibleCount" table={table} />}
           </DataTable>
 
           {isFindLogsLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-white/50">
+            <div className="inset-0 bg-white/50 absolute flex items-center justify-center">
               <Loader className="h-8 w-8 animate-spin text-gray-500" />
             </div>
           )}

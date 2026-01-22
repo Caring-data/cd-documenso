@@ -212,17 +212,6 @@ msgstr "{0} no pudo ser subido:"
 msgid "{0} direct signing templates"
 msgstr "{0} plantillas de firma directa"
 
-#. placeholder {0}: team.name
-#. placeholder {1}: envelope.title
-#: packages/lib/jobs/definitions/emails/send-signing-email.handler.ts
-msgid "{0} has invited you to {recipientActionVerb} the document \"{1}\"."
-msgstr "{0} te ha invitado a {recipientActionVerb} el documento \"{1}\"."
-
-#. placeholder {0}: team.name
-#: packages/lib/jobs/definitions/emails/send-signing-email.handler.ts
-msgid "{0} invited you to {recipientActionVerb} a document"
-msgstr "{0} te invitó a {recipientActionVerb} un documento"
-
 #. placeholder {0}: user.name || user.email
 #. placeholder {1}: envelope.team.name
 #. placeholder {2}: envelope.title
@@ -247,10 +236,6 @@ msgstr "{charactersRemaining, plural, one {1 carácter restante} other {{charact
 msgid "{expiresInMinutes, plural, one {This code will expire in # minute.} other {This code will expire in # minutes.}}"
 msgstr "{expiresInMinutes, plural, one {Este código expirará en # minuto.} other {Este código expirará en # minutos.}}"
 
-#: packages/email/templates/document-invite.tsx
-msgid "{inviterName} <0>({inviterEmail})</0>"
-msgstr "{inviterName} <0>({inviterEmail})</0>"
-
 #: packages/email/templates/document-cancel.tsx
 msgid "{inviterName} has cancelled the document {documentName}, you don't need to sign it anymore."
 msgstr "{inviterName} ha cancelado el documento {documentName}, ya no necesitas firmarlo."
@@ -259,18 +244,9 @@ msgstr "{inviterName} ha cancelado el documento {documentName}, ya no necesitas 
 msgid "{inviterName} has cancelled the document<0/>\"{documentName}\""
 msgstr "{inviterName} ha cancelado el documento<0/>\"{documentName}\""
 
-#. placeholder {0}: _(actionVerb).toLowerCase()
-#: packages/email/template-components/template-document-invite.tsx
-msgid "{inviterName} has invited you to {0}<0/>\"{documentName}\""
-msgstr "{inviterName} te ha invitado a {0}<0/>\"{documentName}\""
-
 #: packages/email/templates/document-invite.tsx
 msgid "{inviterName} has invited you to {action} {documentName}"
 msgstr "{inviterName} te ha invitado a {action} {documentName}"
-
-#: packages/email/templates/document-invite.tsx
-msgid "{inviterName} has invited you to {action} the document \"{documentName}\"."
-msgstr "{inviterName} te ha invitado a {action} el documento \"{documentName}\"."
 
 #: packages/email/templates/recipient-removed-from-document.tsx
 msgid "{inviterName} has removed you from the document {documentName}."
@@ -279,17 +255,6 @@ msgstr "{inviterName} te ha eliminado del documento {documentName}."
 #: packages/email/templates/recipient-removed-from-document.tsx
 msgid "{inviterName} has removed you from the document<0/>\"{documentName}\""
 msgstr "{inviterName} te ha eliminado del documento<0/>\"{documentName}\""
-
-#. placeholder {0}: team.name
-#. placeholder {1}: envelope.title
-#: packages/lib/jobs/definitions/emails/send-signing-email.handler.ts
-msgid "{inviterName} on behalf of \"{0}\" has invited you to {recipientActionVerb} the document \"{1}\"."
-msgstr "{inviterName} en nombre de \"{0}\" te ha invitado a {recipientActionVerb} el documento \"{1}\"."
-
-#. placeholder {0}: _(actionVerb).toLowerCase()
-#: packages/email/template-components/template-document-invite.tsx
-msgid "{inviterName} on behalf of \"{teamName}\" has invited you to {0}<0/>\"{documentName}\""
-msgstr "{inviterName} en nombre de \"{teamName}\" te ha invitado a {0}<0/>\"{documentName}\""
 
 #: packages/email/templates/document-invite.tsx
 msgid "{inviterName} on behalf of \"{teamName}\" has invited you to {action} {documentName}"
@@ -446,11 +411,6 @@ msgstr "{remaningLength, plural, one {# carácter restante} other {# caracteres 
 msgid "{signerName} has rejected the document \"{documentName}\"."
 msgstr "{signerName} ha rechazado el documento \"{documentName}\"."
 
-#. placeholder {0}: _(actionVerb).toLowerCase()
-#: packages/email/template-components/template-document-invite.tsx
-msgid "{teamName} has invited you to {0}<0/>\"{documentName}\""
-msgstr "{teamName} te ha invitado a {0}<0/>\"{documentName}\""
-
 #: packages/email/templates/document-invite.tsx
 msgid "{teamName} has invited you to {action} {documentName}"
 msgstr "{teamName} te ha invitado a {action} {documentName}"
@@ -518,6 +478,12 @@ msgstr "{visibleRows, plural, one {Mostrando # resultado.} other {Mostrando # re
 msgid "<0>\"{0}\"</0>is no longer available to sign"
 msgstr "<0>\"{0}\"</0> ya no está disponible para firmar"
 
+#. placeholder {0}: signingContext?.facilityAdministrator
+#. placeholder {1}: signingContext?.locationName
+#: packages/email/template-components/template-document-invite.tsx
+msgid "<0>{0}</0> from <1>{1}</1> has requested your electronic signature on the following document:"
+msgstr "<0>{0}</0> de <1>{1}</1> ha solicitado tu firma electrónica en el siguiente documento:"
+
 #: packages/email/templates/organisation-account-link-confirmation.tsx
 msgid "<0>{organisationName}</0> has requested to create an account on your behalf."
 msgstr "<0>{organisationName}</0> ha solicitado crear una cuenta en tu nombre."
@@ -573,6 +539,10 @@ msgstr "<0>Administración de cuenta:</0> Modifica la configuración, permisos y
 #: packages/ui/components/document/document-visibility-select.tsx
 msgid "<0>Admins only</0> - Only admins can access and view the document"
 msgstr "<0>Solo administradores</0> - Solo los administradores pueden acceder y ver el documento"
+
+#: packages/email/template-components/template-footer.tsx
+msgid "<0>Caring Data</0> is a secure platform used by <1>{companyName}</1> to manage communication and documentation. We prioritize your privacy and security. For more details, please review our <2>Privacy Statement</2>"
+msgstr "<0>Caring Data</0> es una plataforma segura utilizada por <1>{companyName}</1> para gestionar la comunicación y documentación. Priorizamos tu privacidad y seguridad. Para más detalles, por favor revisa nuestra <2>Declaración de Privacidad</2>"
 
 #: apps/remix/app/routes/_unauthenticated+/organisation.sso.confirmation.$token.tsx
 msgid "<0>Data access:</0> Access all data associated with your account"
@@ -891,6 +861,10 @@ msgstr "Aceptar y Vincular Cuenta"
 #: packages/email/templates/organisation-invite.tsx
 msgid "Accept invitation to join an organisation on Documenso"
 msgstr "Aceptar invitación para unirse a una organización en Documenso"
+
+#: packages/email/template-components/template-document-invite.tsx
+msgid "Accept Invite and Sign"
+msgstr "Aceptar invitación y firmar"
 
 #: packages/email/templates/confirm-team-email.tsx
 msgid "Accept team email request for {teamName} on Documenso"
@@ -2568,25 +2542,9 @@ msgstr "Contexto"
 msgid "Continue"
 msgstr "Continuar"
 
-#: packages/email/template-components/template-document-invite.tsx
-msgid "Continue by approving the document."
-msgstr "Continúa aprobando el documento."
-
-#: packages/email/template-components/template-document-invite.tsx
-msgid "Continue by assisting with the document."
-msgstr "Continúa asistiendo con el documento."
-
 #: packages/email/template-components/template-document-completed.tsx
 msgid "Continue by downloading the document."
 msgstr "Continúa descargando el documento."
-
-#: packages/email/template-components/template-document-invite.tsx
-msgid "Continue by signing the document."
-msgstr "Continúa firmando el documento."
-
-#: packages/email/template-components/template-document-invite.tsx
-msgid "Continue by viewing the document."
-msgstr "Continúa viendo el documento."
 
 #: apps/remix/app/routes/_unauthenticated+/organisation.invite.$token.tsx
 msgid "Continue to login"
@@ -2960,6 +2918,10 @@ msgstr "Configuración de Fecha"
 #: apps/remix/app/components/dialogs/ai-field-detection-dialog.tsx
 msgid "David is the Employee, Lucas is the Manager"
 msgstr "David es el empleado, Lucas es el gerente"
+
+#: packages/email/template-components/template-document-invite.tsx
+msgid "Dear "
+msgstr "Estimado/a "
 
 #: apps/remix/app/components/general/organisations/organisation-invitations.tsx
 #: apps/remix/app/routes/_unauthenticated+/organisation.sso.confirmation.$token.tsx
@@ -3663,6 +3625,11 @@ msgstr "Volumen del documento"
 #: apps/remix/app/components/dialogs/document-delete-dialog.tsx
 msgid "Document will be permanently deleted"
 msgstr "El documento será eliminado permanentemente"
+
+#. placeholder {0}: signingContext?.documentName
+#: packages/email/template-components/template-document-invite.tsx
+msgid "Document: {0}"
+msgstr "Documento: {0}"
 
 #: apps/remix/app/routes/_authenticated+/o.$orgUrl.support.tsx
 msgid "Documentation"
@@ -6251,11 +6218,6 @@ msgstr "Colocar y configurar campos de formulario en el documento"
 msgid "Placeholder"
 msgstr "Marcador de posición"
 
-#. placeholder {0}: _(actionVerb).toLowerCase()
-#: packages/email/template-components/template-document-invite.tsx
-msgid "Please {0} your document<0/>\"{documentName}\""
-msgstr "Por favor {0} tu documento<0/>\"{documentName}\""
-
 #: packages/email/templates/document-invite.tsx
 msgid "Please {action} your document {documentName}"
 msgstr "Por favor {action} tu documento {documentName}"
@@ -6267,10 +6229,6 @@ msgstr "Por favor {recipientActionVerb} este documento"
 #: packages/lib/jobs/definitions/emails/send-signing-email.handler.ts
 msgid "Please {recipientActionVerb} this document created by your direct template"
 msgstr "Por favor {recipientActionVerb} este documento creado a partir de tu plantilla directa"
-
-#: packages/lib/jobs/definitions/emails/send-signing-email.handler.ts
-msgid "Please {recipientActionVerb} your document"
-msgstr "Por favor {recipientActionVerb} tu documento"
 
 #: apps/remix/app/components/dialogs/organisation-member-invite-dialog.tsx
 msgid "Please check the CSV file and make sure it is according to our format"
@@ -6593,6 +6551,10 @@ msgstr "Leyendo tu documento"
 msgid "Ready"
 msgstr "Listo"
 
+#: packages/email/template-components/template-document-invite.tsx
+msgid "Ready to get started?<0/>Click the button and log into your Caring Data account to accept the invite and sign the document."
+msgstr "¿Listo para comenzar?<0/>Haz clic en el botón e inicia sesión en tu cuenta de Caring Data para aceptar la invitación y firmar el documento."
+
 #: packages/email/template-components/template-document-cancel.tsx
 msgid "Reason for cancellation: {cancellationReason}"
 msgstr "Razón de cancelación: {cancellationReason}"
@@ -6733,6 +6695,11 @@ msgstr "URL de redirección"
 #: apps/remix/app/routes/_authenticated+/t.$teamUrl+/documents.$id.edit.tsx
 msgid "Redirecting"
 msgstr "Redireccionando"
+
+#. placeholder {0}: signingContext?.ownerName
+#: packages/email/template-components/template-document-invite.tsx
+msgid "Regarding: {0}"
+msgstr "Respecto a: {0}"
 
 #: apps/remix/app/components/general/claim-account.tsx
 msgid "Registration Successful"
@@ -8956,6 +8923,11 @@ msgstr "Este elemento no se puede eliminar"
 msgid "This link is invalid or has expired. Please contact your team to resend a verification."
 msgstr "Este enlace es inválido o ha expirado. Por favor, contacta a tu equipo para reenviar una verificación."
 
+#. placeholder {0}: tokenExpiration ? new Date(tokenExpiration).toLocaleDateString('en-US') : 'N/A'
+#: packages/email/template-components/template-document-invite.tsx
+msgid "This link is valid until {0}"
+msgstr "Este enlace es válido hasta {0}"
+
 #: apps/remix/app/routes/_unauthenticated+/organisation.sso.confirmation.$token.tsx
 msgid "This organisation will have administrative control over your account. You can revoke this access later, but they will retain access to any data they've already collected."
 msgstr "Esta organización tendrá control administrativo sobre su cuenta. Puede revocar este acceso más tarde, pero conservarán el acceso a cualquier dato que ya hayan recopilado."
@@ -9830,10 +9802,6 @@ msgstr "Ver documento para aprobar"
 msgid "View Document to assist"
 msgstr "Ver documento para asistir"
 
-#: packages/email/template-components/template-document-invite.tsx
-msgid "View Document to sign"
-msgstr "Ver documento para firmar"
-
 #: apps/remix/app/routes/_authenticated+/t.$teamUrl+/settings._index.tsx
 msgid "View documents associated with this email"
 msgstr "Ver documentos asociados con este correo electrónico"
@@ -10485,6 +10453,10 @@ msgstr "Actualmente estás actualizando a <0>{organisationMemberName}</0>."
 msgid "You are currently updating the <0>{teamGroupName}</0> team group."
 msgstr "Actualmente estás actualizando el grupo de equipo <0>{teamGroupName}</0>."
 
+#: packages/email/templates/document-invite.tsx
+msgid "You are invited to sign a document"
+msgstr "Estás invitado a firmar un documento"
+
 #: apps/remix/app/components/dialogs/document-move-to-folder-dialog.tsx
 msgid "You are not allowed to move this document."
 msgstr "No tienes permiso para mover este documento."
@@ -10665,7 +10637,6 @@ msgid "You have declined the invitation from <0>{0}</0> to join their organisati
 msgstr "Has rechazado la invitación de <0>{0}</0> para unirte a su organización."
 
 #. placeholder {0}: `"${envelope.title}"`
-#: packages/lib/jobs/definitions/emails/send-signing-email.handler.ts
 #: packages/lib/server-only/document/resend-document.ts
 msgid "You have initiated the document {0} that requires you to {recipientActionVerb} it."
 msgstr "Has iniciado el documento {0} que requiere que {recipientActionVerb}."
