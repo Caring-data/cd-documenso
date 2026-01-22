@@ -81,5 +81,12 @@ declare namespace NodeJS {
     GOOGLE_VERTEX_PROJECT_ID?: string;
     GOOGLE_VERTEX_LOCATION?: string;
     GOOGLE_VERTEX_API_KEY?: string;
+
+    AZURE_STORAGE_ACCOUNT_NAME?: string;
+    AZURE_STORAGE_ACCOUNT_KEY?: string;
+    AZURE_STORAGE_CONNECTION_STRING?: string;
+    AZURE_STORAGE_CONTAINER_NAME?: string;
+    AZURE_STORAGE_URL?: string;
+    FOLDER_FILE?: string;
   }
 }
