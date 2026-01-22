@@ -116,6 +116,7 @@ enum LogCategory {
   INTEGRATION
   SYSTEM
   JOB
+  EMAIL
 }
 
 model UserSecurityAuditLog {
