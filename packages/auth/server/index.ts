@@ -11,7 +11,6 @@ import { accountRoute } from './routes/account';
 import { callbackRoute } from './routes/callback';
 import { emailPasswordRoute } from './routes/email-password';
 import { oauthRoute } from './routes/oauth';
-import { passkeyRoute } from './routes/passkey';
 import { sessionRoute } from './routes/session';
 import { signOutRoute } from './routes/sign-out';
 import { twoFactorRoute } from './routes/two-factor';
@@ -48,7 +47,6 @@ export const auth = new Hono<HonoAuthContext>()
   .route('/callback', callbackRoute)
   .route('/oauth', oauthRoute)
   .route('/email-password', emailPasswordRoute)
-  .route('/passkey', passkeyRoute)
   .route('/two-factor', twoFactorRoute);
 
 /**

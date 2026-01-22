@@ -132,29 +132,6 @@ export default function SettingsSecurity({ loaderData }: Route.ComponentProps) {
         className="mt-6 flex flex-col justify-between p-6 sm:flex-row sm:items-center"
         variant="neutral"
       >
-        <div className="mb-4 sm:mb-0">
-          <AlertTitle>
-            <Trans>Passkeys</Trans>
-          </AlertTitle>
-
-          <AlertDescription className="mr-4">
-            <Trans>
-              Allows authenticating using biometrics, password managers, hardware keys, etc.
-            </Trans>
-          </AlertDescription>
-        </div>
-
-        <Button asChild variant="outline" className="bg-background">
-          <Link to="/settings/security/passkeys">
-            <Trans>Manage passkeys</Trans>
-          </Link>
-        </Button>
-      </Alert>
-
-      <Alert
-        className="mt-6 flex flex-col justify-between p-6 sm:flex-row sm:items-center"
-        variant="neutral"
-      >
         <div className="mb-4 mr-4 sm:mb-0">
           <AlertTitle>
             <Trans>Recent activity</Trans>

@@ -11,7 +11,6 @@ import { useFieldArray, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router';
 import * as z from 'zod';
 
-import { APP_DOCUMENT_UPLOAD_SIZE_LIMIT } from '@documenso/lib/constants/app';
 import {
   TEMPLATE_RECIPIENT_EMAIL_PLACEHOLDER_REGEX,
   TEMPLATE_RECIPIENT_NAME_PLACEHOLDER_REGEX,
@@ -562,20 +561,6 @@ export function TemplateUseDialog({
                                           form.setError('customDocumentData', {
                                             type: 'manual',
                                             message: _(msg`Please select a PDF file`),
-                                          });
-
-                                          return;
-                                        }
-
-                                        if (
-                                          file.size >
-                                          APP_DOCUMENT_UPLOAD_SIZE_LIMIT * 1024 * 1024
-                                        ) {
-                                          form.setError('customDocumentData', {
-                                            type: 'manual',
-                                            message: _(
-                                              msg`File size exceeds the limit of ${APP_DOCUMENT_UPLOAD_SIZE_LIMIT} MB`,
-                                            ),
                                           });
 
                                           return;

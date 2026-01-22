@@ -16,32 +16,3 @@ export type OAuthClientOptions = {
   bypassEmailVerification?: boolean;
 };
 
-export const GoogleAuthOptions: OAuthClientOptions = {
-  id: 'google',
-  scope: ['openid', 'email', 'profile'],
-  clientId: env('NEXT_PRIVATE_GOOGLE_CLIENT_ID') ?? '',
-  clientSecret: env('NEXT_PRIVATE_GOOGLE_CLIENT_SECRET') ?? '',
-  redirectUrl: `${NEXT_PUBLIC_WEBAPP_URL()}/api/auth/callback/google`,
-  wellKnownUrl: 'https://accounts.google.com/.well-known/openid-configuration',
-  bypassEmailVerification: false,
-};
-
-export const MicrosoftAuthOptions: OAuthClientOptions = {
-  id: 'microsoft',
-  scope: ['openid', 'email', 'profile'],
-  clientId: env('NEXT_PRIVATE_MICROSOFT_CLIENT_ID') ?? '',
-  clientSecret: env('NEXT_PRIVATE_MICROSOFT_CLIENT_SECRET') ?? '',
-  redirectUrl: `${NEXT_PUBLIC_WEBAPP_URL()}/api/auth/callback/microsoft`,
-  wellKnownUrl: 'https://login.microsoftonline.com/common/v2.0/.well-known/openid-configuration',
-  bypassEmailVerification: false,
-};
-
-export const OidcAuthOptions: OAuthClientOptions = {
-  id: 'oidc',
-  scope: ['openid', 'email', 'profile'],
-  clientId: env('NEXT_PRIVATE_OIDC_CLIENT_ID') ?? '',
-  clientSecret: env('NEXT_PRIVATE_OIDC_CLIENT_SECRET') ?? '',
-  redirectUrl: `${NEXT_PUBLIC_WEBAPP_URL()}/api/auth/callback/oidc`,
-  wellKnownUrl: env('NEXT_PRIVATE_OIDC_WELL_KNOWN') ?? '',
-  bypassEmailVerification: env('NEXT_PRIVATE_OIDC_SKIP_VERIFY') === 'true',
-};

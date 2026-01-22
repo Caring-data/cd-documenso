@@ -4,7 +4,6 @@ import { useLingui } from '@lingui/react/macro';
 import { FieldType } from '@prisma/client';
 import { useNavigate, useRevalidator, useSearchParams } from 'react-router';
 
-import { useAnalytics } from '@documenso/lib/client-only/hooks/use-analytics';
 import { useCurrentEnvelopeRender } from '@documenso/lib/client-only/providers/envelope-render-provider';
 import { isBase64Image } from '@documenso/lib/constants/signatures';
 import { AppError, AppErrorCode } from '@documenso/lib/errors/app-error';
@@ -20,7 +19,6 @@ import { useRequiredEnvelopeSigningContext } from '../document-signing/envelope-
 
 export const EnvelopeSignerCompleteDialog = () => {
   const navigate = useNavigate();
-  const analytics = useAnalytics();
 
   const { t } = useLingui();
   const { toast } = useToast();
@@ -89,12 +87,6 @@ export const EnvelopeSignerCompleteDialog = () => {
         accessAuthOptions,
         recipientOverride: recipientDetails,
         ...(nextSigner?.email && nextSigner?.name ? { nextSigner } : {}),
-      });
-
-      analytics.capture('App: Recipient has completed signing', {
-        signerId: recipient.id,
-        documentId: envelope.id,
-        timestamp: new Date().toISOString(),
       });
 
       if (onDocumentCompleted) {

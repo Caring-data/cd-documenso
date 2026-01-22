@@ -27,8 +27,6 @@ datasource db {
 // Todo: (RR7) Remove after RR7 migration.
 enum IdentityProvider {
   DOCUMENSO
-  GOOGLE
-  OIDC
 }
 
 enum Role {
@@ -71,7 +69,6 @@ model User {
   securityAuditLogs  UserSecurityAuditLog[]
   webhooks           Webhook[]
   siteSettings       SiteSettings[]
-  passkeys           Passkey[]
   logs               Log[]
   avatarImage        AvatarImage?           @relation(fields: [avatarImageId], references: [id], onDelete: SetNull)
 
@@ -95,9 +92,6 @@ enum UserSecurityAuditLogType {
   ORGANISATION_SSO_UNLINK
   AUTH_2FA_DISABLE
   AUTH_2FA_ENABLE
-  PASSKEY_CREATED
-  PASSKEY_DELETED
-  PASSKEY_UPDATED
   PASSWORD_RESET
   PASSWORD_UPDATE
   SESSION_REVOKED
@@ -105,7 +99,6 @@ enum UserSecurityAuditLogType {
   SIGN_IN
   SIGN_IN_FAIL
   SIGN_IN_2FA_FAIL
-  SIGN_IN_PASSKEY_FAIL
 }
 
 enum LogLevel {
@@ -143,23 +136,6 @@ model PasswordResetToken {
   expiry    DateTime
   userId    Int
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model Passkey {
-  id                   String    @id @default(cuid())
-  userId               Int
-  name                 String
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @default(now())
-  lastUsedAt           DateTime?
-  credentialId         Bytes /// @zod.custom.use(z.instanceof(Uint8Array))
-  credentialPublicKey  Bytes /// @zod.custom.use(z.instanceof(Uint8Array))
-  counter              BigInt
-  credentialDeviceType String
-  credentialBackedUp   Boolean
-  transports           String[]
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model AnonymousVerificationToken {

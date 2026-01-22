@@ -9,8 +9,6 @@ import { useDropzone } from 'react-dropzone';
 import { Link } from 'react-router';
 
 import { useCurrentOrganisation } from '@documenso/lib/client-only/providers/organisation';
-import { APP_DOCUMENT_UPLOAD_SIZE_LIMIT, IS_BILLING_ENABLED } from '@documenso/lib/constants/app';
-import { megabytesToBytes } from '@documenso/lib/universal/unit-convertions';
 
 import {
   DocumentDropzoneCardCenterVariants,
@@ -67,7 +65,6 @@ export const DocumentDropzone = ({
     },
     onDropRejected,
     maxFiles,
-    maxSize: megabytesToBytes(APP_DOCUMENT_UPLOAD_SIZE_LIMIT),
   });
 
   const heading = {
@@ -164,14 +161,6 @@ export const DocumentDropzone = ({
           <p className="text-muted-foreground/80 mt-1 text-center text-sm">
             {_(disabled ? disabledMessage : msg`Drag & drop your PDF here.`)}
           </p>
-
-          {disabled && IS_BILLING_ENABLED() && (
-            <Button className="hover:bg-warning/80 bg-warning mt-4 w-32" asChild>
-              <Link to={`/o/${organisation.url}/settings/billing`}>
-                <Trans>Upgrade</Trans>
-              </Link>
-            </Button>
-          )}
         </CardContent>
       </Card>
     </motion.div>

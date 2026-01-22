@@ -3,23 +3,11 @@ declare namespace NodeJS {
     PORT?: string;
     NEXT_PUBLIC_WEBAPP_URL?: string;
 
-    NEXT_PRIVATE_GOOGLE_CLIENT_ID?: string;
-    NEXT_PRIVATE_GOOGLE_CLIENT_SECRET?: string;
-
-    NEXT_PRIVATE_OIDC_WELL_KNOWN?: string;
-    NEXT_PRIVATE_OIDC_CLIENT_ID?: string;
-    NEXT_PRIVATE_OIDC_CLIENT_SECRET?: string;
-    NEXT_PRIVATE_OIDC_PROVIDER_LABEL?: string;
-    NEXT_PRIVATE_OIDC_SKIP_VERIFY?: string;
-
     NEXT_PRIVATE_DATABASE_URL: string;
     NEXT_PRIVATE_ENCRYPTION_KEY: string;
     NEXT_PRIVATE_ENCRYPTION_SECONDARY_KEY: string;
 
     NEXT_PRIVATE_LOGGER_FILE_PATH?: string;
-
-    NEXT_PRIVATE_STRIPE_API_KEY: string;
-    NEXT_PRIVATE_STRIPE_WEBHOOK_SECRET: string;
 
     NEXT_PUBLIC_UPLOAD_TRANSPORT?: 'database' | 's3';
     NEXT_PRIVATE_UPLOAD_ENDPOINT?: string;
@@ -52,8 +40,6 @@ declare namespace NodeJS {
 
     NEXT_PRIVATE_BROWSERLESS_URL?: string;
 
-    NEXT_PRIVATE_JOBS_PROVIDER?: 'inngest' | 'local';
-
     NEXT_PUBLIC_USE_INTERNAL_URL_BROWSERLESS?: string;
 
     /**
@@ -61,14 +47,6 @@ declare namespace NodeJS {
      */
     NEXT_PUBLIC_CD_SERVICE_URL?: string;
     NEXT_PUBLIC_CD_SERVICE_API_KEY?: string;
-
-    /**
-     * Inngest environment variables
-     */
-    INNGEST_EVENT_KEY?: string;
-    INNGEST_SIGNING_KEY?: string;
-    NEXT_PRIVATE_INNGEST_APP_ID?: string;
-    NEXT_PRIVATE_INNGEST_EVENT_KEY?: string;
 
     POSTGRES_URL?: string;
     DATABASE_URL?: string;

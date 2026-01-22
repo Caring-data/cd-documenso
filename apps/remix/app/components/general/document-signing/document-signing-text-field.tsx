@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { msg } from '@lingui/core/macro';
 import { useLingui } from '@lingui/react';
 import { Plural, Trans } from '@lingui/react/macro';
+import { FieldType } from '@prisma/client';
 import { useRevalidator } from 'react-router';
 
 import { validateTextField } from '@documenso/lib/advanced-fields-validation/validate-text';
@@ -11,7 +12,6 @@ import { DO_NOT_INVALIDATE_QUERY_ON_MUTATION } from '@documenso/lib/constants/tr
 import { AppError, AppErrorCode } from '@documenso/lib/errors/app-error';
 import type { TRecipientActionAuth } from '@documenso/lib/types/document-auth';
 import { ZDateFieldMeta, ZTextFieldMeta } from '@documenso/lib/types/field-meta';
-import { FieldType } from '@prisma/client';
 import type { FieldWithSignatureAndFieldMeta } from '@documenso/prisma/types/field-with-signature-and-fieldmeta';
 import { trpc } from '@documenso/trpc/react';
 import type {
@@ -25,6 +25,7 @@ import { Textarea } from '@documenso/ui/primitives/textarea';
 import { useToast } from '@documenso/ui/primitives/use-toast';
 
 import { SignFieldCalendarDialog } from '~/components/dialogs/sign-field-calendar-dialog';
+
 import { useRequiredDocumentSigningAuthContext } from './document-signing-auth-provider';
 import { DocumentSigningFieldContainer } from './document-signing-field-container';
 import {
@@ -106,12 +107,12 @@ export const DocumentSigningTextField = ({
     residentId: residentIdData?.residentId || '',
   });
 
-  const residentValue = isResidentField && residentInfo
-    ? getResidentValue(field.type, residentInfo)
-    : '';
+  const residentValue =
+    isResidentField && residentInfo ? getResidentValue(field.type, residentInfo) : '';
 
   // Check if this is RESIDENT_DOB without a value - should use calendar picker
-  const isResidentDobWithoutValue = field.type === FieldType.RESIDENT_DOB && !residentValue && !isAssistantMode;
+  const isResidentDobWithoutValue =
+    field.type === FieldType.RESIDENT_DOB && !residentValue && !isAssistantMode;
 
   useEffect(() => {
     if (!showCustomTextModal) {

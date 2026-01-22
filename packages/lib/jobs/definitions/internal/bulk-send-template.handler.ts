@@ -103,8 +103,8 @@ export const run = async ({
         }
       }
 
-      const envelope = await io.runTask(`create-document-${rowIndex}`, async () => {
-        return await createDocumentFromTemplate({
+      const envelopeId = await io.runTask(`create-document-${rowIndex}`, async () => {
+        const envelope = await createDocumentFromTemplate({
           id: {
             type: 'templateId',
             id: template.id,
@@ -126,6 +126,8 @@ export const run = async ({
             requestMetadata: requestMetadata || {},
           },
         });
+
+        return envelope.id;
       });
 
       if (sendImmediately) {
@@ -133,7 +135,7 @@ export const run = async ({
           await sendDocument({
             id: {
               type: 'envelopeId',
-              id: envelope.id,
+              id: envelopeId,
             },
             userId,
             teamId,

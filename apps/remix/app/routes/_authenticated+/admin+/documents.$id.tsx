@@ -1,7 +1,14 @@
 import { msg } from '@lingui/core/macro';
 import { useLingui } from '@lingui/react';
 import { Trans } from '@lingui/react/macro';
-import { EnvelopeType, RecipientRole, SigningStatus } from '@prisma/client';
+import {
+  EnvelopeType,
+  type Field,
+  type Recipient,
+  RecipientRole,
+  type Signature,
+  SigningStatus,
+} from '@prisma/client';
 import { DateTime } from 'luxon';
 import { Link, redirect } from 'react-router';
 
@@ -160,7 +167,15 @@ export default function AdminDocumentDetailsPage({ loaderData }: Route.Component
               </AccordionTrigger>
 
               <AccordionContent className="border-t px-4 pt-4">
-                <AdminDocumentRecipientItemTable recipient={recipient} />
+                <AdminDocumentRecipientItemTable
+                  recipient={recipient as unknown as Recipient & {
+                    fields: Array<
+                      Field & {
+                        signature: Signature | null;
+                      }
+                    >;
+                  }}
+                />
               </AccordionContent>
             </AccordionItem>
           ))}

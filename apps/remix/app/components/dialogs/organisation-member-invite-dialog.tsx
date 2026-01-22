@@ -13,7 +13,7 @@ import { z } from 'zod';
 
 import { downloadFile } from '@documenso/lib/client-only/download-file';
 import { useCurrentOrganisation } from '@documenso/lib/client-only/providers/organisation';
-import { IS_BILLING_ENABLED, SUPPORT_EMAIL } from '@documenso/lib/constants/app';
+import { SUPPORT_EMAIL } from '@documenso/lib/constants/app';
 import { ORGANISATION_MEMBER_ROLE_HIERARCHY } from '@documenso/lib/constants/organisations';
 import { ORGANISATION_MEMBER_ROLE_MAP } from '@documenso/lib/constants/organisations-translations';
 import { trpc } from '@documenso/trpc/react';

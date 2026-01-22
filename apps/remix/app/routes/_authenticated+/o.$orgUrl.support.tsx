@@ -6,10 +6,6 @@ import { Link, useSearchParams } from 'react-router';
 
 import { useCurrentOrganisation } from '@documenso/lib/client-only/providers/organisation';
 import { useSession } from '@documenso/lib/client-only/providers/session';
-import { IS_BILLING_ENABLED } from '@documenso/lib/constants/app';
-import { Button } from '@documenso/ui/primitives/button';
-
-import { SupportTicketForm } from '~/components/forms/support-ticket-form';
 import { appMetaTags } from '~/utils/meta';
 
 export function meta() {
@@ -17,23 +13,8 @@ export function meta() {
 }
 
 export default function SupportPage() {
-  const [showForm, setShowForm] = useState(false);
   const { user } = useSession();
   const organisation = useCurrentOrganisation();
-
-  const [searchParams] = useSearchParams();
-
-  const teamId = searchParams.get('team');
-
-  const subscriptionStatus = undefined; // Subscriptions removed
-
-  const handleSuccess = () => {
-    setShowForm(false);
-  };
-
-  const handleCloseForm = () => {
-    setShowForm(false);
-  };
 
   return (
     <div className="mx-auto w-full max-w-screen-xl px-4 md:px-8">
@@ -91,33 +72,6 @@ export default function SupportPage() {
               </Trans>
             </p>
           </div>
-          {organisation && IS_BILLING_ENABLED() && subscriptionStatus && (
-            <>
-              <div className="rounded-lg border p-4">
-                <h2 className="flex items-center gap-2 text-lg font-bold">
-                  <Link2Icon className="text-muted-foreground h-5 w-5" />
-                  <Trans>Contact us</Trans>
-                </h2>
-                <p className="text-muted-foreground mt-1">
-                  <Trans>We'll get back to you as soon as possible via email.</Trans>
-                </p>
-                <div className="mt-4">
-                  {!showForm ? (
-                    <Button variant="outline" size="sm" onClick={() => setShowForm(true)}>
-                      <Trans>Create a support ticket</Trans>
-                    </Button>
-                  ) : (
-                    <SupportTicketForm
-                      organisationId={organisation.id}
-                      teamId={teamId}
-                      onSuccess={handleSuccess}
-                      onClose={handleCloseForm}
-                    />
-                  )}
-                </div>
-              </div>
-            </>
-          )}
         </div>
       </div>
     </div>

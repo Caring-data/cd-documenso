@@ -1,5 +1,4 @@
 import type { Envelope, Recipient } from '@prisma/client';
-import { verifyAuthenticationResponse } from '@simplewebauthn/server';
 import { match } from 'ts-pattern';
 
 import { prisma } from '@documenso/prisma';
@@ -10,8 +9,6 @@ import { verifyPassword } from '../2fa/verify-password';
 import { AppError, AppErrorCode } from '../../errors/app-error';
 import type { TDocumentAuth, TDocumentAuthMethods } from '../../types/document-auth';
 import { DocumentAuth } from '../../types/document-auth';
-import type { TAuthenticationResponseJSONSchema } from '../../types/webauthn';
-import { getAuthenticatorOptions } from '../../utils/authenticator';
 import { extractDocumentAuthMethods } from '../../utils/document-auth';
 
 type IsRecipientAuthorizedOptions = {
@@ -108,17 +105,6 @@ export const isRecipientAuthorized = async ({
 
       return recipientUser.id === userId;
     })
-    .with({ type: DocumentAuth.PASSKEY }, async ({ authenticationResponse, tokenReference }) => {
-      if (!userId) {
-        return false;
-      }
-
-      return await isPasskeyAuthValid({
-        userId,
-        authenticationResponse,
-        tokenReference,
-      });
-    })
     .with({ type: DocumentAuth.TWO_FACTOR_AUTH }, async ({ token, method }) => {
       if (type === 'ACCESS') {
         return true;
@@ -171,107 +157,4 @@ export const isRecipientAuthorized = async ({
       return true;
     })
     .exhaustive();
-};
-
-type VerifyPasskeyOptions = {
-  /**
-   * The ID of the user who initiated the request.
-   */
-  userId: number;
-
-  /**
-   * The secondary ID of the verification token.
-   */
-  tokenReference: string;
-
-  /**
-   * The response from the passkey authenticator.
-   */
-  authenticationResponse: TAuthenticationResponseJSONSchema;
-};
-
-/**
- * Whether the provided passkey authenticator response is valid and the user is
- * authenticated.
- */
-const isPasskeyAuthValid = async (options: VerifyPasskeyOptions): Promise<boolean> => {
-  return verifyPasskey(options)
-    .then(() => true)
-    .catch(() => false);
-};
-
-/**
- * Verifies whether the provided passkey authenticator is valid and the user is
- * authenticated.
- *
- * Will throw an error if the user should not be authenticated.
- */
-const verifyPasskey = async ({
-  userId,
-  tokenReference,
-  authenticationResponse,
-}: VerifyPasskeyOptions): Promise<void> => {
-  const passkey = await prisma.passkey.findFirst({
-    where: {
-      credentialId: new Uint8Array(Buffer.from(authenticationResponse.id, 'base64')),
-      userId,
-    },
-  });
-
-  if (!passkey) {
-    throw new AppError(AppErrorCode.NOT_FOUND, {
-      message: 'Passkey not found',
-    });
-  }
-
-  const verificationToken = await prisma.verificationToken
-    .delete({
-      where: {
-        userId,
-        secondaryId: tokenReference,
-      },
-    })
-    .catch(() => null);
-
-  if (!verificationToken) {
-    throw new AppError(AppErrorCode.NOT_FOUND, {
-      message: 'Token not found',
-    });
-  }
-
-  if (verificationToken.expires < new Date()) {
-    throw new AppError(AppErrorCode.EXPIRED_CODE, {
-      message: 'Token expired',
-    });
-  }
-
-  const { rpId, origin } = getAuthenticatorOptions();
-
-  const verification = await verifyAuthenticationResponse({
-    response: authenticationResponse,
-    expectedChallenge: verificationToken.token,
-    expectedOrigin: origin,
-    expectedRPID: rpId,
-    authenticator: {
-      credentialID: new Uint8Array(Array.from(passkey.credentialId)),
-      credentialPublicKey: new Uint8Array(passkey.credentialPublicKey),
-      counter: Number(passkey.counter),
-    },
-  }).catch(() => null); // May want to log this for insights.
-
-  if (verification?.verified !== true) {
-    throw new AppError(AppErrorCode.UNAUTHORIZED, {
-      message: 'User is not authorized',
-    });
-  }
-
-  await prisma.passkey.update({
-    where: {
-      id: passkey.id,
-    },
-    data: {
-      lastUsedAt: new Date(),
-      counter: verification.authenticationInfo.newCounter,
-    },
-  });
 };

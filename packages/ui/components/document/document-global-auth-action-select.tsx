@@ -100,12 +100,6 @@ export const DocumentGlobalAuthActionTooltip = () => (
       <ul className="ml-3.5 list-outside list-disc space-y-0.5 py-2">
         <li>
           <Trans>
-            <strong>Require passkey</strong> - The recipient must have an account and passkey
-            configured via their settings
-          </Trans>
-        </li>
-        <li>
-          <Trans>
             <strong>Require 2FA</strong> - The recipient must have an account and 2FA enabled via
             their settings
           </Trans>
