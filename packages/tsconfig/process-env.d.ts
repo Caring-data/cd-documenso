@@ -9,9 +9,6 @@ declare namespace NodeJS {
 
     NEXT_PRIVATE_LOGGER_FILE_PATH?: string;
 
-    NEXT_PRIVATE_STRIPE_API_KEY: string;
-    NEXT_PRIVATE_STRIPE_WEBHOOK_SECRET: string;
-
     NEXT_PUBLIC_UPLOAD_TRANSPORT?: 'database' | 's3';
     NEXT_PRIVATE_UPLOAD_ENDPOINT?: string;
     NEXT_PRIVATE_UPLOAD_FORCE_PATH_STYLE?: string;
