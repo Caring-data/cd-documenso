@@ -13,7 +13,6 @@ import { FaUsers } from 'react-icons/fa6';
 import { Link, NavLink, Outlet } from 'react-router';
 
 import { useCurrentOrganisation } from '@documenso/lib/client-only/providers/organisation';
-import { IS_BILLING_ENABLED } from '@documenso/lib/constants/app';
 import { canExecuteOrganisationAction } from '@documenso/lib/utils/organisations';
 import { cn } from '@documenso/ui/lib/utils';
 import { Button } from '@documenso/ui/primitives/button';
@@ -28,7 +27,6 @@ export function meta() {
 export default function SettingsLayout() {
   const { t } = useLingui();
 
-  const isBillingEnabled = IS_BILLING_ENABLED();
   const organisation = useCurrentOrganisation();
 
   const organisationSettingRoutes = [
@@ -83,20 +81,7 @@ export default function SettingsLayout() {
       label: t`SSO`,
       icon: ShieldCheckIcon,
     },
-    {
-      path: `/o/${organisation.url}/settings/billing`,
-      label: t`Billing`,
-      icon: CreditCardIcon,
-    },
-  ].filter((route) => {
-    if (!isBillingEnabled && route.path.includes('/billing')) {
-      return false;
-    }
-
-    // Feature flags removed - all settings are now available
-
-    return true;
-  });
+  ];
 
   if (!canExecuteOrganisationAction('MANAGE_ORGANISATION', organisation.currentOrganisationRole)) {
     return (
