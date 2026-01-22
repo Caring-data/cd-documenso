@@ -1959,10 +1959,6 @@ msgstr "Banner actualizado"
 msgid "Before you get started, please confirm your email address by clicking the button below:"
 msgstr "Antes de comenzar, por favor confirma tu dirección de correo electrónico haciendo clic en el botón de abajo:"
 
-#: apps/remix/app/routes/_authenticated+/o.$orgUrl.settings._layout.tsx
-msgid "Billing"
-msgstr "Facturación"
-
 #: packages/ui/primitives/signature-pad/signature-pad-color-picker.tsx
 msgid "Black"
 msgstr "Negro"
@@ -1994,7 +1990,6 @@ msgid "Branding Logo"
 msgstr "Logotipo de Marca"
 
 #: apps/remix/app/components/general/settings-nav-mobile.tsx
-#: apps/remix/app/routes/_authenticated+/o.$orgUrl.settings.branding.tsx
 #: apps/remix/app/routes/_authenticated+/o.$orgUrl.settings.branding.tsx
 #: apps/remix/app/routes/_authenticated+/t.$teamUrl+/settings.branding.tsx
 msgid "Branding Preferences"
@@ -2553,10 +2548,6 @@ msgstr "Consentimiento para Transacciones Electrónicas"
 msgid "Contact Information"
 msgstr "Información de Contacto"
 
-#: apps/remix/app/routes/_authenticated+/o.$orgUrl.support.tsx
-msgid "Contact us"
-msgstr "Contáctanos"
-
 #: apps/remix/app/routes/_authenticated+/admin+/site-settings.tsx
 msgid "Content"
 msgstr "Contenido"
@@ -2722,10 +2713,6 @@ msgstr "Crea una <0>cuenta gratuita</0> para acceder a tus documentos firmados e
 #: apps/remix/app/components/dialogs/organisation-email-create-dialog.tsx
 msgid "Create a new email address for your organisation using the domain <0>{0}</0>."
 msgstr "Crea una nueva dirección de correo electrónico para tu organización usando el dominio <0>{0}</0>."
-
-#: apps/remix/app/routes/_authenticated+/o.$orgUrl.support.tsx
-msgid "Create a support ticket"
-msgstr "Crea un ticket de soporte"
 
 #: apps/remix/app/components/dialogs/team-create-dialog.tsx
 msgid "Create a team to collaborate with your team members."
@@ -2911,14 +2898,6 @@ msgstr "Destinatarios actuales:"
 #: apps/remix/app/components/general/teams/team-inherit-member-alert.tsx
 msgid "Currently all organisation members can access this team"
 msgstr "Actualmente, todos los miembros de la organización pueden acceder a este equipo"
-
-#: apps/remix/app/routes/_authenticated+/o.$orgUrl.settings.branding.tsx
-msgid "Currently branding can only be configured for Teams and above plans."
-msgstr "Actualmente la marca solo se puede configurar para Equipos y planes superiores."
-
-#: apps/remix/app/routes/_authenticated+/o.$orgUrl.settings.email-domains._index.tsx
-msgid "Currently email domains can only be configured for Platform and above plans."
-msgstr "Actualmente los dominios de correo electrónico solo se pueden configurar para planes de Plataforma y superiores."
 
 #. placeholder {0}: (field.value.size / (1024 * 1024)).toFixed(2)
 #: apps/remix/app/components/dialogs/template-use-dialog.tsx
@@ -4018,7 +3997,6 @@ msgstr "Configuración de dominio de correo electrónico"
 
 #: apps/remix/app/routes/_authenticated+/o.$orgUrl.settings._layout.tsx
 #: apps/remix/app/routes/_authenticated+/o.$orgUrl.settings.email-domains._index.tsx
-#: apps/remix/app/routes/_authenticated+/o.$orgUrl.settings.email-domains._index.tsx
 msgid "Email Domains"
 msgstr "Dominios de correo electrónico"
 
@@ -4545,24 +4523,9 @@ msgstr "Campos"
 msgid "Fields updated"
 msgstr "Campos actualizados"
 
-#: apps/remix/app/components/embed/authoring/configure-document-upload.tsx
-#: apps/remix/app/components/general/document/document-upload-button-legacy.tsx
-#: apps/remix/app/components/general/envelope-editor/envelope-editor-upload-page.tsx
-#: apps/remix/app/components/general/envelope/envelope-upload-button.tsx
-msgid "File cannot be uploaded"
-msgstr "El archivo no puede ser subido"
-
-#: apps/remix/app/components/general/envelope/envelope-drop-zone-wrapper.tsx
-msgid "File cannot be uploaded"
-msgstr "El archivo no puede ser subido"
-
 #: apps/remix/app/components/general/envelope/envelope-drop-zone-wrapper.tsx
 msgid "File is too small"
 msgstr "El archivo es demasiado pequeño"
-
-#: apps/remix/app/components/dialogs/template-use-dialog.tsx
-msgid "File cannot be uploaded"
-msgstr "El archivo no puede ser subido"
 
 #: apps/remix/app/routes/embed+/components/template-flow/add-template-fields.tsx
 msgid "First Name"
@@ -8562,6 +8525,13 @@ msgstr "Los eventos que activarán un webhook para ser enviado a tu URL."
 msgid "The fields have been updated to the new field insertion method successfully"
 msgstr "Los campos se han actualizado al nuevo método de inserción de campo con éxito"
 
+#: apps/remix/app/components/embed/authoring/configure-document-upload.tsx
+#: apps/remix/app/components/general/document/document-upload-button-legacy.tsx
+#: apps/remix/app/components/general/envelope-editor/envelope-editor-upload-page.tsx
+#: apps/remix/app/components/general/envelope/envelope-upload-button.tsx
+msgid "The file could not be uploaded. Please check that it is a valid PDF file."
+msgstr ""
+
 #: apps/remix/app/components/dialogs/folder-delete-dialog.tsx
 msgid "The folder you are trying to delete does not exist."
 msgstr "La carpeta que intenta eliminar no existe."
@@ -9465,11 +9435,6 @@ msgstr "Actualizar"
 msgid "Update Banner"
 msgstr "Actualizar banner"
 
-#: apps/remix/app/routes/_authenticated+/o.$orgUrl.settings.branding.tsx
-#: apps/remix/app/routes/_authenticated+/o.$orgUrl.settings.email-domains._index.tsx
-msgid "Update Billing"
-msgstr "Actualizar facturación"
-
 #: apps/remix/app/components/dialogs/organisation-email-update-dialog.tsx
 msgid "Update email"
 msgstr "Actualizar correo electrónico"
@@ -9547,11 +9512,6 @@ msgstr "Actualizando contraseña..."
 #: apps/remix/app/routes/_unauthenticated+/articles.signature-disclosure.tsx
 msgid "Updating Your Information"
 msgstr "Actualizando Su Información"
-
-#: packages/ui/primitives/document-dropzone.tsx
-#: packages/ui/primitives/document-upload-button.tsx
-msgid "Upgrade"
-msgstr "Actualizar"
 
 #: apps/remix/app/components/dialogs/template-use-dialog.tsx
 msgid "Upload"
@@ -10263,10 +10223,6 @@ msgstr "Generaremos enlaces de firma para ti, que podrás enviar a los destinata
 #: packages/ui/primitives/document-flow/add-subject.tsx
 msgid "We won't send anything to notify recipients."
 msgstr "No enviaremos nada para notificar a los destinatarios."
-
-#: apps/remix/app/routes/_authenticated+/o.$orgUrl.support.tsx
-msgid "We'll get back to you as soon as possible via email."
-msgstr "Nos pondremos en contacto contigo lo antes posible, a través de correo electrónico."
 
 #: apps/remix/app/components/dialogs/ai-field-detection-dialog.tsx
 msgid "We'll scan your document to find form fields like signature lines, text inputs, checkboxes, and more. Detected fields will be suggested for you to review."
