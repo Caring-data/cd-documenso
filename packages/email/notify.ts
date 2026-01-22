@@ -1,4 +1,8 @@
+import { LogCategory, LogLevel } from '@prisma/client';
+
 import { env } from '@documenso/lib/utils/env';
+
+import { createLog } from '../lib/utils/createLog';
 
 const NOTIFY_ENDPOINT = env('NEXT_PRIVATE_NOTIFY_ENDPOINT');
 const NOTIFY_EMAIL = env('NEXT_PRIVATE_NOTIFY_EMAIL');
@@ -15,8 +19,20 @@ interface EmailRequestBody {
   richContent: string;
 }
 
-const validateNotifyConfig = () => {
+const validateNotifyConfig = async () => {
   if (!NOTIFY_ENDPOINT || !NOTIFY_EMAIL || !NOTIFY_PASSWORD) {
+    await createLog({
+      level: LogLevel.INFO,
+      category: LogCategory.EMAIL,
+      action: 'notify_config_missing',
+      message: 'Notify configuration is missing',
+      data: {
+        hasEndpoint: !!NOTIFY_ENDPOINT,
+        hasEmail: !!NOTIFY_EMAIL,
+        hasPassword: !!NOTIFY_PASSWORD,
+      },
+    });
+
     throw new Error(
       'Notify is not properly configured. Please set NEXT_PRIVATE_NOTIFY_ENDPOINT, NEXT_PRIVATE_NOTIFY_EMAIL and NEXT_PRIVATE_NOTIFY_PASSWORD',
     );
@@ -24,7 +40,7 @@ const validateNotifyConfig = () => {
 };
 
 export const sendEmailWithNotify = async (to: EmailRecipient, subject: string, html: string) => {
-  validateNotifyConfig();
+  await validateNotifyConfig();
 
   const url = `${NOTIFY_ENDPOINT}sendImmediateEmailNotification?login=${NOTIFY_EMAIL}&password=${NOTIFY_PASSWORD}`;
 
@@ -44,6 +60,20 @@ export const sendEmailWithNotify = async (to: EmailRecipient, subject: string, h
 
   if (!response.ok) {
     const text = await response.text();
+
+    await createLog({
+      level: LogLevel.ERROR,
+      category: LogCategory.EMAIL,
+      action: 'notify_email_failed',
+      message: 'Notify service returned an error',
+      data: {
+        status: response.status,
+        response: text,
+        mailTo: body.mailTo,
+        subject: body.subject,
+      },
+    });
+
     throw new Error(`Notify error: ${response.status} - ${text}`);
   }
 

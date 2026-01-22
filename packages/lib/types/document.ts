@@ -180,3 +180,18 @@ export const ZDocumentManySchema = LegacyDocumentSchema.pick({
 });
 
 export type TDocumentMany = z.infer<typeof ZDocumentManySchema>;
+
+export const ZSigningContextSchema = z
+  .object({
+    companyName: z.string().optional(),
+    facilityAdministrator: z.string().optional(),
+    documentName: z.string().optional(),
+    ownerName: z.string().optional(),
+    locationName: z.string().optional(),
+    formType: z.string().optional(),
+    module: z.string().optional(),
+  })
+  .nullable()
+  .optional();
+
+export type TSigningContext = z.infer<typeof ZSigningContextSchema>;
