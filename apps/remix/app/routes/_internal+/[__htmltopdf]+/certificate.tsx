@@ -394,7 +394,11 @@ export default function SigningCertificate({ loaderData }: Route.ComponentProps)
 
                               {signature.signature?.typedSignature &&
                                 (() => {
-                                  const settings = signature.signature.typedSignatureSettings;
+                                  const settings = (
+                                    signature.fieldMeta as {
+                                      typedSignatureSettings?: { font?: string; color?: string };
+                                    }
+                                  )?.typedSignatureSettings;
                                   const hasSettings = isTypedSignatureSettings(settings);
 
                                   return (

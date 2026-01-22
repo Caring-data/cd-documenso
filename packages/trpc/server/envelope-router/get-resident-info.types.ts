@@ -10,8 +10,8 @@ export const ZGetResidentInfoResponseSchema = z.object({
 
 export const getResidentInfoMeta = {
   openapi: {
-    method: 'GET',
-    path: '/envelope/getResidentInfo',
+    method: 'GET' as const,
+    path: '/envelope/getResidentInfo' as const,
     summary: 'Get resident info',
     description: 'Get residentId from envelope by recipient token',
     tags: ['Envelope'],
