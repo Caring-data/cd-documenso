@@ -101,6 +101,10 @@ COPY --from=builder --chown=nodejs:nodejs /app/patches ./patches
 
 RUN npm ci --only=production --legacy-peer-deps
 
+# Copy node_modules from installer to ensure all runtime dependencies are available
+# The build artifacts may reference modules that need to be available at runtime
+COPY --from=installer --chown=nodejs:nodejs /app/node_modules ./node_modules
+
 # Automatically leverage output traces to reduce image size
 # https://nodejs.org/docs/advanced-features/output-file-tracing
 COPY --from=installer --chown=nodejs:nodejs /app/apps/remix/build ./apps/remix/build
