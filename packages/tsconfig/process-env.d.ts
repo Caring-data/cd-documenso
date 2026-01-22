@@ -3,15 +3,6 @@ declare namespace NodeJS {
     PORT?: string;
     NEXT_PUBLIC_WEBAPP_URL?: string;
 
-    NEXT_PRIVATE_GOOGLE_CLIENT_ID?: string;
-    NEXT_PRIVATE_GOOGLE_CLIENT_SECRET?: string;
-
-    NEXT_PRIVATE_OIDC_WELL_KNOWN?: string;
-    NEXT_PRIVATE_OIDC_CLIENT_ID?: string;
-    NEXT_PRIVATE_OIDC_CLIENT_SECRET?: string;
-    NEXT_PRIVATE_OIDC_PROVIDER_LABEL?: string;
-    NEXT_PRIVATE_OIDC_SKIP_VERIFY?: string;
-
     NEXT_PRIVATE_DATABASE_URL: string;
     NEXT_PRIVATE_ENCRYPTION_KEY: string;
     NEXT_PRIVATE_ENCRYPTION_SECONDARY_KEY: string;
@@ -66,7 +57,6 @@ declare namespace NodeJS {
      * Inngest environment variables
      */
     INNGEST_EVENT_KEY?: string;
-    INNGEST_SIGNING_KEY?: string;
     NEXT_PRIVATE_INNGEST_APP_ID?: string;
     NEXT_PRIVATE_INNGEST_EVENT_KEY?: string;
 
