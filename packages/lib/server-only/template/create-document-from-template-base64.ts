@@ -6,6 +6,7 @@ import {
   FolderType,
   LogCategory,
   LogLevel,
+  Prisma,
   type Recipient,
   RecipientRole,
   SendStatus,
@@ -55,6 +56,10 @@ import {
 } from '../../utils/document-auth';
 import type { EnvelopeIdOptions } from '../../utils/envelope';
 import { mapSecondaryIdToTemplateId } from '../../utils/envelope';
+import {
+  findFieldCoordinatesFromPdf,
+  getFieldVariableName,
+} from '../../utils/pdf/findFieldCoordinates';
 import { buildTeamWhereQuery } from '../../utils/teams';
 import { getEnvelopeWhereInput } from '../envelope/get-envelope-by-id';
 import { incrementDocumentId } from '../envelope/increment-id';
@@ -653,7 +658,7 @@ export const createDocumentFromTemplateBase64 = async ({
       },
     });
 
-    let fieldsToCreate: Omit<Field, 'id' | 'secondaryId'>[] = [];
+    const fieldsToCreate: Omit<Field, 'id' | 'secondaryId'>[] = [];
 
     // Get all template field IDs first so we can validate later
     const allTemplateFieldIds = finalRecipients.flatMap((recipient) =>
@@ -696,64 +701,102 @@ export const createDocumentFromTemplateBase64 = async ({
       }
     }
 
-    Object.values(finalRecipients).forEach(({ token, fields }) => {
-      const recipient = envelope.recipients.find((recipient) => recipient.token === token);
+    const isStandardForm = signingContext?.formType === 'standard';
+
+    const base64Pdf = isStandardForm ? template.envelopeItems[0]?.documentData?.data : null;
+
+    if (isStandardForm && !base64Pdf) {
+      throw new AppError(AppErrorCode.INVALID_BODY, {
+        message: 'Standard document PDF data not found on template envelope item',
+      });
+    }
+
+    const shouldSkipCoordinateSearch =
+      signingContext?.formType === 'custom' || signingContext?.formType === 'custom_default';
+
+    const variableCounters: Record<string, number> = {};
+
+    for (const { token, fields } of Object.values(finalRecipients)) {
+      const recipient = envelope.recipients.find((r) => r.token === token);
 
       if (!recipient) {
         throw new Error('Recipient not found.');
       }
 
-      fieldsToCreate = fieldsToCreate.concat(
-        fields.map((field) => {
-          const prefillField = prefillFields?.find((value) => value.id === field.id);
+      for (const field of fields) {
+        const prefillField = prefillFields?.find((value) => value.id === field.id);
 
-          const payload = {
-            envelopeItemId: oldEnvelopeItemToNewEnvelopeItemIdMap[field.envelopeItemId],
-            envelopeId: envelope.id,
-            recipientId: recipient.id,
-            type: field.type,
-            page: field.page,
-            positionX: field.positionX,
-            positionY: field.positionY,
-            width: field.width,
-            height: field.height,
-            customText: '',
-            inserted: false,
-            fieldMeta: field.fieldMeta,
-          };
+        let coordinates: { x: number; y: number; page: number } | null = null;
 
-          if (prefillField) {
-            match(prefillField)
-              .with({ type: 'date' }, (selector) => {
-                if (!selector.value) {
-                  throw new AppError(AppErrorCode.INVALID_BODY, {
-                    message: `Date value is required for field ${field.id}`,
-                  });
-                }
+        if (!shouldSkipCoordinateSearch && base64Pdf) {
+          const variableName = getFieldVariableName(recipient, field);
 
-                const date = new Date(selector.value);
+          const coordinatesList = await findFieldCoordinatesFromPdf({
+            base64Pdf,
+            fieldName: variableName,
+          });
 
-                if (isNaN(date.getTime())) {
-                  throw new AppError(AppErrorCode.INVALID_BODY, {
-                    message: `Invalid date value for field ${field.id}: ${selector.value}`,
-                  });
-                }
-
-                payload.customText = DateTime.fromJSDate(date).toFormat(
-                  template.documentMeta?.dateFormat ?? DEFAULT_DOCUMENT_DATE_FORMAT,
-                );
-
-                payload.inserted = true;
-              })
-              .otherwise((selector) => {
-                payload.fieldMeta = getUpdatedFieldMeta(field, selector);
-              });
+          if (coordinatesList.length > 0) {
+            const index = variableCounters[variableName] ?? 0;
+            coordinates = coordinatesList[index] ?? coordinatesList[0];
+            variableCounters[variableName] = index + 1;
           }
+        }
 
-          return payload;
-        }),
-      );
-    });
+        if (!coordinates) {
+          coordinates = {
+            x: Number(field.positionX),
+            y: Number(field.positionY),
+            page: field.page,
+          };
+        }
+
+        const payload: Omit<Field, 'id' | 'secondaryId'> = {
+          envelopeItemId: oldEnvelopeItemToNewEnvelopeItemIdMap[field.envelopeItemId],
+          envelopeId: envelope.id,
+          recipientId: recipient.id,
+          type: field.type,
+          page: coordinates.page,
+          positionX: new Prisma.Decimal(coordinates.x),
+          positionY: new Prisma.Decimal(coordinates.y),
+          width: field.width,
+          height: field.height,
+          customText: '',
+          inserted: false,
+          fieldMeta: field.fieldMeta,
+        };
+
+        if (prefillField) {
+          match(prefillField)
+            .with({ type: 'date' }, (selector) => {
+              if (!selector.value) {
+                throw new AppError(AppErrorCode.INVALID_BODY, {
+                  message: `Date value is required for field ${field.id}`,
+                });
+              }
+
+              const date = new Date(selector.value);
+
+              if (isNaN(date.getTime())) {
+                throw new AppError(AppErrorCode.INVALID_BODY, {
+                  message: `Invalid date value for field ${field.id}: ${selector.value}`,
+                });
+              }
+
+              payload.customText = DateTime.fromJSDate(date).toFormat(
+                template.documentMeta?.dateFormat ?? DEFAULT_DOCUMENT_DATE_FORMAT,
+              );
+
+              payload.inserted = true;
+            })
+            .otherwise((selector) => {
+              payload.fieldMeta = getUpdatedFieldMeta(field, selector);
+            });
+        }
+
+        fieldsToCreate.push(payload);
+      }
+    }
 
     await tx.field.createMany({
       data: fieldsToCreate.map((field) => ({
