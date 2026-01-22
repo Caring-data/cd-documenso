@@ -1,11 +1,11 @@
-import { DocumentStatus, EnvelopeType } from '@prisma/client';
+import { EnvelopeType } from '@prisma/client';
 
-import { prisma } from '@documenso/prisma';
 import type { TEnvelope } from '@documenso/lib/types/envelope';
+import { prisma } from '@documenso/prisma';
 import { TrpcProvider } from '@documenso/trpc/react';
 
-import { Client } from './components/client';
 import type { Route } from './+types/template.$externalId';
+import { Client } from './components/client';
 
 export async function loader({ params }: Route.LoaderArgs) {
   const { externalId } = params;
@@ -172,6 +172,7 @@ export async function loader({ params }: Route.LoaderArgs) {
 
   // Note: We skip ZEnvelopeSchema.parse() because Prisma Decimal types don't survive
   // serialization through Remix loaders. The data is already validated by Prisma.
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
   const initialEnvelope = envelopeData as unknown as TEnvelope;
 
   return {
@@ -196,6 +197,7 @@ export default function EmbedTemplatePage({ loaderData }: Route.ComponentProps) 
       <Client
         envelopeId={envelopeId}
         externalId={externalId}
+        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
         initialEnvelope={initialEnvelope as unknown as TEnvelope}
       />
     </TrpcProvider>

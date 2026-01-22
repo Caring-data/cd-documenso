@@ -1,11 +1,13 @@
-import { lazy, startTransition, Suspense, useEffect, useState } from 'react';
-import { useRevalidator } from 'react-router';
+import { Suspense, lazy, startTransition, useCallback, useEffect, useState } from 'react';
+
 import { msg } from '@lingui/core/macro';
 import { useLingui } from '@lingui/react/macro';
 import { ReadStatus, RecipientRole, SendStatus, SigningStatus } from '@prisma/client';
+import { useRevalidator } from 'react-router';
 
 import { EnvelopeRenderProvider } from '@documenso/lib/client-only/providers/envelope-render-provider';
 import { AppError } from '@documenso/lib/errors/app-error';
+import type { TRecipientActionAuthTypes } from '@documenso/lib/types/document-auth';
 import type { TEnvelope } from '@documenso/lib/types/envelope';
 import { generateRecipientPlaceholder } from '@documenso/lib/utils/templates';
 import { trpc } from '@documenso/trpc/react';
@@ -15,9 +17,12 @@ import type { DocumentFlowStep } from '@documenso/ui/primitives/document-flow/ty
 import { Stepper } from '@documenso/ui/primitives/stepper';
 import { useToast } from '@documenso/ui/primitives/use-toast';
 
-import { EmbedTemplateEditorProvider, useCurrentEmbedTemplateEditor } from './providers/embed-template-editor-provider';
-import { AddTemplateSettingsFormPartial } from './template-flow/add-template-settings';
+import {
+  EmbedTemplateEditorProvider,
+  useCurrentEmbedTemplateEditor,
+} from './providers/embed-template-editor-provider';
 import { EmbedAddTemplateFieldsFormPartial } from './template-flow/add-template-fields';
+import { AddTemplateSettingsFormPartial } from './template-flow/add-template-settings';
 
 const EmbedFieldsPageRenderer = lazy(
   async () => import('./template-flow/embed-fields-page-renderer'),
@@ -31,7 +36,7 @@ export type ClientProps = {
   initialEnvelope: TEnvelope;
 };
 
-export function Client({ envelopeId, externalId, initialEnvelope }: ClientProps) {
+export function Client({ envelopeId, externalId: _externalId, initialEnvelope }: ClientProps) {
   return (
     <EmbedTemplateEditorProvider initialEnvelope={initialEnvelope}>
       <EnvelopeRenderProvider
@@ -59,7 +64,17 @@ function ClientInner({ envelopeId, initialEnvelope }: ClientInnerProps) {
 
   const { envelope, editorFields, setLocalEnvelope } = useCurrentEmbedTemplateEditor();
 
-  const { mutateAsync: updateTemplateSettings, isPending } =
+  const postMessage = useCallback((action: string, data?: unknown) => {
+    try {
+      if (typeof window !== 'undefined' && window.parent) {
+        window.parent.postMessage({ action, data }, '*');
+      }
+    } catch (error) {
+      console.warn('Could not send message to parent window:', error);
+    }
+  }, []);
+
+  const { mutateAsync: updateTemplateSettings, isPending: _isPending } =
     trpc.template.updateTemplateSettings.useMutation({
       onSuccess: async (data) => {
         await revalidate();
@@ -104,6 +119,7 @@ function ClientInner({ envelopeId, initialEnvelope }: ClientInnerProps) {
         title: t`Success`,
         description: t`Template fields saved successfully`,
       });
+      postMessage('template-completed', null);
     },
     onError: (error) => {
       const appError = AppError.parseError(error);
@@ -128,18 +144,28 @@ function ClientInner({ envelopeId, initialEnvelope }: ClientInnerProps) {
     },
   };
 
-  const onAddGeneralSettings = async (data: { title: string; recipients: any[] }) => {
+  const onAddGeneralSettings = async (data: {
+    title: string;
+    recipients: Array<{
+      id?: number;
+      formId: string;
+      name: string;
+      email: string;
+      role: RecipientRole;
+      signingOrder?: number;
+      actionAuth?: TRecipientActionAuthTypes[];
+    }>;
+  }) => {
     try {
-      // Map recipients to the format expected by TRPC, removing formId and ensuring valid emails
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      
+
       const mappedRecipients = data.recipients.map((recipient, index) => {
-        // Ensure email is valid - if not, use a valid placeholder
-        const isValidEmail = recipient.email && emailRegex.test(recipient.email.trim().toLowerCase());
-        const email = isValidEmail 
-          ? recipient.email.trim().toLowerCase() 
+        const isValidEmail =
+          recipient.email && emailRegex.test(recipient.email.trim().toLowerCase());
+        const email = isValidEmail
+          ? recipient.email.trim().toLowerCase()
           : generateRecipientPlaceholder(index + 1).email;
-        
+
         return {
           id: recipient.id,
           email,
@@ -208,10 +234,12 @@ function ClientInner({ envelopeId, initialEnvelope }: ClientInnerProps) {
   }, [envelope.recipients]);
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-muted/10">
+    <div className="bg-muted/10 flex h-screen w-full overflow-hidden">
       <main className="relative flex-1 overflow-y-auto scroll-smooth p-4 lg:p-8">
         <div className="mx-auto flex min-h-full max-w-[800px] flex-col items-center justify-center">
-          <Suspense fallback={<div className="flex h-[60vh] items-center justify-center">Loading...</div>}>
+          <Suspense
+            fallback={<div className="flex h-[60vh] items-center justify-center">Loading...</div>}
+          >
             <PDFViewerKonvaLazy
               renderer="editor"
               customPageRenderer={EmbedFieldsPageRenderer}
