@@ -1,13 +1,10 @@
 import { z } from 'zod';
 
-import { ZAuthenticationResponseJSONSchema } from './webauthn';
-
 /**
  * All the available types of document authentication options for both access and action.
  */
 export const ZDocumentAuthTypesSchema = z.enum([
   'ACCOUNT',
-  'PASSKEY',
   'TWO_FACTOR_AUTH',
   'PASSWORD',
   'EXPLICIT_NONE',
@@ -21,12 +18,6 @@ const ZDocumentAuthAccountSchema = z.object({
 
 const ZDocumentAuthExplicitNoneSchema = z.object({
   type: z.literal(DocumentAuth.EXPLICIT_NONE),
-});
-
-const ZDocumentAuthPasskeySchema = z.object({
-  type: z.literal(DocumentAuth.PASSKEY),
-  authenticationResponse: ZAuthenticationResponseJSONSchema,
-  tokenReference: z.string().min(1),
 });
 
 const ZDocumentAuthPasswordSchema = z.object({
@@ -46,7 +37,6 @@ const ZDocumentAuth2FASchema = z.object({
 export const ZDocumentAuthMethodsSchema = z.discriminatedUnion('type', [
   ZDocumentAuthAccountSchema,
   ZDocumentAuthExplicitNoneSchema,
-  ZDocumentAuthPasskeySchema,
   ZDocumentAuth2FASchema,
   ZDocumentAuthPasswordSchema,
 ]);
@@ -71,17 +61,11 @@ export const ZDocumentAccessAuthTypesSchema = z
  */
 export const ZDocumentActionAuthSchema = z.discriminatedUnion('type', [
   ZDocumentAuthAccountSchema,
-  ZDocumentAuthPasskeySchema,
   ZDocumentAuth2FASchema,
   ZDocumentAuthPasswordSchema,
 ]);
 export const ZDocumentActionAuthTypesSchema = z
-  .enum([
-    DocumentAuth.ACCOUNT,
-    DocumentAuth.PASSKEY,
-    DocumentAuth.TWO_FACTOR_AUTH,
-    DocumentAuth.PASSWORD,
-  ])
+  .enum([DocumentAuth.ACCOUNT, DocumentAuth.TWO_FACTOR_AUTH, DocumentAuth.PASSWORD])
   .describe(
     'The type of authentication required for the recipient to sign the document. This field is restricted to Enterprise plan users only.',
   );
@@ -106,7 +90,6 @@ export const ZRecipientAccessAuthTypesSchema = z
  */
 export const ZRecipientActionAuthSchema = z.discriminatedUnion('type', [
   ZDocumentAuthAccountSchema,
-  ZDocumentAuthPasskeySchema,
   ZDocumentAuth2FASchema,
   ZDocumentAuthPasswordSchema,
   ZDocumentAuthExplicitNoneSchema,
@@ -114,7 +97,6 @@ export const ZRecipientActionAuthSchema = z.discriminatedUnion('type', [
 export const ZRecipientActionAuthTypesSchema = z
   .enum([
     DocumentAuth.ACCOUNT,
-    DocumentAuth.PASSKEY,
     DocumentAuth.TWO_FACTOR_AUTH,
     DocumentAuth.PASSWORD,
     DocumentAuth.EXPLICIT_NONE,
