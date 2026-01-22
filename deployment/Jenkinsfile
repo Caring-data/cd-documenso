@@ -107,34 +107,63 @@ pipeline {
                         docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" \
                             up -d app_${env.TARGET_SLOT}
                         
-                        # If active slot exists, start it too (for nginx to work)
+                        # Check if active slot container exists and is running
+                        ACTIVE_SLOT_EXISTS=false
                         if docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" ps app_${env.ACTIVE_SLOT} --format '{{.Name}}' 2>/dev/null | grep -q app_${env.ACTIVE_SLOT}; then
-                            echo "Starting app_${env.ACTIVE_SLOT} (active slot)..."
-                            docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" \
-                                up -d app_${env.ACTIVE_SLOT} || true
+                            ACTIVE_SLOT_STATUS=\$(docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" ps app_${env.ACTIVE_SLOT} --format '{{.Status}}' 2>/dev/null || echo '')
+                            if echo "\$ACTIVE_SLOT_STATUS" | grep -q 'Up'; then
+                                ACTIVE_SLOT_EXISTS=true
+                                echo "Active slot app_${env.ACTIVE_SLOT} is already running"
+                            else
+                                echo "Starting app_${env.ACTIVE_SLOT} (active slot)..."
+                                docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" \
+                                    up -d app_${env.ACTIVE_SLOT} || true
+                                sleep 3
+                                if docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" ps app_${env.ACTIVE_SLOT} --format '{{.Status}}' 2>/dev/null | grep -q 'Up'; then
+                                    ACTIVE_SLOT_EXISTS=true
+                                fi
+                            fi
                         fi
                         
-                        # Configure nginx to point to active slot before starting (if nginx is not running)
-                        if ! docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" ps nginx --format '{{.Name}}' 2>/dev/null | grep -q nginx; then
-                            echo "Configuring nginx to point to ${env.ACTIVE_SLOT}..."
-                            sed -i 's/app_blue:3002/app_${env.ACTIVE_SLOT}:3002/g' nginx/conf.d/app.conf || true
-                            sed -i 's/app_green:3002/app_${env.ACTIVE_SLOT}:3002/g' nginx/conf.d/app.conf || true
-                            echo '${env.ACTIVE_SLOT}' > nginx/conf.d/active_slot.txt || true
+                        # Determine which slot nginx should point to
+                        if [ "\$ACTIVE_SLOT_EXISTS" = "true" ]; then
+                            NGINX_TARGET_SLOT="${env.ACTIVE_SLOT}"
+                            echo "Nginx will point to active slot: \${NGINX_TARGET_SLOT}"
+                        else
+                            NGINX_TARGET_SLOT="${env.TARGET_SLOT}"
+                            echo "Active slot doesn't exist, nginx will point to target slot: \${NGINX_TARGET_SLOT}"
+                        fi
+                        
+                        # Configure nginx to point to the correct slot before starting
+                        if ! docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" ps nginx --format '{{.Name}}' 2>/dev/null | grep -q nginx || \
+                           ! docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" ps nginx --format '{{.Status}}' 2>/dev/null | grep -q 'Up'; then
+                            echo "Configuring nginx to point to \${NGINX_TARGET_SLOT}..."
+                            # Replace any existing slot reference with the target slot
+                            sed -i 's/app_blue:3002/app_\${NGINX_TARGET_SLOT}:3002/g' nginx/conf.d/app.conf || true
+                            sed -i 's/app_green:3002/app_\${NGINX_TARGET_SLOT}:3002/g' nginx/conf.d/app.conf || true
+                            echo "\${NGINX_TARGET_SLOT}" > nginx/conf.d/active_slot.txt || true
                         fi
                         
                         echo "Starting nginx..."
                         docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" \
                             up -d nginx
                         
-                        # Wait for nginx to be stable
+                        # Wait for nginx to be stable (not restarting)
                         echo "Waiting for nginx to be ready..."
                         sleep 5
-                        for i in {1..10}; do
-                            if docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" ps nginx --format '{{.Status}}' 2>/dev/null | grep -q 'Up'; then
-                                echo "Nginx is running"
+                        for i in {1..20}; do
+                            NGINX_STATUS=\$(docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" ps nginx --format '{{.Status}}' 2>/dev/null || echo '')
+                            if echo "\$NGINX_STATUS" | grep -q 'Up' && ! echo "\$NGINX_STATUS" | grep -q 'Restarting'; then
+                                echo "Nginx is running and stable"
                                 break
                             fi
-                            echo "Waiting for nginx... (\$i/10)"
+                            if [ \$i -eq 20 ]; then
+                                echo "ERROR: Nginx did not become stable after 45 seconds"
+                                echo "Nginx status: \$NGINX_STATUS"
+                                docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" logs nginx --tail=20 || true
+                                exit 1
+                            fi
+                            echo "Waiting for nginx... (\$i/20) - Status: \$NGINX_STATUS"
                             sleep 2
                         done
                         
@@ -192,16 +221,18 @@ pipeline {
                         # Wait for nginx to be stable before executing commands
                         echo "Waiting for nginx to be ready..."
                         for i in {1..30}; do
-                            if docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" ps nginx --format '{{.Status}}' 2>/dev/null | grep -q 'Up' && \
-                               ! docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" ps nginx --format '{{.Status}}' 2>/dev/null | grep -q 'Restarting'; then
-                                echo "Nginx is stable"
+                            NGINX_STATUS=\$(docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" ps nginx --format '{{.Status}}' 2>/dev/null || echo '')
+                            if echo "\$NGINX_STATUS" | grep -q 'Up' && ! echo "\$NGINX_STATUS" | grep -q 'Restarting'; then
+                                echo "Nginx is stable (Status: \$NGINX_STATUS)"
                                 break
                             fi
                             if [ \$i -eq 30 ]; then
                                 echo "ERROR: Nginx did not become stable after 60 seconds"
+                                echo "Nginx status: \$NGINX_STATUS"
+                                docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" logs nginx --tail=20 || true
                                 exit 1
                             fi
-                            echo "Waiting for nginx to be stable... (\$i/30)"
+                            echo "Waiting for nginx to be stable... (\$i/30) - Status: \$NGINX_STATUS"
                             sleep 2
                         done
 
