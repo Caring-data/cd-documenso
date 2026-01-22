@@ -1,4 +1,5 @@
 import { JobClient } from './client/client';
+import { DOCUMENT_COMPLETE_PROCESSING_JOB_DEFINITION } from './definitions/documents/document-complete-processing';
 import { SEND_CONFIRMATION_EMAIL_JOB_DEFINITION } from './definitions/emails/send-confirmation-email';
 import { SEND_DOCUMENT_CANCELLED_EMAILS_JOB_DEFINITION } from './definitions/emails/send-document-cancelled-emails';
 import { SEND_ORGANISATION_MEMBER_JOINED_EMAIL_JOB_DEFINITION } from './definitions/emails/send-organisation-member-joined-email';
@@ -29,6 +30,7 @@ export const jobsClient = new JobClient([
   SEND_DOCUMENT_CANCELLED_EMAILS_JOB_DEFINITION,
   BULK_SEND_TEMPLATE_JOB_DEFINITION,
   EXECUTE_WEBHOOK_JOB_DEFINITION,
+  DOCUMENT_COMPLETE_PROCESSING_JOB_DEFINITION,
 ] as const);
 
 export const jobs = jobsClient;
