@@ -160,7 +160,6 @@ export default function SigningCertificate({ loaderData }: Route.ComponentProps)
       .with('ACCOUNT', () => _(msg`Account Re-Authentication`))
       .with('TWO_FACTOR_AUTH', () => _(msg`Two-Factor Re-Authentication`))
       .with('PASSWORD', () => _(msg`Password Re-Authentication`))
-      .with('PASSKEY', () => _(msg`Passkey Re-Authentication`))
       .with('EXPLICIT_NONE', () => _(msg`Email`))
       .with(undefined, () => null)
       .exhaustive();
