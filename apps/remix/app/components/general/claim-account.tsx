@@ -7,7 +7,6 @@ import { useNavigate } from 'react-router';
 import { z } from 'zod';
 
 import { authClient } from '@documenso/auth/client';
-import { useAnalytics } from '@documenso/lib/client-only/hooks/use-analytics';
 import { AppError } from '@documenso/lib/errors/app-error';
 import { ZPasswordSchema } from '@documenso/trpc/server/auth-router/schema';
 import { Button } from '@documenso/ui/primitives/button';
@@ -57,7 +56,6 @@ export const ClaimAccount = ({ defaultName, defaultEmail }: ClaimAccountProps) =
   const { _ } = useLingui();
   const { toast } = useToast();
 
-  const analytics = useAnalytics();
   const navigate = useNavigate();
 
   const form = useForm<TClaimAccountFormSchema>({
@@ -81,11 +79,6 @@ export const ClaimAccount = ({ defaultName, defaultEmail }: ClaimAccountProps) =
           msg`You have successfully registered. Please verify your account by clicking on the link you received in the email.`,
         ),
         duration: 5000,
-      });
-
-      analytics.capture('App: User Claim Account', {
-        email,
-        timestamp: new Date().toISOString(),
       });
     } catch (err) {
       const error = AppError.parseError(err);

@@ -7,7 +7,6 @@ import { Cloud, FileText, Loader, X } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import { useFormContext } from 'react-hook-form';
 
-import { APP_DOCUMENT_UPLOAD_SIZE_LIMIT } from '@documenso/lib/constants/app';
 import { cn } from '@documenso/ui/lib/utils';
 import { Button } from '@documenso/ui/primitives/button';
 import {
@@ -85,7 +84,7 @@ export const ConfigureDocumentUpload = ({ isSubmitting = false }: ConfigureDocum
   const onDropRejected = () => {
     toast({
       title: _(msg`Your document failed to upload.`),
-      description: _(msg`File cannot be larger than ${APP_DOCUMENT_UPLOAD_SIZE_LIMIT}MB`),
+      description: _(msg`The file could not be uploaded. Please check that it is a valid PDF file.`),
       duration: 5000,
       variant: 'destructive',
     });
@@ -117,7 +116,6 @@ export const ConfigureDocumentUpload = ({ isSubmitting = false }: ConfigureDocum
     accept: {
       'application/pdf': ['.pdf'],
     },
-    maxSize: APP_DOCUMENT_UPLOAD_SIZE_LIMIT * 1024 * 1024,
     multiple: false,
     disabled: isSubmitting || isLoading || isPersisted,
     onDrop: (files) => {
@@ -183,7 +181,7 @@ export const ConfigureDocumentUpload = ({ isSubmitting = false }: ConfigureDocum
                               <Trans>This document cannot be changed</Trans>
                             ) : (
                               <Trans>
-                                .PDF documents accepted (max {APP_DOCUMENT_UPLOAD_SIZE_LIMIT}MB)
+                                .PDF documents accepted
                               </Trans>
                             )}
                           </p>

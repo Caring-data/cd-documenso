@@ -7,7 +7,6 @@ import { LucideChevronDown, LucideChevronUp } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { P, match } from 'ts-pattern';
 
-import { useAnalytics } from '@documenso/lib/client-only/hooks/use-analytics';
 import { DEFAULT_DOCUMENT_DATE_FORMAT } from '@documenso/lib/constants/date-formats';
 import { PDF_VIEWER_PAGE_SELECTOR } from '@documenso/lib/constants/pdf-viewer';
 import { DEFAULT_DOCUMENT_TIME_ZONE } from '@documenso/lib/constants/time-zones';
@@ -80,7 +79,6 @@ export const DocumentSigningPageViewV1 = ({
     : false;
 
   const navigate = useNavigate();
-  const analytics = useAnalytics();
 
   const [selectedSignerId, setSelectedSignerId] = useState<number | null>(allRecipients?.[0]?.id);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -117,12 +115,6 @@ export const DocumentSigningPageViewV1 = ({
     };
 
     await completeDocumentWithToken(payload);
-
-    analytics.capture('App: Recipient has completed signing', {
-      signerId: recipient.id,
-      documentId: document.id,
-      timestamp: new Date().toISOString(),
-    });
 
     if (documentMeta?.redirectUrl) {
       window.location.href = documentMeta.redirectUrl;

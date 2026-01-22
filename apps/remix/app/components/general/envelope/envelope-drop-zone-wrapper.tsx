@@ -14,11 +14,8 @@ import {
 import { Link, useNavigate, useParams } from 'react-router';
 import { match } from 'ts-pattern';
 
-import { useAnalytics } from '@documenso/lib/client-only/hooks/use-analytics';
 import { useCurrentOrganisation } from '@documenso/lib/client-only/providers/organisation';
 import { useSession } from '@documenso/lib/client-only/providers/session';
-import { APP_DOCUMENT_UPLOAD_SIZE_LIMIT, IS_BILLING_ENABLED } from '@documenso/lib/constants/app';
-import { megabytesToBytes } from '@documenso/lib/universal/unit-convertions';
 import { DEFAULT_DOCUMENT_TIME_ZONE, TIME_ZONES } from '@documenso/lib/constants/time-zones';
 import { AppError, AppErrorCode } from '@documenso/lib/errors/app-error';
 import { formatDocumentsPath, formatTemplatesPath } from '@documenso/lib/utils/teams';
@@ -48,7 +45,6 @@ export const EnvelopeDropZoneWrapper = ({
   const team = useCurrentTeam();
 
   const navigate = useNavigate();
-  const analytics = useAnalytics();
   const organisation = useCurrentOrganisation();
 
   const [isLoading, setIsLoading] = useState(false);
@@ -62,8 +58,7 @@ export const EnvelopeDropZoneWrapper = ({
   const isUploadDisabled = !user.emailVerified;
 
   const onFileDrop = async (files: File[]) => {
-    if (isUploadDisabled && IS_BILLING_ENABLED()) {
-      await navigate(`/o/${organisation.url}/settings/billing`);
+    if (isUploadDisabled) {
       return;
     }
 
@@ -98,13 +93,6 @@ export const EnvelopeDropZoneWrapper = ({
         duration: 5000,
       });
 
-      if (type === EnvelopeType.DOCUMENT) {
-        analytics.capture('App: Document Uploaded', {
-          userId: user.id,
-          documentId: id,
-          timestamp: new Date().toISOString(),
-        });
-      }
 
       const pathPrefix =
         type === EnvelopeType.DOCUMENT
@@ -155,9 +143,6 @@ export const EnvelopeDropZoneWrapper = ({
     const errorNodes = errors.map((error, index) => (
       <span key={index} className="block">
         {match(error.code)
-          .with(ErrorCode.FileTooLarge, () => (
-            <Trans>File is larger than {APP_DOCUMENT_UPLOAD_SIZE_LIMIT}MB</Trans>
-          ))
           .with(ErrorCode.FileInvalidType, () => <Trans>Only PDF files are allowed</Trans>)
           .with(ErrorCode.FileTooSmall, () => <Trans>File is too small</Trans>)
           .with(ErrorCode.TooManyFiles, () => (
@@ -190,7 +175,6 @@ export const EnvelopeDropZoneWrapper = ({
       'application/pdf': ['.pdf'],
     },
     multiple: true,
-    maxSize: megabytesToBytes(APP_DOCUMENT_UPLOAD_SIZE_LIMIT),
     onDrop: (files) => void onFileDrop(files),
     onDropRejected: onFileDropRejected,
     noClick: true,
