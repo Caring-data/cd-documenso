@@ -68,7 +68,7 @@ import { triggerWebhook } from '../webhooks/trigger/trigger-webhook';
 
 type FinalRecipient = Pick<
   Recipient,
-  'name' | 'email' | 'role' | 'authOptions' | 'signingOrder' | 'token'
+  'name' | 'email' | 'expired' | 'role' | 'authOptions' | 'signingOrder' | 'token'
 > & {
   templateRecipientId: number;
   fields: Field[];
@@ -638,6 +638,7 @@ export const createDocumentFromTemplateBase64 = async ({
                     ? SigningStatus.SIGNED
                     : SigningStatus.NOT_SIGNED,
                 signingOrder: recipient.signingOrder,
+                expired: recipient?.expired,
                 token: recipient.token,
               };
             }),
