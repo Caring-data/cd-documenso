@@ -27,7 +27,7 @@ export const getResidentInfoRoute = procedure
       include: {
         envelope: {
           select: {
-            residentId: true,
+            ownerId: true,
           },
         },
       },
@@ -40,6 +40,6 @@ export const getResidentInfoRoute = procedure
     }
 
     return {
-      residentId: result.envelope?.residentId ?? null,
+      residentId: result.envelope?.ownerId ?? null,
     };
   });

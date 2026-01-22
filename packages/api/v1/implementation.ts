@@ -1,4 +1,12 @@
-import { DocumentDataType, EnvelopeType, SigningStatus, TemplateType } from '@prisma/client';
+import {
+  DocumentDataType,
+  EnvelopeType,
+  FolderType,
+  LogCategory,
+  LogLevel,
+  SigningStatus,
+  TemplateType,
+} from '@prisma/client';
 import { tsr } from '@ts-rest/serverless/fetch';
 import { match } from 'ts-pattern';
 
@@ -6,7 +14,7 @@ import { NEXT_PUBLIC_WEBAPP_URL } from '@documenso/lib/constants/app';
 import { DATE_FORMATS, DEFAULT_DOCUMENT_DATE_FORMAT } from '@documenso/lib/constants/date-formats';
 import '@documenso/lib/constants/time-zones';
 import { DEFAULT_DOCUMENT_TIME_ZONE, TIME_ZONES } from '@documenso/lib/constants/time-zones';
-import { AppError } from '@documenso/lib/errors/app-error';
+import { AppError, AppErrorCode } from '@documenso/lib/errors/app-error';
 import { createDocumentData } from '@documenso/lib/server-only/document-data/create-document-data';
 import { updateDocumentMeta } from '@documenso/lib/server-only/document-meta/upsert-document-meta';
 import { deleteDocument } from '@documenso/lib/server-only/document/delete-document';
@@ -26,6 +34,7 @@ import { getRecipientsForDocument } from '@documenso/lib/server-only/recipient/g
 import { setDocumentRecipients } from '@documenso/lib/server-only/recipient/set-document-recipients';
 import { updateEnvelopeRecipients } from '@documenso/lib/server-only/recipient/update-envelope-recipients';
 import { createDocumentFromTemplate } from '@documenso/lib/server-only/template/create-document-from-template';
+import { createDocumentFromTemplateBase64 } from '@documenso/lib/server-only/template/create-document-from-template-base64';
 import { deleteTemplate } from '@documenso/lib/server-only/template/delete-template';
 import { findTemplates } from '@documenso/lib/server-only/template/find-templates';
 import { getTemplateById } from '@documenso/lib/server-only/template/get-template-by-id';
@@ -48,12 +57,14 @@ import {
   getPresignGetUrl,
   getPresignPostUrl,
 } from '@documenso/lib/universal/upload/server-actions';
+import { createLog } from '@documenso/lib/utils/createLog';
 import { isDocumentCompleted } from '@documenso/lib/utils/document';
 import { createDocumentAuditLogData } from '@documenso/lib/utils/document-audit-logs';
 import {
   mapSecondaryIdToDocumentId,
   mapSecondaryIdToTemplateId,
 } from '@documenso/lib/utils/envelope';
+import { buildTeamWhereQuery } from '@documenso/lib/utils/teams';
 import { prisma } from '@documenso/prisma';
 
 import { ApiContractV1 } from './contract';
@@ -593,6 +604,256 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
     }
   }),
 
+  createTemplateBase64: authenticatedMiddleware(async (args, user, team, { metadata }) => {
+    const { body } = args;
+    const {
+      title,
+      formKey,
+      data,
+      folderId,
+      folderName,
+      envelopeId,
+      envelopeItemId,
+      externalId,
+      visibility,
+      globalAccessAuth,
+      globalActionAuth,
+      publicTitle,
+      publicDescription,
+      meta,
+      attachments,
+    } = body;
+    const teamId = team.id;
+    const userId = user.id;
+
+    try {
+      if (!data || typeof data !== 'string') {
+        return {
+          status: 400,
+          body: {
+            message: 'Invalid base64 data provided',
+          },
+        };
+      }
+
+      const dateFormat = meta?.dateFormat
+        ? DATE_FORMATS.find((format) => format.value === meta?.dateFormat)
+        : DATE_FORMATS.find((format) => format.value === DEFAULT_DOCUMENT_DATE_FORMAT);
+
+      if (meta?.dateFormat && !dateFormat) {
+        return {
+          status: 400,
+          body: {
+            message: 'Invalid date format. Please provide a valid date format',
+          },
+        };
+      }
+
+      const timezone = meta?.timezone
+        ? TIME_ZONES.find((tz) => tz === meta?.timezone)
+        : DEFAULT_DOCUMENT_TIME_ZONE;
+
+      const isTimeZoneValid = meta?.timezone ? TIME_ZONES.includes(String(timezone)) : true;
+
+      if (!isTimeZoneValid) {
+        return {
+          status: 400,
+          body: {
+            message: 'Invalid timezone. Please provide a valid timezone',
+          },
+        };
+      }
+
+      const cleanBase64 = data.replace(/^data:application\/pdf;base64,/, '');
+
+      try {
+        Buffer.from(cleanBase64, 'base64');
+      } catch (error) {
+        return {
+          status: 400,
+          body: {
+            message: 'Invalid base64 encoding',
+          },
+        };
+      }
+
+      const templateDocumentData = await createDocumentData({
+        data: cleanBase64,
+        type: DocumentDataType.BYTES_64,
+      });
+
+      if (envelopeId && envelopeItemId) {
+        const envelope = await prisma.envelope.findFirst({
+          where: {
+            id: envelopeId,
+            teamId,
+            type: EnvelopeType.TEMPLATE,
+          },
+          include: {
+            envelopeItems: {
+              include: {
+                documentData: true,
+              },
+            },
+          },
+        });
+
+        if (!envelope) {
+          throw new AppError(AppErrorCode.NOT_FOUND, {
+            message: 'Template envelope not found',
+          });
+        }
+
+        const envelopeItem = envelope.envelopeItems.find((item) => item.id === envelopeItemId);
+
+        if (!envelopeItem) {
+          throw new AppError(AppErrorCode.NOT_FOUND, {
+            message: 'Envelope item not found',
+          });
+        }
+
+        const oldDocumentDataId = envelopeItem.documentDataId;
+
+        await prisma.envelopeItem.update({
+          where: { id: envelopeItem.id },
+          data: {
+            documentDataId: templateDocumentData.id,
+          },
+        });
+
+        await prisma.documentData.delete({
+          where: { id: oldDocumentDataId },
+        });
+
+        const fullTemplate = await getTemplateById({
+          id: { type: 'envelopeId', id: envelopeId },
+          userId,
+          teamId,
+        });
+
+        const legacyDocumentId = mapSecondaryIdToDocumentId(envelope.secondaryId);
+
+        return {
+          status: 200,
+          body: {
+            documentId: legacyDocumentId,
+            template: fullTemplate.envelopeItems,
+            folderId: fullTemplate.folderId,
+            message: 'Template updated successfully with base64 data',
+          },
+        };
+      }
+
+      let resolvedFolderId: string | undefined;
+
+      if (folderId) {
+        resolvedFolderId = folderId;
+      } else if (folderName) {
+        const folder = await prisma.folder.findFirst({
+          where: {
+            name: folderName,
+            type: FolderType.TEMPLATE,
+            team: buildTeamWhereQuery({ teamId, userId }),
+          },
+        });
+
+        if (!folder) {
+          throw new AppError(AppErrorCode.NOT_FOUND, {
+            message: 'Folder not found',
+          });
+        }
+
+        resolvedFolderId = folder.id;
+      }
+
+      const createdTemplate = await createEnvelope({
+        userId: user.id,
+        teamId: team.id,
+        internalVersion: 1,
+        data: {
+          type: EnvelopeType.TEMPLATE,
+          envelopeItems: [
+            {
+              documentDataId: templateDocumentData.id,
+            },
+          ],
+          templateType: TemplateType.PRIVATE,
+          title: title,
+          folderId: resolvedFolderId,
+          folderName,
+          externalId: externalId ?? undefined,
+          visibility,
+          globalAccessAuth,
+          globalActionAuth,
+          publicTitle,
+          publicDescription,
+          formKey,
+        },
+        meta,
+        attachments,
+        requestMetadata: metadata,
+      });
+
+      const fullTemplate = await getTemplateById({
+        id: {
+          type: 'envelopeId',
+          id: createdTemplate.id,
+        },
+        userId: user.id,
+        teamId: team.id,
+      });
+
+      await createLog({
+        level: LogLevel.INFO,
+        category: LogCategory.DOCUMENT,
+        action: 'template_base64_before_map_secondary_id',
+        message: 'Mapping secondaryId to legacy documentId',
+        data: {
+          envelopeId: fullTemplate.id,
+          envelopeType: fullTemplate.type,
+          secondaryId: fullTemplate.secondaryId,
+        },
+        metadata,
+        userId,
+      });
+
+      const legacyDocumentId = mapSecondaryIdToTemplateId(fullTemplate.secondaryId);
+
+      return {
+        status: 200,
+        body: {
+          documentId: legacyDocumentId,
+          template: fullTemplate.envelopeItems,
+          folderId: fullTemplate.folderId,
+          message: 'Template created successfully with base64 data',
+        },
+      };
+    } catch (err) {
+      await createLog({
+        level: LogLevel.ERROR,
+        category: LogCategory.DOCUMENT,
+        action: 'template_base64_error',
+        message: 'Error creating template with base64',
+        data: {
+          error: err instanceof Error ? err.message : err,
+          envelopeId,
+          envelopeItemId,
+          folderId,
+          folderName,
+        },
+        metadata,
+        userId,
+      });
+
+      return {
+        status: 500,
+        body: {
+          message: 'An error has occurred while creating the template',
+        },
+      };
+    }
+  }),
+
   createEmbebedTemplate: authenticatedMiddleware(async (args, user, team, { logger, metadata }) => {
     const { body } = args;
     const { title, data, key, externalId } = body;
@@ -1037,6 +1298,196 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
           },
         });
       }
+
+      const legacyDocumentId = mapSecondaryIdToDocumentId(envelope.secondaryId);
+
+      return {
+        status: 200,
+        body: {
+          documentId: legacyDocumentId,
+          recipients: envelope.recipients.map((recipient) => ({
+            recipientId: recipient.id,
+            name: recipient.name,
+            email: recipient.email,
+            token: recipient.token,
+            role: recipient.role,
+            signingOrder: recipient.signingOrder,
+            signingUrl: `${NEXT_PUBLIC_WEBAPP_URL()}/sign/${recipient.token}`,
+          })),
+        },
+      };
+    },
+  ),
+
+  generateDocumentFromTemplateBase64: authenticatedMiddleware(
+    async (args, user, team, { logger, metadata }) => {
+      const { body, params } = args;
+
+      logger.info({
+        input: {
+          templateId: params.templateId,
+        },
+      });
+
+      const templateId = Number(params.templateId);
+
+      await createLog({
+        level: LogLevel.INFO,
+        category: LogCategory.DOCUMENT,
+        action: 'generate_document_base64_input',
+        message: 'Received generateDocumentFromTemplateBase64 request',
+        data: {
+          templateId,
+          bodyType: body.type,
+          hasData: Boolean(body.data),
+          dataLength: body.data?.length,
+          title: body.title,
+          folderId: body.folderId,
+          folderName: body.folderName,
+          formKey: body.formKey,
+          signingContext: body.signingContext,
+        },
+        metadata,
+        userId: user.id,
+      });
+
+      let customDocumentData;
+
+      if (body.type === 'BYTES_64') {
+        await createLog({
+          level: LogLevel.INFO,
+          category: LogCategory.DOCUMENT,
+          action: 'bytes64_branch_entered',
+          message: 'Processing document from BYTES_64 payload',
+          data: {
+            hasData: Boolean(body.data),
+            dataLength: body.data?.length,
+            title: body.title,
+          },
+          metadata,
+          userId: user.id,
+        });
+
+        if (!body.data) {
+          throw new AppError(AppErrorCode.INVALID_BODY, {
+            message: 'data is required when type is BYTES_64',
+          });
+        }
+
+        const buffer = Buffer.from(body.data, 'base64');
+
+        const uploaded = await putPdfFileServerSide({
+          name: body.formKey ?? 'document.pdf',
+          type: 'application/pdf',
+          arrayBuffer: async () => Promise.resolve(buffer),
+        });
+
+        customDocumentData = [
+          {
+            documentDataId: uploaded.id,
+          },
+        ];
+      }
+
+      let envelope: Awaited<ReturnType<typeof createDocumentFromTemplate>> | null = null;
+
+      try {
+        envelope = await createDocumentFromTemplateBase64({
+          id: {
+            type: 'templateId',
+            id: templateId,
+          },
+          externalId: body.externalId || null,
+          userId: user.id,
+          teamId: team.id,
+          recipients: body.recipients,
+          prefillFields: body.prefillFields,
+          folderId: body.folderId,
+          folderName: body.folderName,
+          override: {
+            title: body.title,
+            ...body.meta,
+          },
+          requestMetadata: metadata,
+          ownerId: body.ownerId,
+          formKey: body.formKey,
+          signingContext: body.signingContext,
+          customDocumentData,
+        });
+      } catch (err) {
+        return AppError.toRestAPIError(err);
+      }
+
+      if (envelope.envelopeItems.length !== 1) {
+        throw new Error('API V1 does not support envelopes');
+      }
+
+      const firstEnvelopeDocumentData = await prisma.envelopeItem.findFirstOrThrow({
+        where: {
+          envelopeId: envelope.id,
+        },
+        include: {
+          documentData: true,
+        },
+      });
+
+      if (body.formValues) {
+        const fileName = envelope.title.endsWith('.pdf') ? envelope.title : `${envelope.title}.pdf`;
+
+        const pdf = await getFileServerSide(firstEnvelopeDocumentData.documentData);
+
+        const prefilled = await insertFormValuesInPdf({
+          pdf: Buffer.from(pdf),
+          formValues: body.formValues,
+        });
+
+        const newDocumentData = await putPdfFileServerSide({
+          name: fileName,
+          type: 'application/pdf',
+          arrayBuffer: async () => Promise.resolve(prefilled),
+        });
+
+        await prisma.envelope.update({
+          where: {
+            id: envelope.id,
+          },
+          data: {
+            formValues: body.formValues,
+            envelopeItems: {
+              update: {
+                where: {
+                  id: firstEnvelopeDocumentData.id,
+                },
+                data: {
+                  documentDataId: newDocumentData.id,
+                },
+              },
+            },
+          },
+        });
+      }
+
+      if (body.authOptions) {
+        await prisma.envelope.update({
+          where: {
+            id: envelope.id,
+          },
+          data: {
+            authOptions: body.authOptions,
+          },
+        });
+      }
+
+      await sendDocument({
+        id: {
+          type: 'envelopeId',
+          id: envelope.id,
+        },
+        userId: user.id,
+        teamId: team.id,
+        sendEmail: true,
+        requestMetadata: metadata,
+      });
 
       const legacyDocumentId = mapSecondaryIdToDocumentId(envelope.secondaryId);
 

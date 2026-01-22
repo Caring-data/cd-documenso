@@ -76,7 +76,7 @@ export const RecipientActionAuthSelect = ({
 
       <Tooltip>
         <TooltipTrigger
-          className={cn('absolute right-2 top-1/2 -translate-y-1/2', {
+          className={cn('absolute top-1/2 right-2 -translate-y-1/2', {
             'right-8': selectedOptions.length > 0,
           })}
         >
@@ -109,14 +109,14 @@ export const RecipientActionAuthSelect = ({
             </li>
             <li>
               <Trans>
-                <strong>Require passkey</strong> - The recipient must have an account and passkey
-                configured via their settings
+                <strong>Require 2FA</strong> - The recipient must have an account and 2FA enabled
+                via their settings
               </Trans>
             </li>
             <li>
               <Trans>
-                <strong>Require 2FA</strong> - The recipient must have an account and 2FA enabled
-                via their settings
+                <strong>Require password</strong> - The recipient must have an account and password
+                configured via their settings, the password will be verified during signing
               </Trans>
             </li>
             <li>

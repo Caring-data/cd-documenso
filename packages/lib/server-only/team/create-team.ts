@@ -4,7 +4,6 @@ import { match } from 'ts-pattern';
 import { AppError, AppErrorCode } from '@documenso/lib/errors/app-error';
 import { prisma } from '@documenso/prisma';
 
-import { IS_BILLING_ENABLED } from '../../constants/app';
 import {
   LOWEST_ORGANISATION_ROLE,
   ORGANISATION_MEMBER_ROLE_PERMISSIONS_MAP,

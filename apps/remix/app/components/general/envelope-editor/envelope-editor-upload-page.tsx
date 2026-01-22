@@ -15,7 +15,6 @@ import {
   useDebounceFunction,
 } from '@documenso/lib/client-only/providers/envelope-editor-provider';
 import { useCurrentOrganisation } from '@documenso/lib/client-only/providers/organisation';
-import { APP_DOCUMENT_UPLOAD_SIZE_LIMIT } from '@documenso/lib/constants/app';
 import { nanoid } from '@documenso/lib/universal/id';
 import { canEnvelopeItemsBeModified } from '@documenso/lib/utils/envelope';
 import { trpc } from '@documenso/trpc/react';
@@ -226,7 +225,7 @@ export const EnvelopeEditorUploadPage = () => {
   const onFileDropRejected = (fileRejections: FileRejection[]) => {
     toast({
       title: t`Upload failed`,
-      description: t`File cannot be larger than ${APP_DOCUMENT_UPLOAD_SIZE_LIMIT}MB`,
+      description: t`The file could not be uploaded. Please check that it is a valid PDF file.`,
       duration: 5000,
       variant: 'destructive',
     });

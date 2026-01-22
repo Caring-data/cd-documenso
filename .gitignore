@@ -56,6 +56,8 @@ logs.json
 
 # claude
 .claude
+.claude/
+*.claude
 CLAUDE.md
 
 # agents
@@ -70,3 +72,6 @@ docs/
 
 # cursor
 .cursor
+
+
+# Prueba

@@ -30,10 +30,6 @@ type TEmailPasswordSignin = InferRequestType<
   AuthClientType['email-password']['authorize']['$post']
 >['json'] & { redirectPath?: string };
 
-type TPasskeySignin = InferRequestType<AuthClientType['passkey']['authorize']['$post']>['json'] & {
-  redirectPath?: string;
-};
-
 export class AuthClient {
   public client: AuthClientType;
 
@@ -268,99 +264,6 @@ export class AuthClient {
     },
   };
 
-  public passkey = {
-    signIn: async (data: TPasskeySignin) => {
-      const response = await this.client['passkey'].authorize.$post({ json: data });
-
-      if (!response.ok) {
-        const error = await response.json();
-
-        throw AppError.parseError(error);
-      }
-
-      handleSignInRedirect(data.redirectPath);
-    },
-  };
-
-  public google = {
-    signIn: async ({ redirectPath }: { redirectPath?: string } = {}) => {
-      const response = await this.client['oauth'].authorize.google.$post({
-        json: { redirectPath },
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-
-        throw AppError.parseError(error);
-      }
-
-      const data = await response.json();
-
-      // Redirect to external Google auth URL.
-      if (data.redirectUrl) {
-        window.location.href = data.redirectUrl;
-      }
-    },
-  };
-
-  public microsoft = {
-    signIn: async ({ redirectPath }: { redirectPath?: string } = {}) => {
-      const response = await this.client['oauth'].authorize.microsoft.$post({
-        json: { redirectPath },
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-
-        throw AppError.parseError(error);
-      }
-
-      const data = await response.json();
-
-      if (data.redirectUrl) {
-        window.location.href = data.redirectUrl;
-      }
-    },
-  };
-
-  public oidc = {
-    signIn: async ({ redirectPath }: { redirectPath?: string } = {}) => {
-      const response = await this.client['oauth'].authorize.oidc.$post({ json: { redirectPath } });
-
-      if (!response.ok) {
-        const error = await response.json();
-
-        throw AppError.parseError(error);
-      }
-
-      const data = await response.json();
-
-      // Redirect to external OIDC provider URL.
-      if (data.redirectUrl) {
-        window.location.href = data.redirectUrl;
-      }
-    },
-    org: {
-      signIn: async ({ orgUrl }: { orgUrl: string }) => {
-        const response = await this.client['oauth'].authorize.oidc.org[':orgUrl'].$post({
-          param: { orgUrl },
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-
-          throw AppError.parseError(error);
-        }
-
-        const data = await response.json();
-
-        // Redirect to external OIDC provider URL.
-        if (data.redirectUrl) {
-          window.location.href = data.redirectUrl;
-        }
-      },
-    },
-  };
 }
 
 export const authClient = new AuthClient({

@@ -207,7 +207,7 @@ export class LocalJobProvider extends BaseJobProvider {
     };
   }
 
-  private async submitJobToEndpoint(options: {
+  public async submitJobToEndpoint(options: {
     jobId: string;
     jobDefinitionId: string;
     data: SimpleTriggerJobOptions;

@@ -3,6 +3,7 @@ import {
   DocumentStatus,
   EnvelopeType,
   FieldType,
+  LogLevel,
   RecipientRole,
   SendStatus,
   SigningStatus,
@@ -26,6 +27,7 @@ import {
   ZWebhookDocumentSchema,
   mapEnvelopeToWebhookDocumentPayload,
 } from '../../types/webhook-payload';
+import { createLog } from '../../utils/createLog';
 import { extractDocumentAuthMethods } from '../../utils/document-auth';
 import type { EnvelopeIdOptions } from '../../utils/envelope';
 import { mapSecondaryIdToDocumentId, unsafeBuildEnvelopeIdQuery } from '../../utils/envelope';
@@ -85,20 +87,52 @@ export const completeDocumentWithToken = async ({
   const legacyDocumentId = mapSecondaryIdToDocumentId(envelope.secondaryId);
 
   if (envelope.status !== DocumentStatus.PENDING) {
+    await createLog({
+      level: LogLevel.ERROR,
+      action: 'INVALID_DOCUMENT_STATUS',
+      message: 'Document must be pending',
+      data: { legacyDocumentId, status: envelope.status },
+      metadata: requestMetadata,
+    });
+
     throw new Error(`Document ${envelope.id} must be pending`);
   }
 
   if (envelope.recipients.length === 0) {
+    await createLog({
+      level: LogLevel.ERROR,
+      action: 'NO_RECIPIENTS_FOUND',
+      message: 'No recipient found for document',
+      data: { legacyDocumentId, token },
+      metadata: requestMetadata,
+    });
+
     throw new Error(`Document ${envelope.id} has no recipient with token ${token}`);
   }
 
   const [recipient] = envelope.recipients;
 
   if (recipient.signingStatus === SigningStatus.SIGNED) {
+    await createLog({
+      level: LogLevel.ERROR,
+      action: 'ALREADY_SIGNED',
+      message: 'Recipient has already signed',
+      data: { legacyDocumentId, recipientId: recipient.id },
+      metadata: requestMetadata,
+    });
+
     throw new Error(`Recipient ${recipient.id} has already signed`);
   }
 
   if (recipient.signingStatus === SigningStatus.REJECTED) {
+    await createLog({
+      level: LogLevel.ERROR,
+      action: 'ALREADY_REJECTED',
+      message: 'Recipient has already rejected the document',
+      data: { legacyDocumentId, recipientId: recipient.id },
+      metadata: requestMetadata,
+    });
+
     throw new AppError(AppErrorCode.UNKNOWN_ERROR, {
       message: 'Recipient has already rejected the document',
       statusCode: 400,
@@ -109,6 +143,14 @@ export const completeDocumentWithToken = async ({
     const isRecipientsTurn = await getIsRecipientsTurnToSign({ token: recipient.token });
 
     if (!isRecipientsTurn) {
+      await createLog({
+        level: LogLevel.ERROR,
+        action: 'INVALID_SIGNING_ORDER',
+        message: 'Recipient attempted to complete the document before their turn',
+        data: { legacyDocumentId, recipientId: recipient.id },
+        metadata: requestMetadata,
+      });
+
       throw new Error(
         `Recipient ${recipient.id} attempted to complete the document before it was their turn`,
       );
@@ -123,6 +165,14 @@ export const completeDocumentWithToken = async ({
   });
 
   if (fieldsContainUnsignedRequiredField(fields)) {
+    await createLog({
+      level: LogLevel.ERROR,
+      action: 'UNSIGNED_REQUIRED_FIELDS',
+      message: 'There are unsigned required fields',
+      data: { legacyDocumentId, recipientId: recipient.id },
+      metadata: requestMetadata,
+    });
+
     throw new Error(`Recipient ${recipient.id} has unsigned fields`);
   }
 
@@ -284,6 +334,16 @@ export const completeDocumentWithToken = async ({
   });
 
   await jobs.triggerJob({
+    name: 'document.complete.processing',
+    payload: {
+      envelopeId: envelope.id,
+      legacyDocumentId,
+      recipientId: recipient.id,
+      requestMetadata,
+    },
+  });
+
+  await jobs.triggerJob({
     name: 'send.recipient.signed.email',
     payload: {
       documentId: legacyDocumentId,
@@ -313,11 +373,35 @@ export const completeDocumentWithToken = async ({
     orderBy: [{ signingOrder: { sort: 'asc', nulls: 'last' } }, { id: 'asc' }],
   });
 
+  await createLog({
+    level: LogLevel.INFO,
+    action: 'PENDING_RECIPIENTS_CHECK',
+    message: 'Verification of pending recipients',
+    data: {
+      legacyDocumentId,
+      pendingCount: pendingRecipients.length,
+      pendingRecipientIds: pendingRecipients.map((r) => r.id),
+    },
+    metadata: requestMetadata,
+  });
+
   if (pendingRecipients.length > 0) {
     await sendPendingEmail({ id, recipientId: recipient.id });
 
     if (envelope.documentMeta?.signingOrder === DocumentSigningOrder.SEQUENTIAL) {
       const [nextRecipient] = pendingRecipients;
+
+      await createLog({
+        level: LogLevel.INFO,
+        action: 'NOTIFYING_NEXT_RECIPIENT',
+        message: 'Notifying the next recipient (sequential order)',
+        data: {
+          legacyDocumentId,
+          nextRecipientId: nextRecipient.id,
+          nextRecipientEmail: nextRecipient.email,
+        },
+        metadata: requestMetadata,
+      });
 
       await prisma.$transaction(async (tx) => {
         if (nextSigner && envelope.documentMeta?.allowDictateNextSigner) {
@@ -389,7 +473,26 @@ export const completeDocumentWithToken = async ({
     },
   });
 
+  await createLog({
+    level: LogLevel.INFO,
+    action: 'ALL_RECIPIENTS_SIGNED_CHECK',
+    message: 'Verification of complete signatures',
+    data: {
+      legacyDocumentId,
+      allSigned: !!haveAllRecipientsSigned,
+    },
+    metadata: requestMetadata,
+  });
+
   if (haveAllRecipientsSigned) {
+    await createLog({
+      level: LogLevel.INFO,
+      action: 'SEALING_DOCUMENT_START',
+      message: 'Starting document sealing',
+      data: { legacyDocumentId },
+      metadata: requestMetadata,
+    });
+
     await jobs.triggerJob({
       name: 'internal.seal-document',
       payload: {
@@ -415,5 +518,13 @@ export const completeDocumentWithToken = async ({
     data: ZWebhookDocumentSchema.parse(mapEnvelopeToWebhookDocumentPayload(updatedDocument)),
     userId: updatedDocument.userId,
     teamId: updatedDocument.teamId ?? undefined,
+  });
+
+  await createLog({
+    level: LogLevel.INFO,
+    action: 'DOCUMENT_FULLY_PROCESSED',
+    message: 'Document fully processed and stamped',
+    data: { legacyDocumentId },
+    metadata: requestMetadata,
   });
 };

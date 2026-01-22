@@ -10,6 +10,6 @@ export const findLogsRoute = adminProcedure
     const { query, ...rest } = input;
     return findLogs({
       ...rest,
-      action: query || rest.action,
+      action: query,
     });
   });

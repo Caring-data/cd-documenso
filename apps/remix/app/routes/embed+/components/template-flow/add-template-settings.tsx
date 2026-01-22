@@ -1,25 +1,16 @@
+import { useRef } from 'react';
+
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Trans, useLingui } from '@lingui/react/macro';
 import { RecipientRole } from '@prisma/client';
 import { Plus, Trash } from 'lucide-react';
-import { nanoid } from 'nanoid';
-import { useRef } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-import { generateRecipientPlaceholder } from '@documenso/lib/utils/templates';
-import { ZRecipientEmailSchema } from '@documenso/lib/types/recipient';
 import type { TEnvelope } from '@documenso/lib/types/envelope';
+import { ZRecipientEmailSchema } from '@documenso/lib/types/recipient';
+import { generateRecipientPlaceholder } from '@documenso/lib/utils/templates';
 import { RecipientRoleSelect } from '@documenso/ui/components/recipient/recipient-role-select';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@documenso/ui/primitives/form/form';
-import { Input } from '@documenso/ui/primitives/input';
 import { Button } from '@documenso/ui/primitives/button';
 import {
   DocumentFlowFormContainerActions,
@@ -29,8 +20,17 @@ import {
   DocumentFlowFormContainerStep,
 } from '@documenso/ui/primitives/document-flow/document-flow-root';
 import type { DocumentFlowStep } from '@documenso/ui/primitives/document-flow/types';
-import { useStep } from '@documenso/ui/primitives/stepper';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@documenso/ui/primitives/form/form';
+import { Input } from '@documenso/ui/primitives/input';
 import { Separator } from '@documenso/ui/primitives/separator';
+import { useStep } from '@documenso/ui/primitives/stepper';
 
 const ZAddTemplateSettingsFormSchema = z.object({
   title: z.string().min(1, { message: 'Title is required' }),
@@ -51,10 +51,17 @@ type TAddTemplateSettingsFormSchema = z.infer<typeof ZAddTemplateSettingsFormSch
 export type AddTemplateSettingsFormProps = {
   flowStep: DocumentFlowStep;
   envelope: TEnvelope;
-  onSubmit: (data: { title: string; recipients: TAddTemplateSettingsFormSchema['recipients'] }) => void | Promise<void>;
+  onSubmit: (data: {
+    title: string;
+    recipients: TAddTemplateSettingsFormSchema['recipients'];
+  }) => void | Promise<void>;
 };
 
-export const AddTemplateSettingsFormPartial = ({ flowStep, envelope, onSubmit }: AddTemplateSettingsFormProps) => {
+export const AddTemplateSettingsFormPartial = ({
+  flowStep,
+  envelope,
+  onSubmit,
+}: AddTemplateSettingsFormProps) => {
   const { t } = useLingui();
 
   const generateDefaultRecipients = () => {
@@ -73,9 +80,10 @@ export const AddTemplateSettingsFormPartial = ({ flowStep, envelope, onSubmit }:
 
     return envelope.recipients.map((recipient, index) => {
       // Ensure email is valid, use placeholder if not
-      const email = recipient.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient.email.trim().toLowerCase())
-        ? recipient.email.trim().toLowerCase()
-        : generateRecipientPlaceholder(index + 1).email;
+      const email =
+        recipient.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient.email.trim().toLowerCase())
+          ? recipient.email.trim().toLowerCase()
+          : generateRecipientPlaceholder(index + 1).email;
 
       return {
         id: recipient.id,
@@ -99,6 +107,7 @@ export const AddTemplateSettingsFormPartial = ({ flowStep, envelope, onSubmit }:
   });
 
   const initialValuesRef = useRef<TAddTemplateSettingsFormSchema>(defaultValues);
+  const hadNoRecipientsInitiallyRef = useRef<boolean>(envelope.recipients.length === 0);
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -119,11 +128,14 @@ export const AddTemplateSettingsFormPartial = ({ flowStep, envelope, onSubmit }:
     });
   };
 
-  const normalizeRecipientForComparison = (recipient: TAddTemplateSettingsFormSchema['recipients'][0]) => {
+  const normalizeRecipientForComparison = (
+    recipient: TAddTemplateSettingsFormSchema['recipients'][0],
+  ) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const email = recipient.email && emailRegex.test(recipient.email.trim().toLowerCase())
-      ? recipient.email.trim().toLowerCase()
-      : recipient.email?.trim().toLowerCase() || '';
+    const email =
+      recipient.email && emailRegex.test(recipient.email.trim().toLowerCase())
+        ? recipient.email.trim().toLowerCase()
+        : recipient.email?.trim().toLowerCase() || '';
 
     return {
       name: recipient.name.trim(),
@@ -166,9 +178,10 @@ export const AddTemplateSettingsFormPartial = ({ flowStep, envelope, onSubmit }:
   };
 
   const handleSubmit = async (data: TAddTemplateSettingsFormSchema) => {
-    // Check if values have changed
-    if (!hasValuesChanged(data, initialValuesRef.current)) {
-      // No changes, just advance to next step
+    const shouldSave =
+      hadNoRecipientsInitiallyRef.current || hasValuesChanged(data, initialValuesRef.current);
+
+    if (!shouldSave) {
       nextStep();
       return;
     }
@@ -194,9 +207,10 @@ export const AddTemplateSettingsFormPartial = ({ flowStep, envelope, onSubmit }:
     // Ensure all recipients have valid emails, fix invalid ones
     const fixedRecipients = validRecipients.map((recipient, index) => {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      const email = recipient.email && emailRegex.test(recipient.email.trim().toLowerCase())
-        ? recipient.email.trim().toLowerCase()
-        : generateRecipientPlaceholder(index + 1).email;
+      const email =
+        recipient.email && emailRegex.test(recipient.email.trim().toLowerCase())
+          ? recipient.email.trim().toLowerCase()
+          : generateRecipientPlaceholder(index + 1).email;
 
       return {
         ...recipient,
@@ -209,96 +223,86 @@ export const AddTemplateSettingsFormPartial = ({ flowStep, envelope, onSubmit }:
 
   return (
     <div className="flex h-full flex-col">
-      <DocumentFlowFormContainerHeader
-        title={flowStep.title}
-        description={flowStep.description}
-      />
+      <DocumentFlowFormContainerHeader title={flowStep.title} description={flowStep.description} />
 
       <DocumentFlowFormContainerContent>
         <Form {...form}>
           <fieldset disabled={form.formState.isSubmitting} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      <Trans>Title</Trans>
-                    </FormLabel>
-                    <FormControl>
-                      <Input placeholder={t`Enter template title`} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    <Trans>Title</Trans>
+                  </FormLabel>
+                  <FormControl>
+                    <Input placeholder={t`Enter template title`} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-              <Separator />
+            <Separator />
 
-              <h3 className="text-foreground text-xl font-semibold">
-                <Trans>Add Placeholders</Trans>
-              </h3>
+            <h3 className="text-foreground text-xl font-semibold">
+              <Trans>Add Placeholders</Trans>
+            </h3>
 
-              <p className="text-muted-foreground mt-2 text-sm">
-                <Trans>Set the number of recipients you'll later assign fields and signatures to.</Trans>
-              </p>
+            <p className="text-muted-foreground mt-2 text-sm">
+              <Trans>
+                Set the number of recipients you'll later assign fields and signatures to.
+              </Trans>
+            </p>
 
-              <hr className="border-border mb-8 mt-4" />
+            <hr className="border-border mt-4 mb-8" />
 
-              {fields.map((field, index) => (
-                <div key={field.id} className="flex items-center gap-2">
-                  <FormField
-                    control={form.control}
-                    name={`recipients.${index}.name`}
-                    render={({ field: formField }) => (
-                      <FormItem className="flex-1">
-                        <FormControl>
-                          <Input
-                            disabled
-                            {...formField}
-                            className="bg-muted"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name={`recipients.${index}.role`}
-                    render={({ field: formField }) => (
-                      <FormItem>
-                        <FormControl>
-                          <RecipientRoleSelect {...formField} hideAssistant />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  {fields.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => remove(index)}
-                      className="h-10 w-10 p-0"
-                    >
-                      <Trash className="h-4 w-4" />
-                    </Button>
+            {fields.map((field, index) => (
+              <div key={field.id} className="flex items-center gap-2">
+                <FormField
+                  control={form.control}
+                  name={`recipients.${index}.name`}
+                  render={({ field: formField }) => (
+                    <FormItem className="flex-1">
+                      <FormControl>
+                        <Input disabled {...formField} className="bg-muted" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </div>
-              ))}
+                />
+                <FormField
+                  control={form.control}
+                  name={`recipients.${index}.role`}
+                  render={({ field: formField }) => (
+                    <FormItem>
+                      <FormControl>
+                        <RecipientRoleSelect {...formField} hideAssistant />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                {fields.length > 1 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => remove(index)}
+                    className="h-10 w-10 p-0"
+                  >
+                    <Trash className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            ))}
 
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleAddRecipient}
-                className="w-full"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                <Trans>Add Recipient</Trans>
-              </Button>
-            </fieldset>
+            <Button type="button" variant="outline" onClick={handleAddRecipient} className="w-full">
+              <Plus className="mr-2 h-4 w-4" />
+              <Trans>Add Recipient</Trans>
+            </Button>
+          </fieldset>
         </Form>
       </DocumentFlowFormContainerContent>
 

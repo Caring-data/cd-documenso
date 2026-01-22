@@ -1,18 +1,6 @@
 import { z } from 'zod';
 
-export const SUPPORTED_LANGUAGE_CODES = [
-  'de',
-  'en',
-  'fr',
-  'es',
-  'it',
-  'nl',
-  'pl',
-  'pt-BR',
-  'ja',
-  'ko',
-  'zh',
-] as const;
+export const SUPPORTED_LANGUAGE_CODES = ['en', 'es'] as const;
 
 export const ZSupportedLanguageCodeSchema = z.enum(SUPPORTED_LANGUAGE_CODES).catch('en');
 
@@ -42,49 +30,13 @@ type SupportedLanguage = {
 };
 
 export const SUPPORTED_LANGUAGES: Record<string, SupportedLanguage> = {
-  de: {
-    full: 'German',
-    short: 'de',
-  },
   en: {
     full: 'English',
     short: 'en',
   },
-  fr: {
-    full: 'French',
-    short: 'fr',
-  },
   es: {
     full: 'Spanish',
     short: 'es',
-  },
-  it: {
-    full: 'Italian',
-    short: 'it',
-  },
-  nl: {
-    short: 'nl',
-    full: 'Dutch',
-  },
-  pl: {
-    short: 'pl',
-    full: 'Polish',
-  },
-  'pt-BR': {
-    short: 'pt-BR',
-    full: 'Portuguese (Brazil)',
-  },
-  ja: {
-    short: 'ja',
-    full: 'Japanese',
-  },
-  ko: {
-    short: 'ko',
-    full: 'Korean',
-  },
-  zh: {
-    short: 'zh',
-    full: 'Chinese',
   },
 } satisfies Record<SupportedLanguageCodes, SupportedLanguage>;
 

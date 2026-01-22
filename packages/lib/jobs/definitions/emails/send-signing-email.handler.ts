@@ -119,13 +119,6 @@ export const run = async ({
   let emailMessage = customEmail?.message || '';
   let emailSubject = i18n._(msg`Please ${recipientActionVerb} this document`);
 
-  if (selfSigner) {
-    emailMessage = i18n._(
-      msg`You have initiated the document ${`"${envelope.title}"`} that requires you to ${recipientActionVerb} it.`,
-    );
-    emailSubject = i18n._(msg`Please ${recipientActionVerb} your document`);
-  }
-
   if (isDirectTemplate) {
     emailMessage = i18n._(
       msg`A document was created by your direct template that requires you to ${recipientActionVerb} it.`,
@@ -133,21 +126,6 @@ export const run = async ({
     emailSubject = i18n._(
       msg`Please ${recipientActionVerb} this document created by your direct template`,
     );
-  }
-
-  if (organisationType === OrganisationType.ORGANISATION) {
-    emailSubject = i18n._(msg`${team.name} invited you to ${recipientActionVerb} a document`);
-    emailMessage = customEmail?.message ?? '';
-
-    if (!emailMessage) {
-      const inviterName = user.name || '';
-
-      emailMessage = i18n._(
-        settings.includeSenderDetails
-          ? msg`${inviterName} on behalf of "${team.name}" has invited you to ${recipientActionVerb} the document "${envelope.title}".`
-          : msg`${team.name} has invited you to ${recipientActionVerb} the document "${envelope.title}".`,
-      );
-    }
   }
 
   const customEmailTemplate = {
@@ -175,6 +153,9 @@ export const run = async ({
     teamName: team?.name,
     teamEmail: team?.teamEmail?.email,
     includeSenderDetails: settings.includeSenderDetails,
+    recipientName: recipient.name,
+    signingContext: envelope.signingContext || {},
+    tokenExpiration: recipient.expired ? recipient.expired.toISOString() : undefined,
   });
 
   if (isRecipientEmailValidForSending(recipient)) {

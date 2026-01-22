@@ -36,16 +36,8 @@ export const filesRoute = new Hono<HonoEnv>()
         return c.json({ error: 'No file provided' }, 400);
       }
 
-      // File size limit
-      const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB
+      // Log large files for monitoring purposes
       const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
-
-      if (file.size > MAX_FILE_SIZE) {
-        return c.json(
-          { error: `File size exceeds the limit of 500MB. File size: ${fileSizeMB}MB` },
-          400,
-        );
-      }
 
       if (parseFloat(fileSizeMB) > 100) {
         console.log(`[upload-pdf] Processing large file: ${file.name}, size: ${fileSizeMB}MB`);

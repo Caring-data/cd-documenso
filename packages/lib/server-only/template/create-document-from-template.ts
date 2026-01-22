@@ -79,7 +79,7 @@ export type CreateDocumentFromTemplateOptions = {
   }[];
   folderId?: string;
   prefillFields?: TFieldMetaPrefillFieldsSchema[];
-  residentId?: string;
+  ownerId?: string;
 
   customDocumentData?: {
     documentDataId: string;
@@ -304,7 +304,7 @@ export const createDocumentFromTemplate = async ({
   folderId,
   prefillFields,
   attachments,
-  residentId,
+  ownerId,
 }: CreateDocumentFromTemplateOptions) => {
   const { envelopeWhereInput } = await getEnvelopeWhereInput({
     id,
@@ -518,7 +518,7 @@ export const createDocumentFromTemplate = async ({
         visibility: template.visibility || settings.documentVisibility,
         useLegacyFieldInsertion: template.useLegacyFieldInsertion ?? false,
         documentMetaId: documentMeta.id,
-        residentId,
+        ownerId,
         recipients: {
           createMany: {
             data: finalRecipients.map((recipient) => {
