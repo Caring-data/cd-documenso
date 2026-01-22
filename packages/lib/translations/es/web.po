@@ -19,8 +19,8 @@ msgstr ""
 "X-Crowdin-File-ID: 8\n"
 
 #: apps/remix/app/components/embed/authoring/configure-document-upload.tsx
-msgid ".PDF documents accepted (max {APP_DOCUMENT_UPLOAD_SIZE_LIMIT}MB)"
-msgstr ".Documentos PDF aceptados (máx {APP_DOCUMENT_UPLOAD_SIZE_LIMIT}MB)"
+msgid ".PDF documents accepted"
+msgstr ".Documentos PDF aceptados"
 
 #. placeholder {0}: field.customText
 #. placeholder {1}: timezone || ''
@@ -4549,20 +4549,20 @@ msgstr "Campos actualizados"
 #: apps/remix/app/components/general/document/document-upload-button-legacy.tsx
 #: apps/remix/app/components/general/envelope-editor/envelope-editor-upload-page.tsx
 #: apps/remix/app/components/general/envelope/envelope-upload-button.tsx
-msgid "File cannot be larger than {APP_DOCUMENT_UPLOAD_SIZE_LIMIT}MB"
-msgstr "El archivo no puede ser mayor a {APP_DOCUMENT_UPLOAD_SIZE_LIMIT}MB"
+msgid "File cannot be uploaded"
+msgstr "El archivo no puede ser subido"
 
 #: apps/remix/app/components/general/envelope/envelope-drop-zone-wrapper.tsx
-msgid "File is larger than {APP_DOCUMENT_UPLOAD_SIZE_LIMIT}MB"
-msgstr "El archivo es mayor que {APP_DOCUMENT_UPLOAD_SIZE_LIMIT}MB"
+msgid "File cannot be uploaded"
+msgstr "El archivo no puede ser subido"
 
 #: apps/remix/app/components/general/envelope/envelope-drop-zone-wrapper.tsx
 msgid "File is too small"
 msgstr "El archivo es demasiado pequeño"
 
 #: apps/remix/app/components/dialogs/template-use-dialog.tsx
-msgid "File size exceeds the limit of {APP_DOCUMENT_UPLOAD_SIZE_LIMIT} MB"
-msgstr "El tamaño del archivo excede el límite de {APP_DOCUMENT_UPLOAD_SIZE_LIMIT} MB"
+msgid "File cannot be uploaded"
+msgstr "El archivo no puede ser subido"
 
 #: apps/remix/app/routes/embed+/components/template-flow/add-template-fields.tsx
 msgid "First Name"
