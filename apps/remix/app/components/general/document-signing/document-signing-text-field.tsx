@@ -114,6 +114,9 @@ export const DocumentSigningTextField = ({
   const isResidentDobWithoutValue =
     field.type === FieldType.RESIDENT_DOB && !residentValue && !isAssistantMode;
 
+  // Check if this is RESIDENT_DOB without a value - should use calendar picker
+  const isResidentDobWithoutValue = field.type === FieldType.RESIDENT_DOB && !residentValue && !isAssistantMode;
+
   useEffect(() => {
     if (!showCustomTextModal) {
       // For resident fields, don't reset to parsedFieldMeta text if we have residentValue

@@ -4,6 +4,9 @@ import {
   EnvelopeType,
   type Field,
   FolderType,
+  LogCategory,
+  LogLevel,
+  Prisma,
   type Recipient,
   RecipientRole,
   SendStatus,
@@ -43,6 +46,7 @@ import {
 import type { ApiRequestMetadata } from '../../universal/extract-request-metadata';
 import { getFileServerSide } from '../../universal/upload/get-file.server';
 import { putPdfFileServerSide } from '../../universal/upload/put-file.server';
+import { createLog } from '../../utils/createLog';
 import { extractDerivedDocumentMeta } from '../../utils/document';
 import { createDocumentAuditLogData } from '../../utils/document-audit-logs';
 import {
@@ -52,6 +56,10 @@ import {
 } from '../../utils/document-auth';
 import type { EnvelopeIdOptions } from '../../utils/envelope';
 import { mapSecondaryIdToTemplateId } from '../../utils/envelope';
+import {
+  findFieldCoordinatesFromPdf,
+  getFieldVariableName,
+} from '../../utils/pdf/findFieldCoordinates';
 import { buildTeamWhereQuery } from '../../utils/teams';
 import { getEnvelopeWhereInput } from '../envelope/get-envelope-by-id';
 import { incrementDocumentId } from '../envelope/increment-id';
@@ -66,7 +74,7 @@ type FinalRecipient = Pick<
   fields: Field[];
 };
 
-export type CreateDocumentFromTemplateOptions = {
+export type createDocumentFromTemplateBase64Options = {
   id: EnvelopeIdOptions;
   externalId?: string | null;
   userId: number;
@@ -76,10 +84,22 @@ export type CreateDocumentFromTemplateOptions = {
     name?: string;
     email: string;
     signingOrder?: number | null;
+    expired?: Date | null;
   }[];
   folderId?: string;
+  folderName?: string;
   prefillFields?: TFieldMetaPrefillFieldsSchema[];
   ownerId?: string;
+  formKey?: string;
+  signingContext?: {
+    companyName?: string;
+    facilityAdministrator?: string;
+    documentName?: string;
+    ownerName?: string;
+    locationName?: string;
+    formType?: 'custom' | 'standard' | 'custom_default';
+    module?: 'resident' | 'staff' | 'facility';
+  };
 
   customDocumentData?: {
     documentDataId: string;
@@ -292,7 +312,7 @@ const getUpdatedFieldMeta = (field: Field, prefillField?: TFieldMetaPrefillField
     .otherwise(() => field.fieldMeta);
 };
 
-export const createDocumentFromTemplate = async ({
+export const createDocumentFromTemplateBase64 = async ({
   id,
   externalId,
   userId,
@@ -302,15 +322,38 @@ export const createDocumentFromTemplate = async ({
   override,
   requestMetadata,
   folderId,
+  folderName,
   prefillFields,
   attachments,
   ownerId,
-}: CreateDocumentFromTemplateOptions) => {
+  formKey,
+  signingContext,
+}: createDocumentFromTemplateBase64Options) => {
   const { envelopeWhereInput } = await getEnvelopeWhereInput({
     id,
     type: EnvelopeType.TEMPLATE,
     userId,
     teamId,
+  });
+  let resolvedFolderId: string | undefined = folderId;
+
+  await createLog({
+    level: LogLevel.INFO,
+    category: LogCategory.DOCUMENT,
+    action: 'create_document_from_template_start',
+    message: 'Starting document generation from template',
+    data: {
+      envelopeIdOptions: id,
+      folderId,
+      folderName,
+      userId,
+      teamId,
+      ownerId,
+      formKey,
+      signingContext,
+    },
+    metadata: requestMetadata,
+    userId,
   });
 
   const template = await prisma.envelope.findUnique({
@@ -355,6 +398,37 @@ export const createDocumentFromTemplate = async ({
     }
   }
 
+  await createLog({
+    level: LogLevel.INFO,
+    category: LogCategory.DOCUMENT,
+    action: 'resolve_folder_by_name',
+    message: 'Resolving folder by name',
+    data: {
+      folderName,
+      folderType: FolderType.DOCUMENT,
+      teamId,
+      userId,
+    },
+    metadata: requestMetadata,
+    userId,
+  });
+
+  if (folderName && !folderId) {
+    const folder = await prisma.folder.findFirst({
+      where: {
+        name: folderName,
+        team: buildTeamWhereQuery({ teamId, userId }),
+        type: FolderType.DOCUMENT,
+      },
+    });
+
+    if (!folder) {
+      throw new AppError(AppErrorCode.NOT_FOUND, { message: `Folder not found` });
+    }
+
+    resolvedFolderId = folder.id;
+  }
+
   const legacyTemplateId = mapSecondaryIdToTemplateId(template.secondaryId);
   const finalEnvelopeTitle = override?.title || template.title;
 
@@ -369,15 +443,21 @@ export const createDocumentFromTemplate = async ({
     teamId,
   });
 
-  // Check that all the passed in recipient IDs can be associated with a template recipient.
+  // Validate that all provided recipients match a template recipient by signingOrder
   recipients.forEach((recipient) => {
+    if (recipient.signingOrder == null) {
+      throw new AppError(AppErrorCode.INVALID_BODY, {
+        message: 'Recipient signingOrder is required.',
+      });
+    }
+
     const foundRecipient = template.recipients.find(
-      (templateRecipient) => templateRecipient.id === recipient.id,
+      (templateRecipient) => templateRecipient.signingOrder === recipient.signingOrder,
     );
 
     if (!foundRecipient) {
       throw new AppError(AppErrorCode.INVALID_BODY, {
-        message: `Recipient with ID ${recipient.id} not found in the template.`,
+        message: `Recipient with signingOrder ${recipient.signingOrder} not found in the template.`,
       });
     }
   });
@@ -387,18 +467,35 @@ export const createDocumentFromTemplate = async ({
   });
 
   const finalRecipients: FinalRecipient[] = template.recipients.map((templateRecipient) => {
-    const foundRecipient = recipients.find((recipient) => recipient.id === templateRecipient.id);
+    const foundRecipient = recipients.find(
+      (recipient) =>
+        recipient.signingOrder != null && recipient.signingOrder === templateRecipient.signingOrder,
+    );
 
     return {
       templateRecipientId: templateRecipient.id,
       fields: templateRecipient.fields,
-      name: foundRecipient ? (foundRecipient.name ?? '') : templateRecipient.name,
-      email: foundRecipient ? foundRecipient.email : templateRecipient.email,
+      name: foundRecipient?.name ?? templateRecipient.name,
+      email: foundRecipient?.email ?? templateRecipient.email,
       role: templateRecipient.role,
       signingOrder: foundRecipient?.signingOrder ?? templateRecipient.signingOrder,
       authOptions: templateRecipient.authOptions,
       token: nanoid(),
+      expired: foundRecipient?.expired ?? templateRecipient?.expired ?? null,
     };
+  });
+
+  await createLog({
+    level: LogLevel.INFO,
+    category: LogCategory.DOCUMENT,
+    action: 'duplicate_document_data_start',
+    message: 'Duplicating document data from template',
+    data: {
+      envelopeItemsCount: template.envelopeItems.length,
+      customDocumentData,
+    },
+    metadata: requestMetadata,
+    userId,
   });
 
   // Key = original envelope item ID
@@ -491,7 +588,7 @@ export const createDocumentFromTemplate = async ({
     }),
   });
 
-  return await prisma.$transaction(async (tx) => {
+  const envelope = await prisma.$transaction(async (tx) => {
     const envelope = await tx.envelope.create({
       data: {
         id: prefixedId('envelope'),
@@ -503,7 +600,7 @@ export const createDocumentFromTemplate = async ({
         externalId: externalId || template.externalId,
         templateId: legacyTemplateId, // The template this envelope was created from.
         userId,
-        folderId,
+        folderId: resolvedFolderId,
         teamId: template.teamId,
         title: finalEnvelopeTitle,
         envelopeItems: {
@@ -519,6 +616,8 @@ export const createDocumentFromTemplate = async ({
         useLegacyFieldInsertion: template.useLegacyFieldInsertion ?? false,
         documentMetaId: documentMeta.id,
         ownerId,
+        formKey,
+        signingContext,
         recipients: {
           createMany: {
             data: finalRecipients.map((recipient) => {
@@ -559,7 +658,7 @@ export const createDocumentFromTemplate = async ({
       },
     });
 
-    let fieldsToCreate: Omit<Field, 'id' | 'secondaryId'>[] = [];
+    const fieldsToCreate: Omit<Field, 'id' | 'secondaryId'>[] = [];
 
     // Get all template field IDs first so we can validate later
     const allTemplateFieldIds = finalRecipients.flatMap((recipient) =>
@@ -602,64 +701,102 @@ export const createDocumentFromTemplate = async ({
       }
     }
 
-    Object.values(finalRecipients).forEach(({ token, fields }) => {
-      const recipient = envelope.recipients.find((recipient) => recipient.token === token);
+    const isStandardForm = signingContext?.formType === 'standard';
+
+    const base64Pdf = isStandardForm ? template.envelopeItems[0]?.documentData?.data : null;
+
+    if (isStandardForm && !base64Pdf) {
+      throw new AppError(AppErrorCode.INVALID_BODY, {
+        message: 'Standard document PDF data not found on template envelope item',
+      });
+    }
+
+    const shouldSkipCoordinateSearch =
+      signingContext?.formType === 'custom' || signingContext?.formType === 'custom_default';
+
+    const variableCounters: Record<string, number> = {};
+
+    for (const { token, fields } of Object.values(finalRecipients)) {
+      const recipient = envelope.recipients.find((r) => r.token === token);
 
       if (!recipient) {
         throw new Error('Recipient not found.');
       }
 
-      fieldsToCreate = fieldsToCreate.concat(
-        fields.map((field) => {
-          const prefillField = prefillFields?.find((value) => value.id === field.id);
+      for (const field of fields) {
+        const prefillField = prefillFields?.find((value) => value.id === field.id);
 
-          const payload = {
-            envelopeItemId: oldEnvelopeItemToNewEnvelopeItemIdMap[field.envelopeItemId],
-            envelopeId: envelope.id,
-            recipientId: recipient.id,
-            type: field.type,
-            page: field.page,
-            positionX: field.positionX,
-            positionY: field.positionY,
-            width: field.width,
-            height: field.height,
-            customText: '',
-            inserted: false,
-            fieldMeta: field.fieldMeta,
-          };
+        let coordinates: { x: number; y: number; page: number } | null = null;
 
-          if (prefillField) {
-            match(prefillField)
-              .with({ type: 'date' }, (selector) => {
-                if (!selector.value) {
-                  throw new AppError(AppErrorCode.INVALID_BODY, {
-                    message: `Date value is required for field ${field.id}`,
-                  });
-                }
+        if (!shouldSkipCoordinateSearch && base64Pdf) {
+          const variableName = getFieldVariableName(recipient, field);
 
-                const date = new Date(selector.value);
+          const coordinatesList = await findFieldCoordinatesFromPdf({
+            base64Pdf,
+            fieldName: variableName,
+          });
 
-                if (isNaN(date.getTime())) {
-                  throw new AppError(AppErrorCode.INVALID_BODY, {
-                    message: `Invalid date value for field ${field.id}: ${selector.value}`,
-                  });
-                }
-
-                payload.customText = DateTime.fromJSDate(date).toFormat(
-                  template.documentMeta?.dateFormat ?? DEFAULT_DOCUMENT_DATE_FORMAT,
-                );
-
-                payload.inserted = true;
-              })
-              .otherwise((selector) => {
-                payload.fieldMeta = getUpdatedFieldMeta(field, selector);
-              });
+          if (coordinatesList.length > 0) {
+            const index = variableCounters[variableName] ?? 0;
+            coordinates = coordinatesList[index] ?? coordinatesList[0];
+            variableCounters[variableName] = index + 1;
           }
+        }
 
-          return payload;
-        }),
-      );
-    });
+        if (!coordinates) {
+          coordinates = {
+            x: Number(field.positionX),
+            y: Number(field.positionY),
+            page: field.page,
+          };
+        }
+
+        const payload: Omit<Field, 'id' | 'secondaryId'> = {
+          envelopeItemId: oldEnvelopeItemToNewEnvelopeItemIdMap[field.envelopeItemId],
+          envelopeId: envelope.id,
+          recipientId: recipient.id,
+          type: field.type,
+          page: coordinates.page,
+          positionX: new Prisma.Decimal(coordinates.x),
+          positionY: new Prisma.Decimal(coordinates.y),
+          width: field.width,
+          height: field.height,
+          customText: '',
+          inserted: false,
+          fieldMeta: field.fieldMeta,
+        };
+
+        if (prefillField) {
+          match(prefillField)
+            .with({ type: 'date' }, (selector) => {
+              if (!selector.value) {
+                throw new AppError(AppErrorCode.INVALID_BODY, {
+                  message: `Date value is required for field ${field.id}`,
+                });
+              }
+
+              const date = new Date(selector.value);
+
+              if (isNaN(date.getTime())) {
+                throw new AppError(AppErrorCode.INVALID_BODY, {
+                  message: `Invalid date value for field ${field.id}: ${selector.value}`,
+                });
+              }
+
+              payload.customText = DateTime.fromJSDate(date).toFormat(
+                template.documentMeta?.dateFormat ?? DEFAULT_DOCUMENT_DATE_FORMAT,
+              );
+
+              payload.inserted = true;
+            })
+            .otherwise((selector) => {
+              payload.fieldMeta = getUpdatedFieldMeta(field, selector);
+            });
+        }
+
+        fieldsToCreate.push(payload);
+      }
+    }
 
     await tx.field.createMany({
       data: fieldsToCreate.map((field) => ({
@@ -733,4 +870,21 @@ export const createDocumentFromTemplate = async ({
 
     return envelope;
   });
+
+  await createLog({
+    level: LogLevel.INFO,
+    category: LogCategory.DOCUMENT,
+    action: 'envelope_created',
+    message: 'Envelope created successfully from template',
+    data: {
+      envelopeId: envelope.id,
+      folderId: resolvedFolderId,
+      title: envelope.title,
+    },
+    metadata: requestMetadata,
+    userId,
+    envelopeId: envelope.id,
+  });
+
+  return envelope;
 };
