@@ -9,8 +9,10 @@ import {
 } from '@cantoo/pdf-lib';
 import type { DocumentData, DocumentMeta, Envelope, EnvelopeItem, Field } from '@prisma/client';
 import {
+  DocumentDataType,
   DocumentStatus,
   EnvelopeType,
+  LogLevel,
   RecipientRole,
   SigningStatus,
   WebhookTriggerEvents,
@@ -27,6 +29,7 @@ import { AppError, AppErrorCode } from '../../../errors/app-error';
 import { sendCompletedEmail } from '../../../server-only/document/send-completed-email';
 import { getAuditLogsPdf } from '../../../server-only/htmltopdf/get-audit-logs-pdf';
 import { getCertificatePdf } from '../../../server-only/htmltopdf/get-certificate-pdf';
+import { storeSignedDocument } from '../../../server-only/laravel-auth/store-signed-document';
 import { addRejectionStampToPdf } from '../../../server-only/pdf/add-rejection-stamp-to-pdf';
 import { flattenAnnotations } from '../../../server-only/pdf/flatten-annotations';
 import { flattenForm } from '../../../server-only/pdf/flatten-form';
@@ -46,11 +49,13 @@ import { prefixedId } from '../../../universal/id';
 import { getFileServerSide } from '../../../universal/upload/get-file.server';
 import { putPdfFileServerSide } from '../../../universal/upload/put-file.server';
 import { fieldsContainUnsignedRequiredField } from '../../../utils/advanced-fields-helpers';
+import { createLog } from '../../../utils/createLog';
 import { isDocumentCompleted } from '../../../utils/document';
 import { createDocumentAuditLogData } from '../../../utils/document-audit-logs';
 import { mapDocumentIdToSecondaryId, mapSecondaryIdToDocumentId } from '../../../utils/envelope';
 import type { JobRunIO } from '../../client/_internal/job';
 import type { TSealDocumentJobDefinition } from './seal-document';
+import { ZSigningContextSchema, type TSigningContext } from '../../../types/document';
 
 export const run = async ({
   payload,
@@ -259,21 +264,6 @@ export const run = async ({
     };
   });
 
-  await io.runTask('send-completed-email', async () => {
-    let shouldSendCompletedEmail = sendEmail && !isResealing && !isRejected;
-
-    if (isResealing && !isDocumentCompleted(envelopeStatus)) {
-      shouldSendCompletedEmail = sendEmail;
-    }
-
-    if (shouldSendCompletedEmail) {
-      await sendCompletedEmail({
-        id: { type: 'envelopeId', id: envelopeId },
-        requestMetadata,
-      });
-    }
-  });
-
   const updatedEnvelope = await prisma.envelope.findFirstOrThrow({
     where: {
       id: envelopeId,
@@ -291,6 +281,177 @@ export const run = async ({
     data: ZWebhookDocumentSchema.parse(mapEnvelopeToWebhookDocumentPayload(updatedEnvelope)),
     userId: updatedEnvelope.userId,
     teamId: updatedEnvelope.teamId ?? undefined,
+  });
+
+  await io.runTask('send-final-document-to-laravel', async () => {
+    try {
+      const finalEnvelope = await prisma.envelope.findFirstOrThrow({
+        where: { id: envelopeId },
+        include: {
+          recipients: true,
+          envelopeItems: {
+            include: {
+              documentData: true,
+            },
+          },
+        },
+      });
+
+      const legacyDocumentId = mapSecondaryIdToDocumentId(finalEnvelope.secondaryId);
+
+      const parsedSigningContext =
+      finalEnvelope.signingContext === null
+        ? null
+        : ZSigningContextSchema.safeParse(finalEnvelope.signingContext);
+
+      const documentDetails: TSigningContext = parsedSigningContext?.data || null;
+
+      if (!documentDetails || typeof documentDetails !== 'object') {
+        await createLog({
+          level: LogLevel.ERROR,
+          action: 'LARAVEL_FINAL_SUBMISSION_SKIPPED_NO_DETAILS',
+          message: 'Laravel final submission skipped - invalid signingContext',
+          data: {
+            envelopeId,
+            legacyDocumentId: legacyDocumentId,
+            signingContext: finalEnvelope.signingContext,
+          },
+          metadata: requestMetadata,
+        });
+
+        return;
+      }
+
+      const finalEnvelopeItem = finalEnvelope.envelopeItems[0];
+      if (!finalEnvelopeItem?.documentData) {
+        await createLog({
+          level: LogLevel.ERROR,
+          action: 'LARAVEL_FINAL_SUBMISSION_SKIPPED_NO_PDF',
+          message: 'Laravel final submission skipped - no PDF data available',
+          data: {
+            envelopeId,
+            legacyDocumentId: legacyDocumentId,
+            hasEnvelopeItems: finalEnvelope.envelopeItems.length > 0,
+          },
+          metadata: requestMetadata,
+        });
+
+        return;
+      }
+
+      let base64FinalPdf: string;
+
+      if (finalEnvelopeItem.documentData.type === DocumentDataType.BYTES_64) {
+        base64FinalPdf = finalEnvelopeItem.documentData.data;
+      } else {
+        const finalPdfData = await getFileServerSide({
+          type: finalEnvelopeItem.documentData.type,
+          data: finalEnvelopeItem.documentData.data,
+        });
+
+        base64FinalPdf = Buffer.from(finalPdfData).toString('base64');
+      }
+
+      const mainRecipient = finalEnvelope.recipients.find((r) => r.role !== RecipientRole.CC);
+
+      if (!mainRecipient) {
+        await createLog({
+          level: LogLevel.ERROR,
+          action: 'LARAVEL_FINAL_SUBMISSION_SKIPPED_NO_RECIPIENT',
+          message: 'Laravel final submission skipped - no main recipient found',
+          data: {
+            envelopeId,
+            legacyDocumentId: legacyDocumentId,
+            totalRecipients: finalEnvelope.recipients.length,
+            recipientRoles: finalEnvelope.recipients.map((r) => r.role),
+          },
+          metadata: requestMetadata,
+        });
+
+        return;
+      }
+
+      await createLog({
+        action: 'LARAVEL_FINAL_SUBMISSION_START',
+        message: 'Starting final document submission to Laravel',
+        data: {
+          envelopeId,
+          legacyDocumentId: legacyDocumentId,
+          recipientEmail: mainRecipient.email,
+          dataType: finalEnvelopeItem.documentData.type,
+        },
+        metadata: requestMetadata,
+      });
+
+      const result = await storeSignedDocument(
+        finalEnvelope,
+        base64FinalPdf,
+        documentDetails,
+        legacyDocumentId,
+        mainRecipient,
+        true
+      );
+
+      if (result.fileUrl) {
+        await prisma.envelope.update({
+          where: { id: envelopeId },
+          data: {
+            finalDocumentUrl: result.fileUrl,
+          },
+        });
+
+        await createLog({
+          level: LogLevel.INFO,
+          action: 'FINAL_DOCUMENT_URL_STORED',
+          message: 'Final document URL stored',
+          data: {
+            envelopeId,
+            legacyDocumentId: documentId,
+            fileUrl: result.fileUrl,
+          },
+        });
+      }
+
+      await createLog({
+        level: LogLevel.INFO,
+        action: 'LARAVEL_FINAL_SUBMISSION_SUCCESS',
+        message: 'Final document submitted to Laravel',
+        data: {
+          envelopeId,
+          legacyDocumentId: documentId,
+          fileUrl: result.fileUrl,
+        },
+      });
+    } catch (error) {
+       await createLog({
+        level: LogLevel.ERROR,
+        action: 'LARAVEL_FINAL_SUBMISSION_ERROR',
+        message: 'Error submitting final document to Laravel',
+        data: {
+          envelopeId,
+          legacyDocumentId: documentId,
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+        },
+      });
+
+      console.error('Error submitting final document to Laravel:', error);
+    }
+  });
+
+  await io.runTask('send-completed-email', async () => {
+    let shouldSendCompletedEmail = sendEmail && !isResealing && !isRejected;
+
+    if (isResealing && !isDocumentCompleted(envelopeStatus)) {
+      shouldSendCompletedEmail = sendEmail;
+    }
+
+    if (shouldSendCompletedEmail) {
+      await sendCompletedEmail({
+        id: { type: 'envelopeId', id: envelopeId },
+        requestMetadata,
+      });
+    }
   });
 };
 

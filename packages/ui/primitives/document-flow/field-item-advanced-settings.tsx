@@ -66,6 +66,12 @@ export type FieldMetaKeys =
 
 const getDefaultState = (fieldType: FieldType): FieldMeta => {
   switch (fieldType) {
+    case FieldType.SIGNATURE:
+      return {
+        type: 'signature',
+        fontSize: 18,
+        required: true,
+      };
     case FieldType.INITIALS:
       return {
         type: 'initials',
@@ -195,7 +201,7 @@ export const FieldAdvancedSettings = forwardRef<HTMLDivElement, FieldAdvancedSet
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [fieldMeta]);
 
-    const { scheduleSave } = useAutoSave(onAutoSave || (async () => {}));
+    const { scheduleSave } = useAutoSave(onAutoSave || (async () => { }));
 
     const handleAutoSave = () => {
       if (errors.length === 0) {
