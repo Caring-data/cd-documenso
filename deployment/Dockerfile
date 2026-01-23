@@ -5,7 +5,9 @@ FROM node:22-alpine3.20 AS base
 
 RUN apk add --no-cache openssl
 RUN apk add --no-cache font-freefont
-
+# Chromium para generar certificados PDF con Playwright
+RUN apk add --no-cache chromium nss freetype harfbuzz ca-certificates
+RUN apk add --no-cache ghostscript
 
 ###########################
 #    BUILDER CONTAINER    #
@@ -83,7 +85,9 @@ FROM base AS runner
 
 ENV HUSKY 0
 ENV DOCKER_OUTPUT 1
-
+# Configurar Playwright para usar chromium del sistema
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 # Don't run production as root
 RUN addgroup --system --gid 1001 nodejs

@@ -190,8 +190,6 @@ export const ZSigningContextSchema = z
     locationName: z.string().optional(),
     formType: z.string().optional(),
     module: z.string().optional(),
-  })
-  .nullable()
-  .optional();
+  });
 
-export type TSigningContext = z.infer<typeof ZSigningContextSchema>;
+export type TSigningContext = z.infer<typeof ZSigningContextSchema> | null;

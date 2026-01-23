@@ -4,17 +4,10 @@ import { prisma } from '@documenso/prisma';
 
 import { storeSignedDocument } from '../../../server-only/laravel-auth/store-signed-document';
 import { generateSignedPdf } from '../../../server-only/pdf/generate-signed-pdf';
+import { type TSigningContext, ZSigningContextSchema } from '../../../types/document';
 import { createLog } from '../../../utils/createLog';
 import type { JobRunIO } from '../../client/_internal/job';
 import type { TDocumentCompleteProcessingJobDefinition } from './document-complete-processing';
-
-interface DocumentDetails {
-  companyName?: string;
-  facilityAdministrator?: string;
-  documentName?: string;
-  residentName?: string;
-  locationName?: string;
-}
 
 export const run = async ({
   payload,
@@ -62,7 +55,12 @@ export const run = async ({
         throw new Error(`Recipient ${recipientId} not found`);
       }
 
-      const documentDetails = envelope.signingContext as DocumentDetails | null;
+      const parsedSigningContext =
+        envelope.signingContext === null
+          ? null
+          : ZSigningContextSchema.safeParse(envelope.signingContext);
+
+      const documentDetails: TSigningContext = parsedSigningContext?.data || null;
 
       if (!documentDetails || typeof documentDetails !== 'object') {
         await createLog({
