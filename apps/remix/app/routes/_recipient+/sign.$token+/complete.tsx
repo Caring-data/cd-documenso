@@ -1,8 +1,7 @@
 import { useLingui } from '@lingui/react/macro';
 import { Trans } from '@lingui/react/macro';
 import { DocumentStatus, FieldType, RecipientRole } from '@prisma/client';
-import { CheckCircle2, Clock8, DownloadIcon, Loader2 } from 'lucide-react';
-import { Link } from 'react-router';
+import { CheckCircle2, Clock8, Loader2 } from 'lucide-react';
 import { match } from 'ts-pattern';
 
 import signingCelebration from '@documenso/assets/images/signing-celebration.png';
@@ -14,17 +13,12 @@ import { getFieldsForToken } from '@documenso/lib/server-only/field/get-fields-f
 import { getRecipientByToken } from '@documenso/lib/server-only/recipient/get-recipient-by-token';
 import { getRecipientSignatures } from '@documenso/lib/server-only/recipient/get-recipient-signatures';
 import { getUserByEmail } from '@documenso/lib/server-only/user/get-user-by-email';
-import { isDocumentCompleted } from '@documenso/lib/utils/document';
 import { env } from '@documenso/lib/utils/env';
 import { trpc } from '@documenso/trpc/react';
-import { DocumentShareButton } from '@documenso/ui/components/document/document-share-button';
 import { SigningCard3D } from '@documenso/ui/components/signing-card';
 import { cn } from '@documenso/ui/lib/utils';
 import { Badge } from '@documenso/ui/primitives/badge';
-import { Button } from '@documenso/ui/primitives/button';
 
-import { EnvelopeDownloadDialog } from '~/components/dialogs/envelope-download-dialog';
-import { ClaimAccount } from '~/components/general/claim-account';
 import { DocumentSigningAuthPageView } from '~/components/general/document-signing/document-signing-auth-page';
 import { DocumentDownloadButton } from '@documenso/ui/components/document/document-download-button';
 
@@ -178,7 +172,7 @@ export default function CompletedSigningPage({ loaderData }: Route.ComponentProp
           />
 
           <h2 className="mt-6 max-w-[35ch] text-center text-2xl font-semibold leading-normal md:text-3xl lg:text-4xl">
-            {recipient.role === RecipientRole.SIGNER && <Trans>Document Signed</Trans>}
+            {recipient.role === RecipientRole.SIGNER && <Trans>Document Successfully Signed</Trans>}
             {recipient.role === RecipientRole.VIEWER && <Trans>Document Viewed</Trans>}
             {recipient.role === RecipientRole.APPROVER && <Trans>Document Approved</Trans>}
           </h2>
@@ -196,7 +190,7 @@ export default function CompletedSigningPage({ loaderData }: Route.ComponentProp
               <div className="mt-4 flex items-center text-center text-orange-600">
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                 <span className="text-sm">
-                  <Trans>Processing document</Trans>
+                  <Trans>Document is preparing...</Trans>
                 </span>
               </div>
             ))
@@ -221,22 +215,22 @@ export default function CompletedSigningPage({ loaderData }: Route.ComponentProp
             .with({ status: 'COMPLETED' }, () => (
               <p className="mt-2.5 max-w-[60ch] text-center text-sm font-medium text-muted-foreground/60 md:text-base">
                 <Trans>
-                  Everyone has signed! You will receive an email copy of the signed document.
+                  A copy of the completed document will be sent to your email shortly. You may
+                  also download it below.
                 </Trans>
               </p>
             ))
             .with({ status: 'PROCESSING' }, () => (
               <p className="mt-2.5 max-w-[60ch] text-center text-sm font-medium text-muted-foreground/60 md:text-base">
                 <Trans>
-                  All recipients have signed. The document is being processed and you will receive
-                  an email copy shortly.
+                  The document is being prepared. You'll receive a copy once it's ready.
                 </Trans>
               </p>
             ))
             .with({ deletedAt: null }, () => (
               <p className="mt-2.5 max-w-[60ch] text-center text-sm font-medium text-muted-foreground/60 md:text-base">
                 <Trans>
-                  You will receive an email copy of the signed document once everyone has signed.
+                  You will receive an Email copy of the signed document once everyone has signed.
                 </Trans>
               </p>
             ))
@@ -281,7 +275,7 @@ export default function CompletedSigningPage({ loaderData }: Route.ComponentProp
           </div> */}
 
 
-           <div className="mt-8 flex w-full max-w-sm items-center justify-center gap-4">
+          <div className="mt-8 flex w-full max-w-sm items-center justify-center gap-4">
             {document.status === DocumentStatus.COMPLETED ? (
               <DocumentDownloadButton
                 className="flex-1"
