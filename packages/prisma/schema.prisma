@@ -372,6 +372,8 @@ model Envelope {
   formKey    String? @db.VarChar(255)
   signingContext Json? /// Contextual business information used during electronic signature flows
 
+  finalDocumentUrl String? @db.VarChar(2048) /// @zod.string.describe("The URL of the final signed document stored in external storage.")
+
   envelopeAttachments EnvelopeAttachment[]
 
   @@index([type])
