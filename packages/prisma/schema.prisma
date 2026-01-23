@@ -24,11 +24,6 @@ datasource db {
   directUrl = env("NEXT_PRIVATE_DIRECT_DATABASE_URL")
 }
 
-// Todo: (RR7) Remove after RR7 migration.
-enum IdentityProvider {
-  DOCUMENSO
-}
-
 enum Role {
   ADMIN
   USER
@@ -46,7 +41,6 @@ model User {
   updatedAt        DateTime         @default(now()) @updatedAt
   lastSignedIn     DateTime         @default(now())
   roles            Role[]           @default([USER])
-  identityProvider IdentityProvider @default(DOCUMENSO) // Todo: (RR7) Remove after RR7 migration.
   avatarImageId    String?
   disabled         Boolean          @default(false)
 
