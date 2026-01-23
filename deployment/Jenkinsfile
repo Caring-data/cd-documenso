@@ -38,7 +38,7 @@ pipeline {
                     Environment: ${DEPLOY_ENV}
                     Agent:       ${AGENT_LABEL}
                     Domain:      ${DOMAIN_NAME}
-                    Port:        3002
+                    Port:        4443
                     ============================================
                     """
                 }
@@ -273,7 +273,7 @@ pipeline {
                             script: """
                                 sleep 5
                                 curl -k -s -o /dev/null -w '%{http_code}' \
-                                    https://localhost:3002/api/health || echo '000'
+                                    https://localhost:4443/api/health || echo '000'
                             """,
                             returnStdout: true
                         ).trim()
@@ -304,9 +304,9 @@ pipeline {
             ============================================
             DEPLOYMENT SUCCESSFUL
             ============================================
-            URL: https://${DOMAIN_NAME}:3002
-            Health: https://${DOMAIN_NAME}:3002/api/health
-            Certificate: https://${DOMAIN_NAME}:3002/api/certificate-status
+            URL: https://${DOMAIN_NAME}:4443
+            Health: https://${DOMAIN_NAME}:4443/api/health
+            Certificate: https://${DOMAIN_NAME}:4443/api/certificate-status
             ============================================
             """
         }
