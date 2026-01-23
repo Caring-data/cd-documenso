@@ -66,5 +66,9 @@ declare namespace NodeJS {
     AZURE_STORAGE_CONTAINER_NAME?: string;
     AZURE_STORAGE_URL?: string;
     FOLDER_FILE?: string;
+
+    SEED_ADMIN_NAME?: string;
+    SEED_ADMIN_EMAIL?: string;
+    SEED_ADMIN_PASSWORD?: string;
   }
 }
