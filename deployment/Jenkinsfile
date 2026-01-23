@@ -138,9 +138,10 @@ pipeline {
                         if ! docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" ps nginx --format '{{.Name}}' 2>/dev/null | grep -q nginx || \
                            ! docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" ps nginx --format '{{.Status}}' 2>/dev/null | grep -q 'Up'; then
                             echo "Configuring nginx to point to \${NGINX_TARGET_SLOT}..."
-                            # Replace any existing slot reference with the target slot
+                            # First restore app.conf to clean state from git (fixes any corrupted files)
+                            git show HEAD:deployment/nginx/conf.d/app.conf > nginx/conf.d/app.conf 2>/dev/null || true
+                            # Then configure for target slot
                             sed -i "s/app_blue:3002/app_\${NGINX_TARGET_SLOT}:3002/g" nginx/conf.d/app.conf || true
-                            sed -i "s/app_green:3002/app_\${NGINX_TARGET_SLOT}:3002/g" nginx/conf.d/app.conf || true
                             echo "\${NGINX_TARGET_SLOT}" > nginx/conf.d/active_slot.txt || true
                         fi
                         
