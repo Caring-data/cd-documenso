@@ -66,12 +66,11 @@ CLAUDE.md
 # scripts
 scripts/output*
 
-
 # docs
 docs/
 
 # cursor
 .cursor
 
-
-# Prueba
+.docker/development/data
+**/.docker/development/data/

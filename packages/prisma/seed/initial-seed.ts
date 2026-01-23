@@ -1,27 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { isBase64Image } from '@documenso/lib/constants/signatures';
-import {
-  incrementDocumentId,
-  incrementTemplateId,
-} from '@documenso/lib/server-only/envelope/increment-id';
-import { nanoid, prefixedId } from '@documenso/lib/universal/id';
+import { incrementDocumentId } from '@documenso/lib/server-only/envelope/increment-id';
+import { prefixedId } from '@documenso/lib/universal/id';
+import { env } from '@documenso/lib/utils/env';
 
 import { prisma } from '..';
-import {
-  DIRECT_TEMPLATE_RECIPIENT_EMAIL,
-  DIRECT_TEMPLATE_RECIPIENT_NAME,
-} from '../../lib/constants/direct-templates';
-import {
-  DocumentDataType,
-  DocumentSource,
-  DocumentStatus,
-  EnvelopeType,
-  ReadStatus,
-  SendStatus,
-  SigningStatus,
-} from '../client';
+import { DocumentDataType, DocumentSource, EnvelopeType } from '../client';
 import { seedPendingDocument } from './documents';
 import { seedDirectTemplate, seedTemplate } from './templates';
 import { seedUser } from './users';
@@ -37,6 +22,10 @@ const createDocumentData = async ({ documentData }: { documentData: string }) =>
 };
 
 export const seedDatabase = async () => {
+  const ADMIN_EMAIL = env('SEED_ADMIN_EMAIL');
+  const ADMIN_NAME = env('SEED_ADMIN_NAME');
+  const ADMIN_PASSWORD = env('SEED_ADMIN_PASSWORD');
+
   const examplePdf = fs
     .readFileSync(path.join(__dirname, '../../../assets/example.pdf'))
     .toString('base64');
@@ -49,7 +38,7 @@ export const seedDatabase = async () => {
 
   const adminUserExists = await prisma.user.findFirst({
     where: {
-      email: 'admin@caringdata.com',
+      email: ADMIN_EMAIL,
     },
   });
 
@@ -59,9 +48,9 @@ export const seedDatabase = async () => {
 
   // Create Admin User
   const adminUser = await seedUser({
-    name: 'Admin User',
-    email: 'admin@caringdata.com',
-    password: 'password',
+    name: ADMIN_NAME,
+    email: ADMIN_EMAIL,
+    password: ADMIN_PASSWORD,
     isAdmin: true,
   });
 
