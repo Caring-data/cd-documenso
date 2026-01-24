@@ -63,6 +63,7 @@ import { createDocumentAuditLogData } from '@documenso/lib/utils/document-audit-
 import {
   mapSecondaryIdToDocumentId,
   mapSecondaryIdToTemplateId,
+  mapTemplateIdToSecondaryId,
 } from '@documenso/lib/utils/envelope';
 import { buildTeamWhereQuery } from '@documenso/lib/utils/teams';
 import { prisma } from '@documenso/prisma';
@@ -870,30 +871,25 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
       // Normalize filename
       const fileName = title.endsWith('.pdf') ? title : `${title}.pdf`;
 
-      // Always use BYTES_64 regardless of the type field in request
       const bytes = await getFileServerSide({
         type: DocumentDataType.BYTES_64,
         data,
       });
 
-      // Convert Uint8Array to Buffer and then to ArrayBuffer
       const buffer = Buffer.from(bytes);
       const arrayBuffer = buffer.buffer.slice(
         buffer.byteOffset,
         buffer.byteOffset + buffer.byteLength,
       );
 
-      // Create File-like object for putNormalizedPdfFileServerSide
       const file = {
         name: fileName,
         type: 'application/pdf',
         arrayBuffer: async () => Promise.resolve(arrayBuffer),
       };
 
-      // Normalize PDF and create DocumentData
       const { id: templateDocumentDataId } = await putNormalizedPdfFileServerSide(file);
 
-      // Create envelope type TEMPLATE
       const createdTemplate = await createEnvelope({
         userId: user.id,
         teamId: team.id,
@@ -912,11 +908,211 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
         requestMetadata: metadata,
       });
 
-      // Get full template data
       const fullTemplate = await getTemplateById({
         id: {
           type: 'envelopeId',
           id: createdTemplate.id,
+        },
+        userId: user.id,
+        teamId: team.id,
+      });
+
+      return {
+        status: 200,
+        body: {
+          ...fullTemplate,
+          templateMeta: fullTemplate.templateMeta
+            ? {
+                ...fullTemplate.templateMeta,
+                templateId: fullTemplate.id,
+              }
+            : null,
+          Field: fullTemplate.fields.map((field) => ({
+            ...field,
+            fieldMeta: field.fieldMeta ? ZFieldMetaSchema.parse(field.fieldMeta) : null,
+          })),
+          Recipient: fullTemplate.recipients,
+        },
+      };
+    } catch (err) {
+      return AppError.toRestAPIError(err);
+    }
+  }),
+
+  deleteEmbedTemplate: authenticatedMiddleware(async (args, user, team, { logger }) => {
+    try {
+      const { externalId } = args.params;
+
+      logger.info({
+        input: {
+          externalId,
+          userId: user.id,
+          teamId: team.id,
+        },
+      });
+
+      const templateId = Number(externalId);
+      if (isNaN(templateId)) {
+        return {
+          status: 400,
+          body: {
+            message: 'Invalid template ID',
+            externalId,
+          },
+        };
+      }
+
+      const deletedTemplate = await deleteTemplate({
+        id: {
+          type: 'templateId',
+          id: templateId,
+        },
+        userId: user.id,
+        teamId: team.id,
+      });
+
+      const legacyTemplateId = mapSecondaryIdToTemplateId(deletedTemplate.secondaryId);
+
+      return {
+        status: 200,
+        body: {
+          id: legacyTemplateId,
+          externalId: deletedTemplate.externalId,
+          type: deletedTemplate.templateType,
+          title: deletedTemplate.title,
+          userId: deletedTemplate.userId,
+          teamId: deletedTemplate.teamId,
+          createdAt: deletedTemplate.createdAt,
+          updatedAt: deletedTemplate.updatedAt,
+        },
+      };
+    } catch (err) {
+      logger.error({
+        error: err,
+        message: 'Error deleting embed template',
+      });
+
+      if (err instanceof AppError && err.code === AppErrorCode.NOT_FOUND) {
+        return {
+          status: 404,
+          body: {
+            message: 'Template not found',
+            externalId: args.params.externalId,
+          },
+        };
+      }
+
+      return AppError.toRestAPIError(err);
+    }
+  }),
+
+  replaceEmbedTemplate: authenticatedMiddleware(async (args, user, team, { logger, metadata }) => {
+    const { externalId } = args.params;
+    const { body } = args;
+    const { title, data } = body;
+
+    try {
+      logger.info({
+        input: {
+          externalId,
+          title,
+        },
+      });
+
+      const templateId = Number(externalId);
+      if (isNaN(templateId)) {
+        return {
+          status: 400,
+          body: {
+            message: 'Invalid template ID',
+          },
+        };
+      }
+
+      const secondaryId = mapTemplateIdToSecondaryId(templateId);
+
+      const envelope = await prisma.envelope.findFirst({
+        where: {
+          secondaryId,
+          type: EnvelopeType.TEMPLATE,
+          deletedAt: null,
+        },
+        include: {
+          envelopeItems: {
+            include: {
+              documentData: true,
+            },
+          },
+        },
+      });
+
+      if (!envelope) {
+        return {
+          status: 404,
+          body: {
+            message: 'Template not found',
+          },
+        };
+      }
+
+      const firstEnvelopeItem = envelope.envelopeItems[0];
+
+      if (!firstEnvelopeItem) {
+        return {
+          status: 404,
+          body: {
+            message: 'Template envelope item not found',
+          },
+        };
+      }
+
+      const fileName = title.endsWith('.pdf') ? title : `${title}.pdf`;
+
+      const bytes = await getFileServerSide({
+        type: DocumentDataType.BYTES_64,
+        data,
+      });
+
+      const buffer = Buffer.from(bytes);
+      const arrayBuffer = buffer.buffer.slice(
+        buffer.byteOffset,
+        buffer.byteOffset + buffer.byteLength,
+      );
+
+      const file = {
+        name: fileName,
+        type: 'application/pdf',
+        arrayBuffer: async () => Promise.resolve(arrayBuffer),
+      };
+
+      const { id: newTemplateDocumentDataId } = await putNormalizedPdfFileServerSide(file);
+
+      const oldDocumentDataId = firstEnvelopeItem.documentDataId;
+
+      await prisma.$transaction(async (tx) => {
+        await tx.envelope.update({
+          where: { id: envelope.id },
+          data: {
+            title: fileName,
+          },
+        });
+
+        await tx.envelopeItem.update({
+          where: { id: firstEnvelopeItem.id },
+          data: {
+            documentDataId: newTemplateDocumentDataId,
+          },
+        });
+
+        await tx.documentData.delete({
+          where: { id: oldDocumentDataId },
+        });
+      });
+
+      const fullTemplate = await getTemplateById({
+        id: {
+          type: 'envelopeId',
+          id: envelope.id,
         },
         userId: user.id,
         teamId: team.id,
