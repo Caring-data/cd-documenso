@@ -20,6 +20,7 @@ import {
   ZCreateRecipientMutationSchema,
   ZCreateUserRequestSchema,
   ZDeleteDocumentMutationSchema,
+  ZDeleteEmbedTemplateResponseSchema,
   ZDeleteFieldMutationSchema,
   ZDeleteRecipientMutationSchema,
   ZDownloadDocumentQuerySchema,
@@ -31,6 +32,8 @@ import {
   ZGetTemplatesQuerySchema,
   ZGetUsersQuerySchema,
   ZNoBodyMutationSchema,
+  ZReplaceEmbedTemplateRequestSchema,
+  ZReplaceEmbedTemplateResponseSchema,
   ZResendDocumentForSigningMutationSchema,
   ZSendDocumentForSigningMutationSchema,
   ZSuccessfulDeleteTemplateResponseSchema,
@@ -143,6 +146,35 @@ export const ApiContractV1 = c.router(
       },
       summary: 'Create a new template for embedding',
       description: 'Create a new template for embedding',
+    },
+
+    deleteEmbedTemplate: {
+      method: 'DELETE',
+      path: '/api/v1/templates/embed/:externalId',
+      body: c.noBody(),
+      responses: {
+        200: ZDeleteEmbedTemplateResponseSchema,
+        401: ZUnsuccessfulResponseSchema,
+        404: ZUnsuccessfulResponseSchema,
+        500: ZUnsuccessfulResponseSchema,
+      },
+      summary: 'Delete an embedded template',
+      description: 'Delete an embedded template by externalId',
+    },
+
+    replaceEmbedTemplate: {
+      method: 'PUT',
+      path: '/api/v1/templates/embed/:externalId',
+      body: ZReplaceEmbedTemplateRequestSchema,
+      responses: {
+        200: ZReplaceEmbedTemplateResponseSchema,
+        400: ZUnsuccessfulResponseSchema,
+        401: ZUnsuccessfulResponseSchema,
+        404: ZUnsuccessfulResponseSchema,
+        500: ZUnsuccessfulResponseSchema,
+      },
+      summary: 'Replace an embedded template',
+      description: 'Replace an embedded template with new title and data by externalId',
     },
 
     deleteTemplate: {
