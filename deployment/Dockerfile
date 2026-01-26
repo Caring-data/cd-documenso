@@ -118,12 +118,17 @@ COPY --from=installer --chown=nodejs:nodejs /app/apps/remix/public ./apps/remix/
 COPY --from=installer --chown=nodejs:nodejs /app/packages/prisma/schema.prisma ./packages/prisma/schema.prisma
 COPY --from=installer --chown=nodejs:nodejs /app/packages/prisma/migrations ./packages/prisma/migrations
 
+# Copy scripts folder for migrations
+COPY --from=installer --chown=nodejs:nodejs /app/scripts ./scripts
+
 # Generate the prisma client again
 RUN npx prisma generate --schema ./packages/prisma/schema.prisma
 
 
 # Get the start script from deployment/
 COPY --chown=nodejs:nodejs ./deployment/start.sh /app/apps/remix/start.sh
+# Get the migrations script from deployment/
+COPY --chown=nodejs:nodejs ./deployment/run-migrations.sh /app/run-migrations.sh
 
 WORKDIR /app/apps/remix
 
