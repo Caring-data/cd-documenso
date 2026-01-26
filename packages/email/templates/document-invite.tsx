@@ -6,14 +6,16 @@ import { OrganisationType } from '@prisma/client';
 
 import { RECIPIENT_ROLES_DESCRIPTION } from '@documenso/lib/constants/recipient-roles';
 
-import { Body, Container, Head, Hr, Html, Img, Link, Preview, Section, Text } from '../components';
+import { Body, Container, Head, Html, Img, Preview, Section, Text } from '../components';
 import { useBranding } from '../providers/branding';
-import { TemplateCustomMessageBody } from '../template-components/template-custom-message-body';
 import type { TemplateDocumentInviteProps } from '../template-components/template-document-invite';
 import { TemplateDocumentInvite } from '../template-components/template-document-invite';
 import { TemplateFooter } from '../template-components/template-footer';
 
 export type DocumentInviteEmailTemplateProps = Partial<TemplateDocumentInviteProps> & {
+  inviterName?: string;
+  inviterEmail?: string;
+  documentName?: string;
   customBody?: string;
   role: RecipientRole;
   selfSigner?: boolean;
@@ -21,6 +23,15 @@ export type DocumentInviteEmailTemplateProps = Partial<TemplateDocumentInvitePro
   teamEmail?: string;
   includeSenderDetails?: boolean;
   organisationType?: OrganisationType;
+  recipientName?: string;
+  signingContext?: {
+    companyName?: string;
+    facilityAdministrator?: string;
+    documentName?: string;
+    ownerName?: string;
+    locationName?: string;
+  };
+  tokenExpiration?: Date | string | undefined;
 };
 
 export const DocumentInviteEmailTemplate = ({
@@ -35,6 +46,9 @@ export const DocumentInviteEmailTemplate = ({
   teamName = '',
   includeSenderDetails,
   organisationType,
+  recipientName,
+  signingContext,
+  tokenExpiration,
 }: DocumentInviteEmailTemplateProps) => {
   const { _ } = useLingui();
   const branding = useBranding();
@@ -63,65 +77,43 @@ export const DocumentInviteEmailTemplate = ({
       <Preview>{_(previewText)}</Preview>
 
       <Body className="mx-auto my-auto bg-white font-sans">
-        <Section>
-          <Container className="mx-auto mb-2 mt-8 max-w-xl rounded-lg border border-solid border-slate-200 p-4 backdrop-blur-sm">
-            <Section>
-              {branding.brandingEnabled && branding.brandingLogo ? (
-                <Img src={branding.brandingLogo} alt="Branding Logo" className="mb-4 h-6" />
-              ) : (
-                <Img
-                  src={getAssetUrl('/static/logo.png')}
-                  alt="Documenso Logo"
-                  className="mb-4 h-6"
-                />
-              )}
-
-              <TemplateDocumentInvite
-                inviterName={inviterName}
-                inviterEmail={inviterEmail}
-                documentName={documentName}
-                signDocumentLink={signDocumentLink}
-                assetBaseUrl={assetBaseUrl}
-                role={role}
-                selfSigner={selfSigner}
-                organisationType={organisationType}
-                teamName={teamName}
-                includeSenderDetails={includeSenderDetails}
-              />
-            </Section>
-          </Container>
-
-          <Container className="mx-auto mt-12 max-w-xl">
-            <Section>
-              {organisationType === OrganisationType.PERSONAL && (
-                <Text className="my-4 text-base font-semibold">
-                  <Trans>
-                    {inviterName}{' '}
-                    <Link className="font-normal text-slate-400" href="mailto:{inviterEmail}">
-                      ({inviterEmail})
-                    </Link>
-                  </Trans>
-                </Text>
-              )}
-
-              <Text className="mt-2 text-base text-slate-400">
-                {customBody ? (
-                  <TemplateCustomMessageBody text={customBody} />
+        <div className="flex flex-col items-center justify-center gap-6 rounded-lg bg-zinc-50 p-6">
+          <Section>
+            <Container className="mx-auto mb-4 mt-8 max-w-xl rounded-lg border border-solid border-slate-200 bg-white p-6">
+              <Section>
+                {branding.brandingEnabled && branding.brandingLogo ? (
+                  <Img src={branding.brandingLogo} alt="Branding Logo" className="mb-4 h-6" />
                 ) : (
-                  <Trans>
-                    {inviterName} has invited you to {action} the document "{documentName}".
-                  </Trans>
+                  <div className="mb-6 w-[97%] items-center justify-center gap-1 rounded-md bg-brand px-2 py-4 text-center">
+                    <div className="text-center text-white">
+                      <Img
+                        src={getAssetUrl('/static/file-pen-line-white.png')}
+                        alt="icon image - file pen line"
+                        className="inline h-8"
+                      />
+                    </div>
+                    <Text className="text-center text-lg font-medium text-white">
+                      <Trans>You are invited to sign a document</Trans>
+                    </Text>
+                  </div>
                 )}
-              </Text>
-            </Section>
-          </Container>
 
-          <Hr className="mx-auto mt-12 max-w-xl" />
+                <TemplateDocumentInvite
+                  inviterEmail={inviterEmail}
+                  signDocumentLink={signDocumentLink}
+                  assetBaseUrl={assetBaseUrl}
+                  role={role}
+                  recipientName={recipientName}
+                  signingContext={signingContext}
+                  tokenExpiration={tokenExpiration}
+                  customBody={customBody}
+                />
+              </Section>
+            </Container>
 
-          <Container className="mx-auto max-w-xl">
-            <TemplateFooter />
-          </Container>
-        </Section>
+            <TemplateFooter companyName={signingContext?.companyName || ''} />
+          </Section>
+        </div>
       </Body>
     </Html>
   );

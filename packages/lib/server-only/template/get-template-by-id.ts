@@ -22,7 +22,10 @@ export const getTemplateById = async ({ id, userId, teamId }: GetTemplateByIdOpt
   });
 
   const envelope = await prisma.envelope.findFirst({
-    where: envelopeWhereInput,
+    where: {
+      ...envelopeWhereInput,
+      deletedAt: null,
+    },
     include: {
       directLink: true,
       documentMeta: true,

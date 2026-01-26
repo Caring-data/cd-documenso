@@ -4,7 +4,7 @@ import { ApiContractV1 } from '../contract';
 
 const main = async () => {
   const client = initClient(ApiContractV1, {
-    baseUrl: 'http://localhost:4000/api/v1',
+    baseUrl: 'http://localhost:3002/api/v1',
     baseHeaders: {
       authorization: 'Bearer <my-token>',
     },

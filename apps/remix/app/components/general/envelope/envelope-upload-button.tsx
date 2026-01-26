@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 
-import { msg, plural } from '@lingui/core/macro';
+import { msg } from '@lingui/core/macro';
 import { useLingui } from '@lingui/react/macro';
 import { Trans } from '@lingui/react/macro';
 import { EnvelopeType } from '@prisma/client';
@@ -10,7 +10,6 @@ import { match } from 'ts-pattern';
 
 import { useCurrentOrganisation } from '@documenso/lib/client-only/providers/organisation';
 import { useSession } from '@documenso/lib/client-only/providers/session';
-import { APP_DOCUMENT_UPLOAD_SIZE_LIMIT } from '@documenso/lib/constants/app';
 import { TIME_ZONES } from '@documenso/lib/constants/time-zones';
 import { AppError, AppErrorCode } from '@documenso/lib/errors/app-error';
 import { formatDocumentsPath, formatTemplatesPath } from '@documenso/lib/utils/teams';
@@ -136,26 +135,10 @@ export const EnvelopeUploadButton = ({ className, type, folderId }: EnvelopeUplo
   };
 
   const onFileDropRejected = (fileRejections: FileRejection[]) => {
-    const maxItemsReached = fileRejections.some((fileRejection) =>
-      fileRejection.errors.some((error) => error.code === DropzoneErrorCode.TooManyFiles),
-    );
-
-    if (maxItemsReached) {
-      toast({
-        title: plural(maximumEnvelopeItemCount, {
-          one: `You cannot upload more than # item per envelope.`,
-          other: `You cannot upload more than # items per envelope.`,
-        }),
-        duration: 5000,
-        variant: 'destructive',
-      });
-
-      return;
-    }
 
     toast({
       title: t`Upload failed`,
-      description: t`File cannot be larger than ${APP_DOCUMENT_UPLOAD_SIZE_LIMIT}MB`,
+      description: t`The file could not be uploaded. Please check that it is a valid PDF file.`,
       duration: 5000,
       variant: 'destructive',
     });

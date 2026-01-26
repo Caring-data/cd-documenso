@@ -1,43 +1,59 @@
-import type { EnvelopeItem } from '@prisma/client';
+import type { DocumentData, EnvelopeItem } from '@documenso/prisma/client';
 
-import { getEnvelopeItemPdfUrl } from '../utils/envelope-download';
+import { getFile } from '../universal/upload/get-file';
 import { downloadFile } from './download-file';
 
-type DocumentVersion = 'original' | 'signed';
+type EnvelopeItemToDownload = Pick<EnvelopeItem, 'id' | 'envelopeId' | 'title' | 'order'>;
 
-type DownloadPDFProps = {
-  envelopeItem: Pick<EnvelopeItem, 'id' | 'envelopeId'>;
-  token: string | undefined;
-
+export type DownloadPDFProps = {
+  documentData?: DocumentData;
   fileName?: string;
-  /**
-   * Specifies which version of the document to download.
-   * 'signed': Downloads the signed version (default).
-   * 'original': Downloads the original version.
-   */
-  version?: DocumentVersion;
+  envelopeItem?: EnvelopeItemToDownload;
+  token?: string;
+  version?: 'original' | 'signed';
 };
 
 export const downloadPDF = async ({
+  documentData,
+  fileName,
   envelopeItem,
   token,
-  fileName,
   version = 'signed',
 }: DownloadPDFProps) => {
-  const downloadUrl = getEnvelopeItemPdfUrl({
-    type: 'download',
-    envelopeItem: envelopeItem,
-    token,
-    version,
-  });
+  let blob: Blob;
+  let baseTitle: string;
 
-  const blob = await fetch(downloadUrl).then(async (res) => await res.blob());
+  if (envelopeItem) {
+    // Download envelope item via API
+    const url = token
+      ? `/api/files/envelope/item/${envelopeItem.id}/download/${version}?token=${token}`
+      : `/api/files/envelope/item/${envelopeItem.id}/download/${version}`;
 
-  const baseTitle = (fileName ?? 'document').replace(/\.pdf$/, '');
-  const suffix = version === 'signed' ? '_signed.pdf' : '.pdf';
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error('Failed to download document');
+    }
+
+    blob = await response.blob();
+    baseTitle = (fileName ?? envelopeItem.title ?? 'document').replace(/\.pdf$/, '');
+  } else if (documentData) {
+    // Original behavior - download from document data
+    const bytes = await getFile(documentData);
+
+    blob = new Blob([new Uint8Array(bytes)], {
+      type: 'application/pdf',
+    });
+
+    baseTitle = (fileName ?? 'document').replace(/\.pdf$/, '');
+  } else {
+    throw new Error('Either documentData or envelopeItem must be provided');
+  }
+
+  const suffix = version === 'original' ? '' : '_signed';
 
   downloadFile({
-    filename: `${baseTitle}${suffix}`,
+    filename: `${baseTitle}${suffix}.pdf`,
     data: blob,
   });
 };

@@ -79,6 +79,7 @@ export type CreateDocumentFromTemplateOptions = {
   }[];
   folderId?: string;
   prefillFields?: TFieldMetaPrefillFieldsSchema[];
+  ownerId?: string;
 
   customDocumentData?: {
     documentDataId: string;
@@ -303,6 +304,7 @@ export const createDocumentFromTemplate = async ({
   folderId,
   prefillFields,
   attachments,
+  ownerId,
 }: CreateDocumentFromTemplateOptions) => {
   const { envelopeWhereInput } = await getEnvelopeWhereInput({
     id,
@@ -312,7 +314,10 @@ export const createDocumentFromTemplate = async ({
   });
 
   const template = await prisma.envelope.findUnique({
-    where: envelopeWhereInput,
+    where: {
+      ...envelopeWhereInput,
+      deletedAt: null,
+    },
     include: {
       recipients: {
         include: {
@@ -513,6 +518,7 @@ export const createDocumentFromTemplate = async ({
         visibility: template.visibility || settings.documentVisibility,
         useLegacyFieldInsertion: template.useLegacyFieldInsertion ?? false,
         documentMetaId: documentMeta.id,
+        ownerId,
         recipients: {
           createMany: {
             data: finalRecipients.map((recipient) => {

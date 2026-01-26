@@ -3,8 +3,7 @@ import { lazy, useMemo } from 'react';
 import { Plural, Trans } from '@lingui/react/macro';
 import { EnvelopeType, RecipientRole } from '@prisma/client';
 import { motion } from 'framer-motion';
-import { ArrowLeftIcon, BanIcon, DownloadCloudIcon, PaperclipIcon } from 'lucide-react';
-import { Link } from 'react-router';
+import { BanIcon, DownloadCloudIcon, PaperclipIcon } from 'lucide-react';
 import { match } from 'ts-pattern';
 
 import { useCurrentEnvelopeRender } from '@documenso/lib/client-only/providers/envelope-render-provider';
@@ -14,6 +13,7 @@ import { Button } from '@documenso/ui/primitives/button';
 import { Separator } from '@documenso/ui/primitives/separator';
 
 import { EnvelopeDownloadDialog } from '~/components/dialogs/envelope-download-dialog';
+import { SignFieldCalendarDialog } from '~/components/dialogs/sign-field-calendar-dialog';
 import { SignFieldCheckboxDialog } from '~/components/dialogs/sign-field-checkbox-dialog';
 import { SignFieldDropdownDialog } from '~/components/dialogs/sign-field-dropdown-dialog';
 import { SignFieldEmailDialog } from '~/components/dialogs/sign-field-email-dialog';
@@ -80,6 +80,7 @@ export const DocumentSigningPageViewV2 = () => {
       <SignFieldDropdownDialog.Root />
       <SignFieldSignatureDialog.Root />
       <SignFieldCheckboxDialog.Root />
+      <SignFieldCalendarDialog.Root />
 
       <EnvelopeSignerHeader />
 
@@ -184,8 +185,8 @@ export const DocumentSigningPageViewV2 = () => {
             </div>
           )}
 
-          <div className="embed--DocumentWidgetFooter mt-auto">
-            {/* Footer of left sidebar. */}
+          {/* Footer of left sidebar. */}
+          {/* <div className="embed--DocumentWidgetFooter mt-auto">
             {!isEmbed && (
               <div className="px-4">
                 <Button asChild variant="ghost" className="w-full justify-start">
@@ -196,7 +197,7 @@ export const DocumentSigningPageViewV2 = () => {
                 </Button>
               </div>
             )}
-          </div>
+          </div> */}
         </div>
 
         <div className="embed--DocumentContainer flex-1 overflow-y-auto">

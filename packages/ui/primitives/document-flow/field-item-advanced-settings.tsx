@@ -66,6 +66,12 @@ export type FieldMetaKeys =
 
 const getDefaultState = (fieldType: FieldType): FieldMeta => {
   switch (fieldType) {
+    case FieldType.SIGNATURE:
+      return {
+        type: 'signature',
+        fontSize: 18,
+        required: true,
+      };
     case FieldType.INITIALS:
       return {
         type: 'initials',
@@ -85,6 +91,12 @@ const getDefaultState = (fieldType: FieldType): FieldMeta => {
         textAlign: 'left',
       };
     case FieldType.DATE:
+      return {
+        type: 'date',
+        fontSize: 14,
+        textAlign: 'left',
+      };
+    case FieldType.CALENDAR:
       return {
         type: 'date',
         fontSize: 14,
@@ -189,7 +201,7 @@ export const FieldAdvancedSettings = forwardRef<HTMLDivElement, FieldAdvancedSet
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [fieldMeta]);
 
-    const { scheduleSave } = useAutoSave(onAutoSave || (async () => {}));
+    const { scheduleSave } = useAutoSave(onAutoSave || (async () => { }));
 
     const handleAutoSave = () => {
       if (errors.length === 0) {
@@ -298,6 +310,13 @@ export const FieldAdvancedSettings = forwardRef<HTMLDivElement, FieldAdvancedSet
               />
             ))
             .with(FieldType.DATE, () => (
+              <DateFieldAdvancedSettings
+                fieldState={fieldState}
+                handleFieldChange={handleFieldChange}
+                handleErrors={setErrors}
+              />
+            ))
+            .with(FieldType.CALENDAR, () => (
               <DateFieldAdvancedSettings
                 fieldState={fieldState}
                 handleFieldChange={handleFieldChange}

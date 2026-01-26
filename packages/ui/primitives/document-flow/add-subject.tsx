@@ -212,8 +212,7 @@ export const AddSubjectFormPartial = ({
                     className="flex flex-col gap-y-4 rounded-lg border p-4"
                     disabled={form.formState.isSubmitting}
                   >
-                    {organisation.organisationClaim.flags.emailDomains && (
-                      <FormField
+                    <FormField
                         control={form.control}
                         name="meta.emailId"
                         render={({ field }) => (
@@ -249,7 +248,6 @@ export const AddSubjectFormPartial = ({
                           </FormItem>
                         )}
                       />
-                    )}
 
                     <FormField
                       control={form.control}

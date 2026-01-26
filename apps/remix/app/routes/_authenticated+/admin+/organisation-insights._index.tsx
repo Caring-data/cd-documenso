@@ -46,8 +46,6 @@ export async function loader({ request }: Route.LoaderArgs) {
     name: item.name || '',
     signingVolume: item.signingVolume || 0,
     createdAt: item.createdAt || new Date(),
-    customerId: item.customerId || '',
-    subscriptionStatus: item.subscriptionStatus,
     teamCount: item.teamCount || 0,
     memberCount: item.memberCount || 0,
   }));

@@ -1,28 +1,21 @@
 import { msg } from '@lingui/core/macro';
 import { useLingui } from '@lingui/react';
-import { EnvelopeType, FieldType, SigningStatus } from '@prisma/client';
+import { EnvelopeType, FieldType } from '@prisma/client';
 import { DateTime } from 'luxon';
 import { redirect } from 'react-router';
 import { prop, sortBy } from 'remeda';
 import { match } from 'ts-pattern';
 import { UAParser } from 'ua-parser-js';
-import { renderSVG } from 'uqr';
 
 import { NEXT_PUBLIC_WEBAPP_URL } from '@documenso/lib/constants/app';
-import { APP_I18N_OPTIONS, ZSupportedLanguageCodeSchema } from '@documenso/lib/constants/i18n';
-import {
-  RECIPIENT_ROLES_DESCRIPTION,
-  RECIPIENT_ROLE_SIGNING_REASONS,
-} from '@documenso/lib/constants/recipient-roles';
+import { ZSupportedLanguageCodeSchema } from '@documenso/lib/constants/i18n';
 import { unsafeGetEntireEnvelope } from '@documenso/lib/server-only/admin/get-entire-document';
 import { decryptSecondaryData } from '@documenso/lib/server-only/crypto/decrypt';
 import { getDocumentCertificateAuditLogs } from '@documenso/lib/server-only/document/get-document-certificate-audit-logs';
-import { getOrganisationClaimByTeamId } from '@documenso/lib/server-only/organisation/get-organisation-claims';
 import { DOCUMENT_AUDIT_LOG_TYPE } from '@documenso/lib/types/document-audit-logs';
 import { extractDocumentAuthMethods } from '@documenso/lib/utils/document-auth';
 import { mapSecondaryIdToDocumentId } from '@documenso/lib/utils/envelope';
 import { getTranslations } from '@documenso/lib/utils/i18n';
-import { Card, CardContent } from '@documenso/ui/primitives/card';
 import {
   Table,
   TableBody,
@@ -32,14 +25,7 @@ import {
   TableRow,
 } from '@documenso/ui/primitives/table';
 
-import { BrandingLogo } from '~/components/general/branding-logo';
-
 import type { Route } from './+types/certificate';
-
-const FRIENDLY_SIGNING_REASONS = {
-  ['__OWNER__']: msg`I am the owner of this document`,
-  ...RECIPIENT_ROLE_SIGNING_REASONS,
-};
 
 export async function loader({ request }: Route.LoaderArgs) {
   const d = new URL(request.url).searchParams.get('d');
@@ -68,7 +54,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     throw redirect('/');
   }
 
-  const organisationClaim = await getOrganisationClaimByTeamId({ teamId: envelope.teamId });
+  // Feature flags removed - all features always available
 
   const documentLanguage = ZSupportedLanguageCodeSchema.parse(envelope.documentMeta?.language);
 
@@ -95,7 +81,7 @@ export async function loader({ request }: Route.LoaderArgs) {
       deletedAt: envelope.deletedAt,
       documentMeta: envelope.documentMeta,
     },
-    hidePoweredBy: organisationClaim.flags.hidePoweredBy,
+    hidePoweredBy: false, // Feature flags removed
     documentLanguage,
     auditLogs,
     messages,
@@ -112,17 +98,23 @@ export async function loader({ request }: Route.LoaderArgs) {
  * Update: Maybe <Trans> tags work now after RR7 migration.
  */
 export default function SigningCertificate({ loaderData }: Route.ComponentProps) {
-  const { document, documentLanguage, hidePoweredBy, auditLogs, messages } = loaderData;
+  const {
+    document,
+    documentLanguage,
+    hidePoweredBy: _hidePoweredBy,
+    auditLogs,
+    messages,
+  } = loaderData;
 
   const { i18n, _ } = useLingui();
 
   i18n.loadAndActivate({ locale: documentLanguage, messages });
 
-  const isOwner = (email: string) => {
+  const _isOwner = (email: string) => {
     return email.toLowerCase() === document.user.email.toLowerCase();
   };
 
-  const getDevice = (userAgent?: string | null) => {
+  const _getDevice = (userAgent?: string | null) => {
     if (!userAgent) {
       return 'Unknown';
     }
@@ -161,7 +153,6 @@ export default function SigningCertificate({ loaderData }: Route.ComponentProps)
       .with('ACCOUNT', () => _(msg`Account Re-Authentication`))
       .with('TWO_FACTOR_AUTH', () => _(msg`Two-Factor Re-Authentication`))
       .with('PASSWORD', () => _(msg`Password Re-Authentication`))
-      .with('PASSKEY', () => _(msg`Passkey Re-Authentication`))
       .with('EXPLICIT_NONE', () => _(msg`Email`))
       .with(undefined, () => null)
       .exhaustive();
@@ -220,191 +211,262 @@ export default function SigningCertificate({ loaderData }: Route.ComponentProps)
       );
   };
 
+  const getAssetUrl = (path: string) => {
+    return new URL(path, NEXT_PUBLIC_WEBAPP_URL()).toString();
+  };
+
+  const backgroundUrl = getAssetUrl('/static/background-certificate.png');
+
+  const getFinalCompletionDate = () => {
+    const allCompletionDates: Date[] = [];
+
+    for (const recipient of document.recipients) {
+      const log = auditLogs[DOCUMENT_AUDIT_LOG_TYPE.DOCUMENT_RECIPIENT_COMPLETED].find(
+        (log) => log.data.recipientId === recipient.id,
+      );
+
+      if (log?.createdAt instanceof Date) {
+        allCompletionDates.push(log.createdAt);
+      }
+    }
+
+    if (allCompletionDates.length !== document.recipients.length) {
+      return null;
+    }
+
+    return allCompletionDates.reduce((latest, current) => (current > latest ? current : latest));
+  };
+
+  const formatDateWithTimezone = (
+    date: Date | null | undefined,
+    fallbackZone: string = DateTime.local().zoneName ?? 'UTC',
+    timezone: string | null | undefined = null,
+  ): string => {
+    if (!date) {
+      return 'Unknown';
+    }
+
+    const zoneToUse = timezone ?? fallbackZone;
+
+    return DateTime.fromJSDate(date).setZone(zoneToUse).toFormat('dd LLL yyyy hh:mm:ss a (ZZZZ)');
+  };
+
+  const isTypedSignatureSettings = (
+    settings: unknown,
+  ): settings is { font?: string; color?: string } => {
+    return (
+      typeof settings === 'object' &&
+      settings !== null &&
+      ('font' in settings || 'color' in settings)
+    );
+  };
+
   return (
-    <div className="print-provider pointer-events-none mx-auto max-w-screen-md">
-      <div className="flex items-center">
-        <h1 className="my-8 text-2xl font-bold">{_(msg`Signing Certificate`)}</h1>
-      </div>
+    <div
+      className="relative min-h-[100vh] w-full bg-cover bg-center bg-no-repeat print:overflow-hidden"
+      style={{ backgroundImage: `url('${backgroundUrl}')` }}
+    >
+      <div className="print-provider pointer-events-none w-full print:mx-0 print:w-full print:max-w-none print:p-0">
+        <div className="border-brand m-3 flex min-h-[calc(100vh-24px)] flex-col justify-between border p-5 print:m-3 print:min-h-[calc(100vh-24px)] print:p-5">
+          <div className="flex-1">
+            <div className="mt-12 mb-12 flex items-center justify-center">
+              <h1 className="text-brand flex h-6 w-full flex-col justify-center text-2xl leading-4 font-bold">
+                {_(msg`Signature Certificate`)}
+              </h1>
+            </div>
 
-      <Card>
-        <CardContent className="p-0">
-          <Table overflowHidden>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{_(msg`Signer Events`)}</TableHead>
-                <TableHead>{_(msg`Signature`)}</TableHead>
-                <TableHead>{_(msg`Details`)}</TableHead>
-                {/* <TableHead>Security</TableHead> */}
-              </TableRow>
-            </TableHeader>
+            <Table className="w-full border-collapse border-0" overflowHidden>
+              <TableHeader>
+                <TableRow className="border-b border-zinc-200">
+                  <TableHead className="text-brand w-1/3 text-sm leading-4 font-semibold print:text-xs">
+                    {_(msg`Signer Events`)}
+                  </TableHead>
+                  <TableHead className="text-brand w-1/3 text-sm leading-4 font-semibold print:text-xs">
+                    {_(msg`Timestamp`)}
+                  </TableHead>
+                  <TableHead className="text-brand w-1/3 text-sm leading-4 font-semibold print:text-xs">
+                    {_(msg`Signature`)}
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
 
-            <TableBody className="print:text-xs">
-              {document.recipients.map((recipient, i) => {
-                const logs = getRecipientAuditLogs(recipient.id);
-                const signature = getRecipientSignatureField(recipient.id);
+              <TableBody className="print:text-xs">
+                {document.recipients.map((recipient, i) => {
+                  const logs = getRecipientAuditLogs(recipient.id);
+                  const signature = getRecipientSignatureField(recipient.id);
 
-                return (
-                  <TableRow key={i} className="print:break-inside-avoid">
-                    <TableCell truncate={false} className="w-[min-content] max-w-[220px] align-top">
-                      <div className="hyphens-auto break-words font-medium">{recipient.name}</div>
-                      <div className="break-all">{recipient.email}</div>
-                      <p className="mt-2 text-sm text-muted-foreground print:text-xs">
-                        {_(RECIPIENT_ROLES_DESCRIPTION[recipient.role].roleName)}
-                      </p>
-
-                      <p className="mt-2 text-sm text-muted-foreground print:text-xs">
-                        <span className="font-medium">{_(msg`Authentication Level`)}:</span>{' '}
-                        <span className="block">{getAuthenticationLevel(recipient.id)}</span>
-                      </p>
-                    </TableCell>
-
-                    <TableCell truncate={false} className="w-[min-content] align-top">
-                      {signature ? (
-                        <>
-                          <div
-                            className="inline-block rounded-lg p-1"
-                            style={{
-                              boxShadow: `0px 0px 0px 4.88px rgba(122, 196, 85, 0.1), 0px 0px 0px 1.22px rgba(122, 196, 85, 0.6), 0px 0px 0px 0.61px rgba(122, 196, 85, 1)`,
-                            }}
-                          >
-                            {signature.signature?.signatureImageAsBase64 && (
-                              <img
-                                src={`${signature.signature?.signatureImageAsBase64}`}
-                                alt="Signature"
-                                className="max-h-12 max-w-full"
+                  return (
+                    <TableRow
+                      key={i}
+                      className="h-[1px] border-b border-zinc-200 print:break-inside-avoid"
+                    >
+                      <TableCell
+                        truncate={false}
+                        className="w-[min-content] max-w-[220px] align-top"
+                      >
+                        <div className="text-sm leading-4 font-semibold break-words hyphens-auto text-zinc-700 print:text-xs">
+                          {recipient.name}
+                        </div>
+                        <div className="text-sm leading-4 font-medium break-all text-zinc-600 print:text-xs">
+                          Email: {recipient.email}
+                        </div>
+                        <div className="mt-2 space-y-1 text-sm text-zinc-700 print:text-xs">
+                          <p>
+                            <span className="font-medium">{_(msg`Sent`)}:</span>
+                          </p>
+                          <p>
+                            <span className="font-medium">{_(msg`Viewed`)}:</span>
+                          </p>
+                          <p>
+                            <span className="font-medium">{_(msg`Signed`)}:</span>
+                          </p>
+                        </div>
+                        <p className="text-muted-foreground mt-2 text-sm print:text-xs">
+                          <span className="font-medium">{_(msg`Recipient Verification`)}:</span>{' '}
+                          <span className="flex items-center gap-1 text-[10px] leading-[18px] font-medium text-[#16A34A]">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="16"
+                              height="16"
+                              viewBox="0 0 16 16"
+                              fill="none"
+                            >
+                              <path
+                                d="M13.3334 4L6.00008 11.3333L2.66675 8"
+                                stroke="#16A34A"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
                               />
-                            )}
-
-                            {signature.signature?.typedSignature && (
-                              <p className="text-center font-signature text-sm">
-                                {signature.signature?.typedSignature}
-                              </p>
-                            )}
-                          </div>
-
-                          <p className="mt-2 text-sm text-muted-foreground print:text-xs">
-                            <span className="font-medium">{_(msg`Signature ID`)}:</span>{' '}
-                            <span className="block font-mono uppercase">
-                              {signature.secondaryId}
-                            </span>
-                          </p>
-                        </>
-                      ) : (
-                        <p className="text-muted-foreground">N/A</p>
-                      )}
-
-                      <p className="mt-2 text-sm text-muted-foreground print:text-xs">
-                        <span className="font-medium">{_(msg`IP Address`)}:</span>{' '}
-                        <span className="inline-block">
-                          {logs.DOCUMENT_RECIPIENT_COMPLETED[0]?.ipAddress ?? _(msg`Unknown`)}
-                        </span>
-                      </p>
-
-                      <p className="mt-1 text-sm text-muted-foreground print:text-xs">
-                        <span className="font-medium">{_(msg`Device`)}:</span>{' '}
-                        <span className="inline-block">
-                          {getDevice(logs.DOCUMENT_RECIPIENT_COMPLETED[0]?.userAgent)}
-                        </span>
-                      </p>
-                    </TableCell>
-
-                    <TableCell truncate={false} className="w-[min-content] align-top">
-                      <div className="space-y-1">
-                        <p className="text-sm text-muted-foreground print:text-xs">
-                          <span className="font-medium">{_(msg`Sent`)}:</span>{' '}
-                          <span className="inline-block">
-                            {logs.EMAIL_SENT[0]
-                              ? DateTime.fromJSDate(logs.EMAIL_SENT[0].createdAt)
-                                  .setLocale(APP_I18N_OPTIONS.defaultLocale)
-                                  .toFormat('yyyy-MM-dd hh:mm:ss a (ZZZZ)')
-                              : logs.DOCUMENT_SENT[0]
-                                ? DateTime.fromJSDate(logs.DOCUMENT_SENT[0].createdAt)
-                                    .setLocale(APP_I18N_OPTIONS.defaultLocale)
-                                    .toFormat('yyyy-MM-dd hh:mm:ss a (ZZZZ)')
-                                : _(msg`Unknown`)}
+                            </svg>
+                            {getAuthenticationLevel(recipient.id)} {_(msg`Verified`)}
                           </span>
                         </p>
+                      </TableCell>
 
-                        <p className="text-sm text-muted-foreground print:text-xs">
-                          <span className="font-medium">{_(msg`Viewed`)}:</span>{' '}
-                          <span className="inline-block">
-                            {logs.DOCUMENT_OPENED[0]
-                              ? DateTime.fromJSDate(logs.DOCUMENT_OPENED[0].createdAt)
-                                  .setLocale(APP_I18N_OPTIONS.defaultLocale)
-                                  .toFormat('yyyy-MM-dd hh:mm:ss a (ZZZZ)')
-                              : _(msg`Unknown`)}
-                          </span>
-                        </p>
-
-                        {logs.DOCUMENT_RECIPIENT_REJECTED[0] ? (
-                          <p className="text-sm text-muted-foreground print:text-xs">
-                            <span className="font-medium">{_(msg`Rejected`)}:</span>{' '}
+                      <TableCell truncate={false} className="w-[min-content] align-top">
+                        <p className="invisible text-sm leading-4 print:text-xs">Placeholder</p>
+                        <p className="invisible text-sm leading-4 print:text-xs">Placeholder</p>
+                        <div className="mt-2 space-y-1">
+                          <p className="text-muted-foreground text-sm print:text-xs">
                             <span className="inline-block">
-                              {logs.DOCUMENT_RECIPIENT_REJECTED[0]
-                                ? DateTime.fromJSDate(logs.DOCUMENT_RECIPIENT_REJECTED[0].createdAt)
-                                    .setLocale(APP_I18N_OPTIONS.defaultLocale)
-                                    .toFormat('yyyy-MM-dd hh:mm:ss a (ZZZZ)')
-                                : _(msg`Unknown`)}
+                              {formatDateWithTimezone(
+                                logs.EMAIL_SENT[0]?.createdAt || logs.DOCUMENT_SENT[0]?.createdAt,
+                                undefined,
+                                document.documentMeta?.timezone,
+                              )}
                             </span>
                           </p>
+
+                          <p className="text-muted-foreground text-sm print:text-xs">
+                            <span className="inline-block">
+                              {formatDateWithTimezone(
+                                logs.DOCUMENT_OPENED[0]?.createdAt,
+                                undefined,
+                                document.documentMeta?.timezone,
+                              )}
+                            </span>
+                          </p>
+
+                          <p className="text-muted-foreground text-sm print:text-xs">
+                            <span className="inline-block">
+                              {formatDateWithTimezone(
+                                logs.DOCUMENT_RECIPIENT_COMPLETED[0]?.createdAt,
+                                undefined,
+                                document.documentMeta?.timezone,
+                              )}
+                            </span>
+                          </p>
+                        </div>
+                      </TableCell>
+
+                      <TableCell truncate={false} className="align-top">
+                        {signature ? (
+                          <>
+                            <div className="flex h-[73px] w-full items-center justify-center rounded-sm border border-zinc-200 bg-white p-1">
+                              {signature.signature?.signatureImageAsBase64 && (
+                                <img
+                                  src={`${signature.signature?.signatureImageAsBase64}`}
+                                  alt="Signature"
+                                  className="max-h-12 max-w-full object-contain"
+                                />
+                              )}
+
+                              {signature.signature?.typedSignature &&
+                                (() => {
+                                  const settings = (
+                                    signature.fieldMeta as {
+                                      typedSignatureSettings?: { font?: string; color?: string };
+                                    }
+                                  )?.typedSignatureSettings;
+                                  const hasSettings = isTypedSignatureSettings(settings);
+
+                                  return (
+                                    <p
+                                      className="text-center text-sm print:text-xs"
+                                      style={{
+                                        fontFamily: hasSettings
+                                          ? settings.font || 'Dancing Script'
+                                          : 'Dancing Script',
+                                        color: hasSettings ? settings.color || 'black' : 'black',
+                                      }}
+                                    >
+                                      {signature.signature.typedSignature}
+                                    </p>
+                                  );
+                                })()}
+                            </div>
+
+                            <p className="mt-2 flex h-4 flex-col justify-center self-stretch">
+                              <span className="text-sm leading-4 font-medium text-zinc-600 print:text-xs">
+                                {_(msg`IP address`)}:
+                              </span>{' '}
+                              <span className="text-sm leading-4 font-normal text-zinc-600 print:text-xs">
+                                {logs.DOCUMENT_RECIPIENT_COMPLETED[0]?.ipAddress ?? _(msg`Unknown`)}
+                              </span>
+                            </p>
+                          </>
                         ) : (
-                          <p className="text-sm text-muted-foreground print:text-xs">
-                            <span className="font-medium">{_(msg`Signed`)}:</span>{' '}
-                            <span className="inline-block">
-                              {logs.DOCUMENT_RECIPIENT_COMPLETED[0]
-                                ? DateTime.fromJSDate(
-                                    logs.DOCUMENT_RECIPIENT_COMPLETED[0].createdAt,
-                                  )
-                                    .setLocale(APP_I18N_OPTIONS.defaultLocale)
-                                    .toFormat('yyyy-MM-dd hh:mm:ss a (ZZZZ)')
-                                : _(msg`Unknown`)}
-                            </span>
-                          </p>
+                          <p className="text-muted-foreground">N/A</p>
                         )}
-
-                        <p className="text-sm text-muted-foreground print:text-xs">
-                          <span className="font-medium">{_(msg`Reason`)}:</span>{' '}
-                          <span className="inline-block">
-                            {recipient.signingStatus === SigningStatus.REJECTED
-                              ? recipient.rejectionReason
-                              : _(
-                                  isOwner(recipient.email)
-                                    ? FRIENDLY_SIGNING_REASONS['__OWNER__']
-                                    : FRIENDLY_SIGNING_REASONS[recipient.role],
-                                )}
-                          </span>
-                        </p>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      {!hidePoweredBy && (
-        <div className="my-8 flex-row-reverse space-y-4">
-          <div className="flex items-end justify-end gap-x-4">
-            <div
-              className="flex h-24 w-24 justify-center"
-              dangerouslySetInnerHTML={{
-                __html: renderSVG(`${NEXT_PUBLIC_WEBAPP_URL()}/share/${document.qrToken}`, {
-                  ecc: 'Q',
-                }),
-              }}
-            />
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
           </div>
+          <div className="mb-9 flex items-start gap-4">
+            <div className="flex h-[60px] w-[60px] flex-shrink-0 items-center justify-center rounded-full bg-white">
+              <img
+                src={getAssetUrl('/static/logo-bg-white.png')}
+                alt="Logo - Caring Data"
+                className="h-9 w-auto pt-1"
+              />
+            </div>
 
-          <div className="flex items-end justify-end gap-x-4">
-            <p className="flex-shrink-0 text-sm font-medium print:text-xs">
-              {_(msg`Signing certificate provided by`)}:
-            </p>
-            <BrandingLogo className="max-h-6 print:max-h-4" />
+            <div className="text-sm leading-[18px] font-medium text-zinc-700 print:text-xs">
+              <p>{_(msg`Document Completed by all parties on`)}:</p>
+              <p>
+                {(() => {
+                  const finalDate = getFinalCompletionDate();
+                  const fallbackZone = DateTime.local().zoneName ?? 'UTC';
+                  const docTimezone = document.documentMeta?.timezone ?? fallbackZone;
+
+                  return finalDate
+                    ? DateTime.fromJSDate(finalDate)
+                        .setZone(docTimezone)
+                        .toFormat('dd LLL yyyy hh:mm:ss a (ZZZZ)')
+                    : _(msg`Unknown`);
+                })()}
+              </p>
+              <p>
+                {_(msg`Page`)} 1 {_(msg`of`)} 1
+              </p>
+            </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

@@ -2,13 +2,7 @@ import { useMemo } from 'react';
 
 import { useLingui } from '@lingui/react/macro';
 import { Trans } from '@lingui/react/macro';
-import {
-  CreditCardIcon,
-  ExternalLinkIcon,
-  MoreHorizontalIcon,
-  SettingsIcon,
-  UserIcon,
-} from 'lucide-react';
+import { MoreHorizontalIcon, SettingsIcon, UserIcon } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router';
 
 import { useUpdateSearchParams } from '@documenso/lib/client-only/hooks/use-update-search-params';
@@ -103,34 +97,15 @@ export const AdminOrganisationsTable = ({
       {
         id: 'billingStatus',
         header: t`Status`,
-        cell: ({ row }) => {
-          const subscription = row.original.subscription;
-          const isPaid = subscription && subscription.status === 'ACTIVE';
-          return (
-            <div
-              className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                isPaid ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-              }`}
-            >
-              {isPaid ? (
-                <Trans context="Subscription status">Paid</Trans>
-              ) : (
-                <Trans context="Subscription status">Free</Trans>
-              )}
-            </div>
-          );
-        },
+        cell: () => (
+          <div className="inline-flex items-center rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800">
+            <Trans context="Subscription status">Free</Trans>
+          </div>
+        ),
       },
       {
         header: t`Subscription`,
-        cell: ({ row }) =>
-          row.original.subscription ? (
-            <Badge variant="neutral">
-              {row.original.subscription.status}
-            </Badge>
-          ) : (
-            <Trans>None</Trans>
-          ),
+        cell: () => <Trans>None</Trans>,
       },
       {
         id: 'actions',
@@ -156,14 +131,6 @@ export const AdminOrganisationsTable = ({
                 <Link to={`/admin/users/${row.original.owner.id}`}>
                   <UserIcon className="mr-2 h-4 w-4" />
                   <Trans>View owner</Trans>
-                </Link>
-              </DropdownMenuItem>
-
-              <DropdownMenuItem disabled={!row.original.customerId} asChild>
-                <Link to={`https://dashboard.stripe.com/customers/${row.original.customerId}`}>
-                  <CreditCardIcon className="mr-2 h-4 w-4" />
-                  <Trans>Stripe</Trans>
-                  {!row.original.customerId && <span>&nbsp;(N/A)</span>}
                 </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>

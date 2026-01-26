@@ -1,20 +1,15 @@
 import { DateTime } from 'luxon';
 
 import { kyselyPrisma, prisma, sql } from '@documenso/prisma';
-import { SubscriptionStatus, UserSecurityAuditLogType } from '@documenso/prisma/client';
+import { UserSecurityAuditLogType } from '@documenso/prisma/client';
 
 export const getUsersCount = async () => {
   return await prisma.user.count();
 };
 
 export const getOrganisationsWithSubscriptionsCount = async () => {
-  return await prisma.organisation.count({
-    where: {
-      subscription: {
-        status: SubscriptionStatus.ACTIVE,
-      },
-    },
-  });
+  // Subscriptions removed - all organisations are now free
+  return await prisma.organisation.count();
 };
 
 export type GetUserWithDocumentMonthlyGrowth = Array<{

@@ -13,9 +13,10 @@
   "editor.tabSize": 2,
   "editor.insertSpaces": true,
   "[prisma]": {
-    "editor.defaultFormatter": "Prisma.prisma"
+    "editor.defaultFormatter": "Prisma.prisma-insider"
   },
   "[typescriptreact]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
-  }
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
+  "cSpell.words": ["Laravel", "LARAVEL"]
 }

@@ -5,12 +5,8 @@ import type { MessageDescriptor } from '@lingui/core';
 import { msg } from '@lingui/core/macro';
 import { useLingui } from '@lingui/react';
 import { Trans } from '@lingui/react/macro';
-import { browserSupportsWebAuthn, startAuthentication } from '@simplewebauthn/browser';
-import { KeyRoundIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import { FaIdCardClip } from 'react-icons/fa6';
-import { FcGoogle } from 'react-icons/fc';
-import { Link, useNavigate } from 'react-router';
+import { useNavigate } from 'react-router';
 import { match } from 'ts-pattern';
 import { z } from 'zod';
 
@@ -69,20 +65,12 @@ export type TSignInFormSchema = z.infer<typeof ZSignInFormSchema>;
 export type SignInFormProps = {
   className?: string;
   initialEmail?: string;
-  isGoogleSSOEnabled?: boolean;
-  isMicrosoftSSOEnabled?: boolean;
-  isOIDCSSOEnabled?: boolean;
-  oidcProviderLabel?: string;
   returnTo?: string;
 };
 
 export const SignInForm = ({
   className,
   initialEmail,
-  isGoogleSSOEnabled,
-  isMicrosoftSSOEnabled,
-  isOIDCSSOEnabled,
-  oidcProviderLabel,
   returnTo,
 }: SignInFormProps) => {
   const { _ } = useLingui();
@@ -97,10 +85,6 @@ export const SignInForm = ({
   const [twoFactorAuthenticationMethod, setTwoFactorAuthenticationMethod] = useState<
     'totp' | 'backup'
   >('totp');
-
-  const hasSocialAuthEnabled = isGoogleSSOEnabled || isMicrosoftSSOEnabled || isOIDCSSOEnabled;
-
-  const [isPasskeyLoading, setIsPasskeyLoading] = useState(false);
 
   const redirectPath = useMemo(() => {
     // Handle SSR
@@ -117,9 +101,6 @@ export const SignInForm = ({
 
     return url.toString();
   }, [returnTo]);
-
-  const { mutateAsync: createPasskeySigninOptions } =
-    trpc.auth.passkey.createSigninOptions.useMutation();
 
   const form = useForm<TSignInFormSchema>({
     values: {
@@ -152,61 +133,6 @@ export const SignInForm = ({
     }
 
     setTwoFactorAuthenticationMethod(method);
-  };
-
-  const onSignInWithPasskey = async () => {
-    if (!browserSupportsWebAuthn()) {
-      toast({
-        title: _(msg`Not supported`),
-        description: _(msg`Passkeys are not supported on this browser`),
-        duration: 10000,
-        variant: 'destructive',
-      });
-
-      return;
-    }
-
-    try {
-      setIsPasskeyLoading(true);
-
-      const { options, sessionId } = await createPasskeySigninOptions();
-
-      const credential = await startAuthentication(options);
-
-      await authClient.passkey.signIn({
-        credential: JSON.stringify(credential),
-        csrfToken: sessionId,
-        redirectPath,
-      });
-    } catch (err) {
-      setIsPasskeyLoading(false);
-
-      // Error from library.
-      if (err instanceof Error && err.name === 'NotAllowedError') {
-        return;
-      }
-
-      const error = AppError.parseError(err);
-
-      const errorMessage = match(error.code)
-        .with(
-          AuthenticationErrorCode.NotSetup,
-          () =>
-            msg`This passkey is not configured for this application. Please login and add one in the user settings.`,
-        )
-        .with(
-          AuthenticationErrorCode.SessionExpired,
-          () => msg`This session has expired. Please try again.`,
-        )
-        .otherwise(() => handleFallbackErrorMessages(error.code));
-
-      toast({
-        title: _(msg`Something went wrong`),
-        description: _(errorMessage),
-        duration: 10000,
-        variant: 'destructive',
-      });
-    }
   };
 
   const onFormSubmit = async ({ email, password, totpCode, backupCode }: TSignInFormSchema) => {
@@ -260,54 +186,6 @@ export const SignInForm = ({
     }
   };
 
-  const onSignInWithGoogleClick = async () => {
-    try {
-      await authClient.google.signIn({
-        redirectPath,
-      });
-    } catch (err) {
-      toast({
-        title: _(msg`An unknown error occurred`),
-        description: _(
-          msg`We encountered an unknown error while attempting to sign you In. Please try again later.`,
-        ),
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const onSignInWithMicrosoftClick = async () => {
-    try {
-      await authClient.microsoft.signIn({
-        redirectPath,
-      });
-    } catch (err) {
-      toast({
-        title: _(msg`An unknown error occurred`),
-        description: _(
-          msg`We encountered an unknown error while attempting to sign you In. Please try again later.`,
-        ),
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const onSignInWithOIDCClick = async () => {
-    try {
-      await authClient.oidc.signIn({
-        redirectPath,
-      });
-    } catch (err) {
-      toast({
-        title: _(msg`An unknown error occurred`),
-        description: _(
-          msg`We encountered an unknown error while attempting to sign you In. Please try again later.`,
-        ),
-        variant: 'destructive',
-      });
-    }
-  };
-
   useEffect(() => {
     const hash = window.location.hash.slice(1);
 
@@ -330,7 +208,7 @@ export const SignInForm = ({
       >
         <fieldset
           className="flex w-full flex-col gap-y-4"
-          disabled={isSubmitting || isPasskeyLoading}
+          disabled={isSubmitting}
         >
           <FormField
             control={form.control}
@@ -364,15 +242,6 @@ export const SignInForm = ({
                 </FormControl>
 
                 <FormMessage />
-
-                <p className="mt-2 text-right">
-                  <Link
-                    to="/forgot-password"
-                    className="text-muted-foreground text-sm duration-200 hover:opacity-70"
-                  >
-                    <Trans>Forgot your password?</Trans>
-                  </Link>
-                </p>
               </FormItem>
             )}
           />
@@ -384,79 +253,6 @@ export const SignInForm = ({
             className="dark:bg-documenso dark:hover:opacity-90"
           >
             {isSubmitting ? <Trans>Signing in...</Trans> : <Trans>Sign In</Trans>}
-          </Button>
-
-          {!isEmbeddedRedirect && (
-            <>
-              {hasSocialAuthEnabled && (
-                <div className="relative flex items-center justify-center gap-x-4 py-2 text-xs uppercase">
-                  <div className="bg-border h-px flex-1" />
-                  <span className="text-muted-foreground bg-transparent">
-                    <Trans>Or continue with</Trans>
-                  </span>
-                  <div className="bg-border h-px flex-1" />
-                </div>
-              )}
-
-              {isGoogleSSOEnabled && (
-                <Button
-                  type="button"
-                  size="lg"
-                  variant="outline"
-                  className="bg-background text-muted-foreground border"
-                  disabled={isSubmitting}
-                  onClick={onSignInWithGoogleClick}
-                >
-                  <FcGoogle className="mr-2 h-5 w-5" />
-                  Google
-                </Button>
-              )}
-
-              {isMicrosoftSSOEnabled && (
-                <Button
-                  type="button"
-                  size="lg"
-                  variant="outline"
-                  className="bg-background text-muted-foreground border"
-                  disabled={isSubmitting}
-                  onClick={onSignInWithMicrosoftClick}
-                >
-                  <img
-                    className="mr-2 h-4 w-4"
-                    alt="Microsoft Logo"
-                    src={'/static/microsoft.svg'}
-                  />
-                  Microsoft
-                </Button>
-              )}
-
-              {isOIDCSSOEnabled && (
-                <Button
-                  type="button"
-                  size="lg"
-                  variant="outline"
-                  className="bg-background text-muted-foreground border"
-                  disabled={isSubmitting}
-                  onClick={onSignInWithOIDCClick}
-                >
-                  <FaIdCardClip className="mr-2 h-5 w-5" />
-                  {oidcProviderLabel || 'OIDC'}
-                </Button>
-              )}
-            </>
-          )}
-
-          <Button
-            type="button"
-            size="lg"
-            variant="outline"
-            disabled={isSubmitting}
-            loading={isPasskeyLoading}
-            className="bg-background text-muted-foreground border"
-            onClick={onSignInWithPasskey}
-          >
-            {!isPasskeyLoading && <KeyRoundIcon className="-ml-1 mr-1 h-5 w-5" />}
-            <Trans>Passkey</Trans>
           </Button>
         </fieldset>
       </form>

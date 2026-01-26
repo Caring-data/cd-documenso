@@ -92,6 +92,7 @@ const FormLabel = React.forwardRef<
         // error && 'text-destructive', // Uncomment to apply styling on error.
       )}
       htmlFor={formItemId}
+      suppressHydrationWarning
       {...props}
     />
   );

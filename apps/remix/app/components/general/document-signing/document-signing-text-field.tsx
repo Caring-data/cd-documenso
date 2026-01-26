@@ -3,13 +3,15 @@ import { useEffect, useState } from 'react';
 import { msg } from '@lingui/core/macro';
 import { useLingui } from '@lingui/react';
 import { Plural, Trans } from '@lingui/react/macro';
+import { FieldType } from '@prisma/client';
 import { useRevalidator } from 'react-router';
 
 import { validateTextField } from '@documenso/lib/advanced-fields-validation/validate-text';
+import { useGetResidentInfo } from '@documenso/lib/client-only/hooks/use-get-resident-info';
 import { DO_NOT_INVALIDATE_QUERY_ON_MUTATION } from '@documenso/lib/constants/trpc';
 import { AppError, AppErrorCode } from '@documenso/lib/errors/app-error';
 import type { TRecipientActionAuth } from '@documenso/lib/types/document-auth';
-import { ZTextFieldMeta } from '@documenso/lib/types/field-meta';
+import { ZDateFieldMeta, ZTextFieldMeta } from '@documenso/lib/types/field-meta';
 import type { FieldWithSignatureAndFieldMeta } from '@documenso/prisma/types/field-with-signature-and-fieldmeta';
 import { trpc } from '@documenso/trpc/react';
 import type {
@@ -22,6 +24,8 @@ import { Dialog, DialogContent, DialogFooter, DialogTitle } from '@documenso/ui/
 import { Textarea } from '@documenso/ui/primitives/textarea';
 import { useToast } from '@documenso/ui/primitives/use-toast';
 
+import { SignFieldCalendarDialog } from '~/components/dialogs/sign-field-calendar-dialog';
+
 import { useRequiredDocumentSigningAuthContext } from './document-signing-auth-provider';
 import { DocumentSigningFieldContainer } from './document-signing-field-container';
 import {
@@ -30,6 +34,7 @@ import {
   DocumentSigningFieldsUninserted,
 } from './document-signing-fields';
 import { useDocumentSigningRecipientContext } from './document-signing-recipient-provider';
+import { getResidentValue, isResidentFieldType } from './document-signing-resident-helper';
 
 export type DocumentSigningTextFieldProps = {
   field: FieldWithSignatureAndFieldMeta;
@@ -87,12 +92,46 @@ export const DocumentSigningTextField = ({
   const [showCustomTextModal, setShowCustomTextModal] = useState(false);
   const [localText, setLocalCustomText] = useState(parsedFieldMeta?.text ?? '');
 
+  // Resident field logic - automatically fetch when component mounts if it's a resident field
+  const isResidentField = isResidentFieldType(field.type);
+
+  const { data: residentIdData } = trpc.envelope.getResidentInfo.useQuery(
+    { token: recipient.token },
+    {
+      enabled: isResidentField && !isAssistantMode,
+      retry: false,
+    },
+  );
+
+  const { data: residentInfo } = useGetResidentInfo({
+    residentId: residentIdData?.residentId || '',
+  });
+
+  const residentValue =
+    isResidentField && residentInfo ? getResidentValue(field.type, residentInfo) : '';
+
+  // Check if this is RESIDENT_DOB without a value - should use calendar picker
+  const isResidentDobWithoutValue =
+    field.type === FieldType.RESIDENT_DOB && !residentValue && !isAssistantMode;
+
   useEffect(() => {
     if (!showCustomTextModal) {
-      setLocalCustomText(parsedFieldMeta?.text ?? '');
+      // For resident fields, don't reset to parsedFieldMeta text if we have residentValue
+      if (isResidentField && residentValue) {
+        setLocalCustomText(residentValue);
+      } else {
+        setLocalCustomText(parsedFieldMeta?.text ?? '');
+      }
       setErrors(initialErrors);
     }
-  }, [showCustomTextModal]);
+  }, [showCustomTextModal, isResidentField, residentValue, parsedFieldMeta?.text]);
+
+  // Update localText when residentValue becomes available
+  useEffect(() => {
+    if (isResidentField && residentValue && !showCustomTextModal) {
+      setLocalCustomText(residentValue);
+    }
+  }, [isResidentField, residentValue, showCustomTextModal]);
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const text = e.target.value;
@@ -131,7 +170,41 @@ export const DocumentSigningTextField = ({
     });
   };
 
-  const onPreSign = () => {
+  const onPreSign = async () => {
+    // For resident fields, check if we have residentValue (already fetched automatically)
+    if (isResidentField && !isAssistantMode) {
+      // If we have resident value, auto-fill and proceed
+      if (residentValue) {
+        setLocalCustomText(residentValue);
+        return true; // Auto-proceed with resident value
+      }
+
+      // If RESIDENT_DOB without value, show calendar picker
+      if (isResidentDobWithoutValue) {
+        const safeDateFieldMeta = ZDateFieldMeta.safeParse(field.fieldMeta);
+        const parsedDateFieldMeta = safeDateFieldMeta.success ? safeDateFieldMeta.data : undefined;
+
+        const selectedDate = await SignFieldCalendarDialog.call({
+          fieldMeta: parsedDateFieldMeta,
+        });
+
+        if (selectedDate) {
+          setLocalCustomText(selectedDate);
+          void executeActionAuthProcedure({
+            onReauthFormSubmit: async (authOptions) => await onSign(authOptions, selectedDate),
+            actionTarget: field.type,
+          });
+          return true;
+        }
+        return false;
+      }
+
+      // If no resident value, show modal for manual entry
+      setShowCustomTextModal(true);
+      return false;
+    }
+
+    // For non-resident fields, show modal
     setShowCustomTextModal(true);
 
     if (localText && parsedFieldMeta) {
@@ -145,16 +218,32 @@ export const DocumentSigningTextField = ({
     return false;
   };
 
-  const onSign = async (authOptions?: TRecipientActionAuth) => {
+  const onSign = async (authOptions?: TRecipientActionAuth, value?: string) => {
     try {
-      if (!localText || userInputHasErrors) {
+      // Priority: provided value > resident value > local value
+      const fieldValue = value || residentValue || localText || '';
+
+      if (!fieldValue && !isAssistantMode) {
+        if (isResidentField) {
+          setShowCustomTextModal(true);
+        }
+        return;
+      }
+
+      if (fieldValue && isResidentField && !localText) {
+        setLocalCustomText(fieldValue);
+      }
+
+      const finalValue = fieldValue || localText;
+
+      if (!finalValue || userInputHasErrors) {
         return;
       }
 
       const payload: TSignFieldWithTokenMutationSchema = {
         token: recipient.token,
         fieldId: field.id,
-        value: localText,
+        value: finalValue,
         isBase64: true,
         authOptions,
       };

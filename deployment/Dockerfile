@@ -5,7 +5,9 @@ FROM node:22-alpine3.20 AS base
 
 RUN apk add --no-cache openssl
 RUN apk add --no-cache font-freefont
-
+# Chromium para generar certificados PDF con Playwright
+RUN apk add --no-cache chromium nss freetype harfbuzz ca-certificates
+RUN apk add --no-cache ghostscript
 
 ###########################
 #    BUILDER CONTAINER    #
@@ -41,7 +43,6 @@ WORKDIR /app
 # Disable husky from installing hooks
 ENV HUSKY 0
 ENV DOCKER_OUTPUT 1
-ENV NEXT_TELEMETRY_DISABLED 1
 
 # Encryption keys
 ARG NEXT_PRIVATE_ENCRYPTION_KEY="CAFEBABE"
@@ -50,12 +51,6 @@ ENV NEXT_PRIVATE_ENCRYPTION_KEY="$NEXT_PRIVATE_ENCRYPTION_KEY"
 ARG NEXT_PRIVATE_ENCRYPTION_SECONDARY_KEY="DEADBEEF"
 ENV NEXT_PRIVATE_ENCRYPTION_SECONDARY_KEY="$NEXT_PRIVATE_ENCRYPTION_SECONDARY_KEY"
 
-# Telemetry credentials (optional, baked into image at build time)
-ARG NEXT_PRIVATE_TELEMETRY_KEY=""
-ENV NEXT_PRIVATE_TELEMETRY_KEY="$NEXT_PRIVATE_TELEMETRY_KEY"
-
-ARG NEXT_PRIVATE_TELEMETRY_HOST=""
-ENV NEXT_PRIVATE_TELEMETRY_HOST="$NEXT_PRIVATE_TELEMETRY_HOST"
 
 
 # Uncomment and use build args to enable remote caching
@@ -72,7 +67,7 @@ COPY --from=builder /app/out/package-lock.json ./package-lock.json
 COPY --from=builder /app/lingui.config.ts ./lingui.config.ts
 COPY --from=builder /app/patches ./patches
 
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 
 # Then copy all the source code (as it changes more often)
 COPY --from=builder /app/out/full/ .
@@ -90,13 +85,9 @@ FROM base AS runner
 
 ENV HUSKY 0
 ENV DOCKER_OUTPUT 1
-
-# Telemetry credentials (baked into image at build time, can be disabled at runtime)
-ARG NEXT_PRIVATE_TELEMETRY_KEY=""
-ENV NEXT_PRIVATE_TELEMETRY_KEY="$NEXT_PRIVATE_TELEMETRY_KEY"
-
-ARG NEXT_PRIVATE_TELEMETRY_HOST=""
-ENV NEXT_PRIVATE_TELEMETRY_HOST="$NEXT_PRIVATE_TELEMETRY_HOST"
+# Configurar Playwright para usar chromium del sistema
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 # Don't run production as root
 RUN addgroup --system --gid 1001 nodejs
@@ -112,7 +103,11 @@ COPY --from=builder --chown=nodejs:nodejs /app/out/full/packages/tailwind-config
 # Copy the patches across
 COPY --from=builder --chown=nodejs:nodejs /app/patches ./patches
 
-RUN npm ci --only=production
+RUN npm ci --only=production --legacy-peer-deps
+
+# Copy node_modules from installer to ensure all runtime dependencies are available
+# The build artifacts may reference modules that need to be available at runtime
+COPY --from=installer --chown=nodejs:nodejs /app/node_modules ./node_modules
 
 # Automatically leverage output traces to reduce image size
 # https://nodejs.org/docs/advanced-features/output-file-tracing

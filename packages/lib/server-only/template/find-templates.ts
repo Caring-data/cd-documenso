@@ -59,6 +59,7 @@ export const findTemplates = async ({
       where: {
         type: EnvelopeType.TEMPLATE,
         templateType: type,
+        deletedAt: null,
         AND: whereFilter,
       },
       include: {
@@ -87,6 +88,7 @@ export const findTemplates = async ({
       where: {
         type: EnvelopeType.TEMPLATE,
         templateType: type,
+        deletedAt: null,
         AND: whereFilter,
       },
     }),

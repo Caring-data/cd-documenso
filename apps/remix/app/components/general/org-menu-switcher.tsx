@@ -120,6 +120,7 @@ export const OrgMenuSwitcher = () => {
     <DropdownMenu open={isOpen} onOpenChange={handleOpenChange}>
       <DropdownMenuTrigger asChild>
         <Button
+          id="org-menu-trigger"
           data-testid="menu-switcher"
           variant="none"
           className="relative flex h-12 flex-row items-center px-0 py-2 ring-0 focus:outline-none focus-visible:border-0 focus-visible:ring-0 focus-visible:ring-transparent md:px-2"

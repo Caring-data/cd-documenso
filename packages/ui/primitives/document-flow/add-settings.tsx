@@ -332,7 +332,7 @@ export const AddSettingsFormPartial = ({
               />
             )}
 
-            {organisation.organisationClaim.flags.cfr21 && (
+            {true && (
               <FormField
                 control={form.control}
                 name="globalActionAuth"

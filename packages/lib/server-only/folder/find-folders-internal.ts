@@ -71,6 +71,7 @@ export const findFoldersInternal = async ({
             prisma.envelope.count({
               where: {
                 type: EnvelopeType.TEMPLATE,
+                deletedAt: null,
                 folderId: folder.id,
               },
             }),

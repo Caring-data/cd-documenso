@@ -716,8 +716,7 @@ export const AddTemplatePlaceholderRecipientsFormPartial = ({
                                 )}
                               />
 
-                              {showAdvancedSettings &&
-                                organisation.organisationClaim.flags.cfr21 && (
+                              {showAdvancedSettings && (
                                   <FormField
                                     control={form.control}
                                     name={`signers.${index}.actionAuth`}
@@ -842,7 +841,7 @@ export const AddTemplatePlaceholderRecipientsFormPartial = ({
               </Button>
             </div>
 
-            {!alwaysShowAdvancedSettings && organisation.organisationClaim.flags.cfr21 && (
+            {!alwaysShowAdvancedSettings && (
               <div className="mt-4 flex flex-row items-center">
                 <Checkbox
                   id="showAdvancedRecipientSettings"

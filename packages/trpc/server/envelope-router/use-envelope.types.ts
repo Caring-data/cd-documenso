@@ -108,6 +108,11 @@ export const ZUseEnvelopePayloadSchema = z.object({
       }),
     )
     .optional(),
+  ownerId: z
+    .string()
+    .uuid()
+    .describe('The UUID of the resident to associate with this document.')
+    .optional(),
 });
 
 export const ZUseEnvelopeRequestSchema = zodFormData({

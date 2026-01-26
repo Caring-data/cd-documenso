@@ -10,7 +10,7 @@ import {
   SendStatus,
 } from '@prisma/client';
 
-import { mailer } from '@documenso/email/mailer';
+import { sendEmailWithNotify } from '@documenso/email/notify';
 import DocumentInviteEmailTemplate from '@documenso/email/templates/document-invite';
 import { isRecipientEmailValidForSending } from '@documenso/lib/utils/recipients';
 import { prisma } from '@documenso/prisma';
@@ -93,15 +93,14 @@ export const run = async ({
     return;
   }
 
-  const { branding, emailLanguage, settings, organisationType, senderEmail, replyToEmail } =
-    await getEmailContext({
-      emailType: 'RECIPIENT',
-      source: {
-        type: 'team',
-        teamId: envelope.teamId,
-      },
-      meta: envelope.documentMeta,
-    });
+  const { branding, emailLanguage, settings, organisationType } = await getEmailContext({
+    emailType: 'RECIPIENT',
+    source: {
+      type: 'team',
+      teamId: envelope.teamId,
+    },
+    meta: envelope.documentMeta,
+  });
 
   const customEmail = envelope?.documentMeta;
   const isDirectTemplate = envelope.source === DocumentSource.TEMPLATE_DIRECT_LINK;
@@ -120,13 +119,6 @@ export const run = async ({
   let emailMessage = customEmail?.message || '';
   let emailSubject = i18n._(msg`Please ${recipientActionVerb} this document`);
 
-  if (selfSigner) {
-    emailMessage = i18n._(
-      msg`You have initiated the document ${`"${envelope.title}"`} that requires you to ${recipientActionVerb} it.`,
-    );
-    emailSubject = i18n._(msg`Please ${recipientActionVerb} your document`);
-  }
-
   if (isDirectTemplate) {
     emailMessage = i18n._(
       msg`A document was created by your direct template that requires you to ${recipientActionVerb} it.`,
@@ -136,28 +128,13 @@ export const run = async ({
     );
   }
 
-  if (organisationType === OrganisationType.ORGANISATION) {
-    emailSubject = i18n._(msg`${team.name} invited you to ${recipientActionVerb} a document`);
-    emailMessage = customEmail?.message ?? '';
-
-    if (!emailMessage) {
-      const inviterName = user.name || '';
-
-      emailMessage = i18n._(
-        settings.includeSenderDetails
-          ? msg`${inviterName} on behalf of "${team.name}" has invited you to ${recipientActionVerb} the document "${envelope.title}".`
-          : msg`${team.name} has invited you to ${recipientActionVerb} the document "${envelope.title}".`,
-      );
-    }
-  }
-
   const customEmailTemplate = {
     'signer.name': name,
     'signer.email': email,
     'document.name': envelope.title,
   };
 
-  const assetBaseUrl = NEXT_PUBLIC_WEBAPP_URL() || 'http://localhost:4000';
+  const assetBaseUrl = NEXT_PUBLIC_WEBAPP_URL() || 'http://localhost:3002';
   const signDocumentLink = `${NEXT_PUBLIC_WEBAPP_URL()}/sign/${recipient.token}`;
 
   const template = createElement(DocumentInviteEmailTemplate, {
@@ -176,11 +153,14 @@ export const run = async ({
     teamName: team?.name,
     teamEmail: team?.teamEmail?.email,
     includeSenderDetails: settings.includeSenderDetails,
+    recipientName: recipient.name,
+    signingContext: envelope.signingContext || {},
+    tokenExpiration: recipient.expired ? recipient.expired.toISOString() : undefined,
   });
 
   if (isRecipientEmailValidForSending(recipient)) {
     await io.runTask('send-signing-email', async () => {
-      const [html, text] = await Promise.all([
+      const [html] = await Promise.all([
         renderEmailWithI18N(template, { lang: emailLanguage, branding }),
         renderEmailWithI18N(template, {
           lang: emailLanguage,
@@ -189,20 +169,14 @@ export const run = async ({
         }),
       ]);
 
-      await mailer.sendMail({
-        to: {
-          name: recipient.name,
-          address: recipient.email,
+      await sendEmailWithNotify(
+        {
+          email: recipient.email,
+          name: recipient.name ?? undefined,
         },
-        from: senderEmail,
-        replyTo: replyToEmail,
-        subject: renderCustomEmailTemplate(
-          documentMeta?.subject || emailSubject,
-          customEmailTemplate,
-        ),
+        renderCustomEmailTemplate(documentMeta?.subject || emailSubject, customEmailTemplate),
         html,
-        text,
-      });
+      );
     });
   }
 

@@ -14,10 +14,11 @@ import { cn } from '../../lib/utils';
 export type RecipientRoleSelectProps = SelectProps & {
   hideCCRecipients?: boolean;
   isAssistantEnabled?: boolean;
+  hideAssistant?: boolean;
 };
 
 export const RecipientRoleSelect = forwardRef<HTMLButtonElement, RecipientRoleSelectProps>(
-  ({ hideCCRecipients, isAssistantEnabled = true, ...props }, ref) => (
+  ({ hideCCRecipients, isAssistantEnabled = true, hideAssistant = false, ...props }, ref) => (
     <Select {...props}>
       <SelectTrigger ref={ref} className="bg-background w-[50px] p-2">
         {/* eslint-disable-next-line @typescript-eslint/consistent-type-assertions */}
@@ -112,41 +113,43 @@ export const RecipientRoleSelect = forwardRef<HTMLButtonElement, RecipientRoleSe
           </SelectItem>
         )}
 
-        <SelectItem
-          value={RecipientRole.ASSISTANT}
-          disabled={!isAssistantEnabled}
-          className={cn(
-            !isAssistantEnabled &&
-              'cursor-not-allowed opacity-50 data-[disabled]:pointer-events-auto',
-          )}
-        >
-          <div className="flex items-center">
-            <div className="flex w-[150px] items-center">
-              <span className="mr-2">{ROLE_ICONS[RecipientRole.ASSISTANT]}</span>
-              <Trans>Can prepare</Trans>
+        {!hideAssistant && (
+          <SelectItem
+            value={RecipientRole.ASSISTANT}
+            disabled={!isAssistantEnabled}
+            className={cn(
+              !isAssistantEnabled &&
+                'cursor-not-allowed opacity-50 data-[disabled]:pointer-events-auto',
+            )}
+          >
+            <div className="flex items-center">
+              <div className="flex w-[150px] items-center">
+                <span className="mr-2">{ROLE_ICONS[RecipientRole.ASSISTANT]}</span>
+                <Trans>Can prepare</Trans>
+              </div>
+              <Tooltip>
+                <TooltipTrigger>
+                  <InfoIcon className="h-4 w-4" />
+                </TooltipTrigger>
+                <TooltipContent className="text-foreground z-9999 max-w-md p-4">
+                  <p>
+                    {isAssistantEnabled ? (
+                      <Trans>
+                        The recipient can prepare the document for later signers by pre-filling
+                        suggest values.
+                      </Trans>
+                    ) : (
+                      <Trans>
+                        Assistant role is only available when the document is in sequential signing
+                        mode.
+                      </Trans>
+                    )}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
             </div>
-            <Tooltip>
-              <TooltipTrigger>
-                <InfoIcon className="h-4 w-4" />
-              </TooltipTrigger>
-              <TooltipContent className="text-foreground z-9999 max-w-md p-4">
-                <p>
-                  {isAssistantEnabled ? (
-                    <Trans>
-                      The recipient can prepare the document for later signers by pre-filling
-                      suggest values.
-                    </Trans>
-                  ) : (
-                    <Trans>
-                      Assistant role is only available when the document is in sequential signing
-                      mode.
-                    </Trans>
-                  )}
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-        </SelectItem>
+          </SelectItem>
+        )}
       </SelectContent>
     </Select>
   ),

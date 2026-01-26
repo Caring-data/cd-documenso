@@ -2,8 +2,10 @@ import { TsRestHttpError, fetchRequestHandler } from '@ts-rest/serverless/fetch'
 import { Hono } from 'hono';
 
 import { ApiContractV1 } from '@documenso/api/v1/contract';
+import { ApiContractV1Users } from '@documenso/api/v1/contract';
 import { ApiContractV1Implementation } from '@documenso/api/v1/implementation';
 import { OpenAPIV1 } from '@documenso/api/v1/openapi';
+import { ApiContractV1UsersImplementation } from '@documenso/api/v1/users-implementation';
 import { testCredentialsHandler } from '@documenso/lib/server-only/public-api/test-credentials';
 import { listDocumentsHandler } from '@documenso/lib/server-only/webhooks/zapier/list-documents';
 import { subscribeHandler } from '@documenso/lib/server-only/webhooks/zapier/subscribe';
@@ -27,6 +29,25 @@ tsRestHonoApp
   .all('/zapier/unsubscribe', async (c) => unsubscribeHandler(c.req.raw));
 
 tsRestHonoApp.mount('/', async (request) => {
+  const url = new URL(request.url);
+
+  // Route users endpoints to users contract (API key auth)
+  if (url.pathname.startsWith('/api/v1/users')) {
+    return fetchRequestHandler({
+      request,
+      contract: ApiContractV1Users,
+      router: ApiContractV1UsersImplementation,
+      options: {
+        errorHandler: (err) => {
+          if (err instanceof TsRestHttpError && err.statusCode === 500) {
+            console.error(err);
+          }
+        },
+      },
+    });
+  }
+
+  // Route all other endpoints to main contract (API token auth)
   return fetchRequestHandler({
     request,
     contract: ApiContractV1,

@@ -30,7 +30,10 @@ export const toggleTemplateDirectLink = async ({
   });
 
   const envelope = await prisma.envelope.findFirst({
-    where: envelopeWhereInput,
+    where: {
+      ...envelopeWhereInput,
+      deletedAt: null,
+    },
     include: {
       recipients: true,
       directLink: true,

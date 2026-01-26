@@ -33,9 +33,7 @@ export const getOrganisationSession = async ({
       },
     },
     include: {
-      organisationClaim: true,
       organisationGlobalSettings: true,
-      subscription: true,
       groups: {
         where: {
           organisationGroupMembers: {

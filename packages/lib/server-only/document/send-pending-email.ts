@@ -3,7 +3,7 @@ import { createElement } from 'react';
 import { msg } from '@lingui/core/macro';
 import { EnvelopeType } from '@prisma/client';
 
-import { mailer } from '@documenso/email/mailer';
+import { sendEmailWithNotify } from '@documenso/email/notify';
 import { DocumentPendingEmailTemplate } from '@documenso/email/templates/document-pending';
 import { prisma } from '@documenso/prisma';
 
@@ -49,7 +49,7 @@ export const sendPendingEmail = async ({ id, recipientId }: SendPendingEmailOpti
     throw new Error('Document has no recipients');
   }
 
-  const { branding, emailLanguage, senderEmail, replyToEmail } = await getEmailContext({
+  const { branding, emailLanguage } = await getEmailContext({
     emailType: 'RECIPIENT',
     source: {
       type: 'team',
@@ -75,14 +75,16 @@ export const sendPendingEmail = async ({ id, recipientId }: SendPendingEmailOpti
     return;
   }
 
-  const assetBaseUrl = NEXT_PUBLIC_WEBAPP_URL() || 'http://localhost:4000';
+  const assetBaseUrl = NEXT_PUBLIC_WEBAPP_URL() || 'http://localhost:3002';
 
   const template = createElement(DocumentPendingEmailTemplate, {
     documentName: envelope.title,
     assetBaseUrl,
+    recipientName: recipient?.name,
+    signingContext: envelope?.signingContext || {},
   });
 
-  const [html, text] = await Promise.all([
+  const [html] = await Promise.all([
     renderEmailWithI18N(template, { lang: emailLanguage, branding }),
     renderEmailWithI18N(template, {
       lang: emailLanguage,
@@ -93,15 +95,12 @@ export const sendPendingEmail = async ({ id, recipientId }: SendPendingEmailOpti
 
   const i18n = await getI18nInstance(emailLanguage);
 
-  await mailer.sendMail({
-    to: {
-      address: email,
-      name,
+  await sendEmailWithNotify(
+    {
+      email: email,
+      name: name ?? undefined,
     },
-    from: senderEmail,
-    replyTo: replyToEmail,
-    subject: i18n._(msg`Waiting for others to complete signing.`),
+    i18n._(msg`Waiting for others to complete signing.`),
     html,
-    text,
-  });
+  );
 };

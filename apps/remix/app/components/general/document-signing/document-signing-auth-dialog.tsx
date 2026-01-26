@@ -21,7 +21,6 @@ import {
 
 import { DocumentSigningAuth2FA } from './document-signing-auth-2fa';
 import { DocumentSigningAuthAccount } from './document-signing-auth-account';
-import { DocumentSigningAuthPasskey } from './document-signing-auth-passkey';
 import { DocumentSigningAuthPassword } from './document-signing-auth-password';
 import { useRequiredDocumentSigningAuthContext } from './document-signing-auth-provider';
 
@@ -139,7 +138,6 @@ export const DocumentSigningAuthDialog = ({
                     <div className="font-medium">
                       {match(authType)
                         .with(DocumentAuth.ACCOUNT, () => <Trans>Account</Trans>)
-                        .with(DocumentAuth.PASSKEY, () => <Trans>Passkey</Trans>)
                         .with(DocumentAuth.TWO_FACTOR_AUTH, () => <Trans>2FA</Trans>)
                         .with(DocumentAuth.PASSWORD, () => <Trans>Password</Trans>)
                         .exhaustive()}
@@ -148,9 +146,6 @@ export const DocumentSigningAuthDialog = ({
                     <div className="text-muted-foreground text-sm">
                       {match(authType)
                         .with(DocumentAuth.ACCOUNT, () => <Trans>Sign in to your account</Trans>)
-                        .with(DocumentAuth.PASSKEY, () => (
-                          <Trans>Use your passkey for authentication</Trans>
-                        ))
                         .with(DocumentAuth.TWO_FACTOR_AUTH, () => (
                           <Trans>Enter your 2FA code</Trans>
                         ))
@@ -176,13 +171,6 @@ export const DocumentSigningAuthDialog = ({
               }, // Assume all current auth methods requires them to be logged in.
               () => <DocumentSigningAuthAccount onOpenChange={onOpenChange} />,
             )
-            .with({ documentAuthType: DocumentAuth.PASSKEY }, () => (
-              <DocumentSigningAuthPasskey
-                open={open}
-                onOpenChange={onOpenChange}
-                onReauthFormSubmit={onReauthFormSubmit}
-              />
-            ))
             .with({ documentAuthType: DocumentAuth.TWO_FACTOR_AUTH }, () => (
               <DocumentSigningAuth2FA
                 open={open}

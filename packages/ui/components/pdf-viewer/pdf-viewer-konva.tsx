@@ -76,23 +76,43 @@ export const PdfViewerKonva = ({
 
   const $el = useRef<HTMLDivElement>(null);
 
-  const { getPdfBuffer, currentEnvelopeItem, renderError } = useCurrentEnvelopeRender();
+  const { getPdfBuffer, filesVersion, currentEnvelopeItem, renderError } =
+    useCurrentEnvelopeRender();
+
+  const pdfDataRef = useRef<{ id: string; data: Uint8Array } | null>(null);
 
   const [width, setWidth] = useState(0);
   const [numPages, setNumPages] = useState(0);
   const [pdfError, setPdfError] = useState(false);
 
   const envelopeItemFile = useMemo(() => {
-    const data = getPdfBuffer(currentEnvelopeItem?.id || '');
+    const itemId = currentEnvelopeItem?.id || '';
+    const data = getPdfBuffer(itemId);
 
     if (!data || data.status !== 'loaded') {
+      if (pdfDataRef.current?.id === itemId) {
+        pdfDataRef.current = null;
+      }
       return null;
     }
 
+    // Only create new reference if the ID or buffer changed
+    if (
+      !pdfDataRef.current ||
+      pdfDataRef.current.id !== itemId ||
+      pdfDataRef.current.data.buffer !== data.file.buffer
+    ) {
+      pdfDataRef.current = {
+        id: itemId,
+        data: data.file, // Use direct reference, don't create new Uint8Array
+      };
+    }
+
     return {
-      data: new Uint8Array(data.file),
+      data: pdfDataRef.current.data,
     };
-  }, [currentEnvelopeItem?.id, getPdfBuffer]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentEnvelopeItem?.id, filesVersion]);
 
   const onDocumentLoaded = useCallback(
     (doc: PDFDocumentProxy) => {

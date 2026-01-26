@@ -11,7 +11,6 @@ import type {
 } from '@documenso/prisma/client';
 import {
   EmailDomainStatus,
-  type OrganisationClaim,
   type OrganisationGlobalSettings,
 } from '@documenso/prisma/client';
 
@@ -70,7 +69,6 @@ type EmailContextResponse = {
   allowedEmails: OrganisationEmail[];
   branding: BrandingSettings;
   settings: Omit<OrganisationGlobalSettings, 'id'>;
-  claims: OrganisationClaim;
   organisationType: OrganisationType;
   senderEmail: {
     name: string;
@@ -141,7 +139,6 @@ const handleOrganisationEmailContext = async (organisationId: string) => {
       id: organisationId,
     },
     include: {
-      organisationClaim: true,
       organisationGlobalSettings: true,
       emailDomains: {
         omit: {
@@ -158,8 +155,6 @@ const handleOrganisationEmailContext = async (organisationId: string) => {
     throw new AppError(AppErrorCode.NOT_FOUND);
   }
 
-  const claims = organisation.organisationClaim;
-
   const allowedEmails = getAllowedEmails(organisation);
 
   return {
@@ -167,10 +162,9 @@ const handleOrganisationEmailContext = async (organisationId: string) => {
     branding: organisationGlobalSettingsToBranding(
       organisation.organisationGlobalSettings,
       organisation.id,
-      claims.flags.hidePoweredBy ?? false,
+      false,
     ),
     settings: organisation.organisationGlobalSettings,
-    claims,
     organisationType: organisation.type,
   };
 };
@@ -184,7 +178,6 @@ const handleTeamEmailContext = async (teamId: number) => {
       teamGlobalSettings: true,
       organisation: {
         include: {
-          organisationClaim: true,
           organisationGlobalSettings: true,
           emailDomains: {
             omit: {
@@ -204,7 +197,6 @@ const handleTeamEmailContext = async (teamId: number) => {
   }
 
   const organisation = team.organisation;
-  const claims = organisation.organisationClaim;
 
   const allowedEmails = getAllowedEmails(organisation);
 
@@ -218,10 +210,9 @@ const handleTeamEmailContext = async (teamId: number) => {
     branding: teamGlobalSettingsToBranding(
       teamSettings,
       teamId,
-      claims.flags.hidePoweredBy ?? false,
+      false,
     ),
     settings: teamSettings,
-    claims,
     organisationType: organisation.type,
   };
 };
@@ -229,13 +220,8 @@ const handleTeamEmailContext = async (teamId: number) => {
 const getAllowedEmails = (
   organisation: Organisation & {
     emailDomains: (Pick<EmailDomain, 'status'> & { emails: OrganisationEmail[] })[];
-    organisationClaim: OrganisationClaim;
   },
 ) => {
-  if (!organisation.organisationClaim.flags.emailDomains) {
-    return [];
-  }
-
   return organisation.emailDomains
     .filter((emailDomain) => emailDomain.status === EmailDomainStatus.ACTIVE)
     .flatMap((emailDomain) => emailDomain.emails);

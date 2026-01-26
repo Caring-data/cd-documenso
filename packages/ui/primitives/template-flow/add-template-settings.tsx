@@ -433,7 +433,7 @@ export const AddTemplateSettingsFormPartial = ({
               )}
             />
 
-            {organisation.organisationClaim.flags.cfr21 && (
+            {true && (
               <FormField
                 control={form.control}
                 name="globalActionAuth"
@@ -469,8 +469,7 @@ export const AddTemplateSettingsFormPartial = ({
 
                   <AccordionContent className="text-muted-foreground -mx-1 px-1 pt-4 text-sm leading-relaxed [&>div]:pb-0">
                     <div className="flex flex-col space-y-6">
-                      {organisation.organisationClaim.flags.emailDomains && (
-                        <FormField
+                      <FormField
                           control={form.control}
                           name="meta.emailId"
                           render={({ field }) => (
@@ -510,7 +509,6 @@ export const AddTemplateSettingsFormPartial = ({
                             </FormItem>
                           )}
                         />
-                      )}
 
                       <FormField
                         control={form.control}

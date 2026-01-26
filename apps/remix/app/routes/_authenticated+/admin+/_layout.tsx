@@ -3,6 +3,7 @@ import {
   BarChart3,
   Building2Icon,
   FileStack,
+  FileText,
   Settings,
   Trophy,
   Users,
@@ -106,6 +107,20 @@ export default function AdminLayout() {
             <Link to="/admin/organisation-insights">
               <Trophy className="mr-2 h-5 w-5" />
               <Trans>Organisation Insights</Trans>
+            </Link>
+          </Button>
+
+          <Button
+            variant="ghost"
+            className={cn(
+              'justify-start md:w-full',
+              pathname?.startsWith('/admin/logs') && 'bg-secondary',
+            )}
+            asChild
+          >
+            <Link to="/admin/logs" preventScrollReset>
+              <FileText className="mr-2 h-5 w-5" />
+              <Trans>Logs</Trans>
             </Link>
           </Button>
 

@@ -255,9 +255,21 @@ const handleV2Loader = async ({ params, request }: Route.LoaderArgs) => {
 
 export async function loader(loaderArgs: Route.LoaderArgs) {
   const { token } = loaderArgs.params;
+  const url = new URL(loaderArgs.request.url);
 
   if (!token) {
     throw new Response('Not Found', { status: 404 });
+  }
+
+  // Check if user rejected the document
+  if (url.searchParams.get('reject') === 'true') {
+    throw redirect(`/sign/${token}/rejected`);
+  }
+
+  // Check if user has accessed the pre-signing page
+  // If not, redirect to presign route
+  if (url.searchParams.get('accessed') !== 'true') {
+    throw redirect(`/sign/${token}/presign`);
   }
 
   // Not efficient but works for now until we remove v1.

@@ -1,10 +1,10 @@
 import { createElement } from 'react';
 
-import { msg } from '@lingui/macro';
+import { msg } from '@lingui/core/macro';
 import { parse } from 'csv-parse/sync';
 import { z } from 'zod';
 
-import { mailer } from '@documenso/email/mailer';
+import { sendEmailWithNotify } from '@documenso/email/notify';
 import { BulkSendCompleteEmail } from '@documenso/email/templates/bulk-send-complete';
 import { sendDocument } from '@documenso/lib/server-only/document/send-document';
 import { createDocumentFromTemplate } from '@documenso/lib/server-only/template/create-document-from-template';
@@ -103,8 +103,8 @@ export const run = async ({
         }
       }
 
-      const envelope = await io.runTask(`create-document-${rowIndex}`, async () => {
-        return await createDocumentFromTemplate({
+      const envelopeId = await io.runTask(`create-document-${rowIndex}`, async () => {
+        const envelope = await createDocumentFromTemplate({
           id: {
             type: 'templateId',
             id: template.id,
@@ -126,6 +126,8 @@ export const run = async ({
             requestMetadata: requestMetadata || {},
           },
         });
+
+        return envelope.id;
       });
 
       if (sendImmediately) {
@@ -133,7 +135,7 @@ export const run = async ({
           await sendDocument({
             id: {
               type: 'envelopeId',
-              id: envelope.id,
+              id: envelopeId,
             },
             userId,
             teamId,
@@ -171,7 +173,7 @@ export const run = async ({
       assetBaseUrl: NEXT_PUBLIC_WEBAPP_URL(),
     });
 
-    const { branding, emailLanguage, senderEmail } = await getEmailContext({
+    const { branding, emailLanguage } = await getEmailContext({
       emailType: 'INTERNAL',
       source: {
         type: 'team',
@@ -181,7 +183,7 @@ export const run = async ({
 
     const i18n = await getI18nInstance(emailLanguage);
 
-    const [html, text] = await Promise.all([
+    const [html] = await Promise.all([
       renderEmailWithI18N(completionTemplate, {
         lang: emailLanguage,
         branding,
@@ -193,15 +195,13 @@ export const run = async ({
       }),
     ]);
 
-    await mailer.sendMail({
-      to: {
-        name: user.name || '',
-        address: user.email,
+    await sendEmailWithNotify(
+      {
+        email: user.email,
+        name: user.name ?? undefined,
       },
-      from: senderEmail,
-      subject: i18n._(msg`Bulk Send Complete: ${template.title}`),
+      i18n._(msg`Bulk Send Complete: ${template.title}`),
       html,
-      text,
-    });
+    );
   });
 };

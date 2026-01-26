@@ -1,7 +1,5 @@
-import { IS_BILLING_ENABLED } from '@documenso/lib/constants/app';
 import { AppError, AppErrorCode } from '@documenso/lib/errors/app-error';
 import { createEmbeddingPresignToken } from '@documenso/lib/server-only/embedding-presign/create-embedding-presign-token';
-import { getOrganisationClaimByTeamId } from '@documenso/lib/server-only/organisation/get-organisation-claims';
 import { getApiTokenByToken } from '@documenso/lib/server-only/public-api/get-api-token-by-token';
 
 import { procedure } from '../trpc';
@@ -31,25 +29,7 @@ export const createEmbeddingPresignTokenRoute = procedure
 
       const { expiresIn, scope } = input;
 
-      if (IS_BILLING_ENABLED()) {
-        const token = await getApiTokenByToken({ token: apiToken });
-
-        if (!token.userId) {
-          throw new AppError(AppErrorCode.UNAUTHORIZED, {
-            message: 'Invalid API token',
-          });
-        }
-
-        const organisationClaim = await getOrganisationClaimByTeamId({
-          teamId: token.teamId,
-        });
-
-        if (!organisationClaim.flags.embedAuthoring) {
-          throw new AppError(AppErrorCode.UNAUTHORIZED, {
-            message: 'You do not have permission to create embedding presign tokens',
-          });
-        }
-      }
+      // Feature flags removed - embedding presign tokens are now always available
 
       const presignToken = await createEmbeddingPresignToken({
         apiToken,

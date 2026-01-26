@@ -8,6 +8,7 @@
     "./hono": "./hono.ts",
     "./v1/contract": "./v1/contract.ts",
     "./v1/implementation": "./v1/implementation.ts",
+    "./v1/users-implementation": "./v1/users-implementation.ts",
     "./v1/openapi": "./v1/openapi.ts"
   },
   "license": "MIT",

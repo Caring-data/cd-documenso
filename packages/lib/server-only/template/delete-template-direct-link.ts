@@ -28,7 +28,10 @@ export const deleteTemplateDirectLink = async ({
   });
 
   const envelope = await prisma.envelope.findUnique({
-    where: envelopeWhereInput,
+    where: {
+      ...envelopeWhereInput,
+      deletedAt: null,
+    },
     include: {
       directLink: true,
       recipients: true,

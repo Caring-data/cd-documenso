@@ -13,10 +13,9 @@ import { z } from 'zod';
 
 import { downloadFile } from '@documenso/lib/client-only/download-file';
 import { useCurrentOrganisation } from '@documenso/lib/client-only/providers/organisation';
-import { IS_BILLING_ENABLED, SUPPORT_EMAIL } from '@documenso/lib/constants/app';
+import { SUPPORT_EMAIL } from '@documenso/lib/constants/app';
 import { ORGANISATION_MEMBER_ROLE_HIERARCHY } from '@documenso/lib/constants/organisations';
 import { ORGANISATION_MEMBER_ROLE_MAP } from '@documenso/lib/constants/organisations-translations';
-import { INTERNAL_CLAIM_ID } from '@documenso/lib/types/subscription';
 import { trpc } from '@documenso/trpc/react';
 import { ZCreateOrganisationMemberInvitesRequestSchema } from '@documenso/trpc/server/organisation-router/create-organisation-member-invites.types';
 import { cn } from '@documenso/ui/lib/utils';
@@ -177,23 +176,6 @@ export const OrganisationMemberInviteDialog = ({
       return 'loading';
     }
 
-    if (!IS_BILLING_ENABLED()) {
-      return 'form';
-    }
-
-    if (fullOrganisation.organisationClaim.memberCount === 0) {
-      return 'form';
-    }
-
-    if (fullOrganisation.members.length < fullOrganisation.organisationClaim.memberCount) {
-      return 'form';
-    }
-
-    // This is probably going to screw us over in the future.
-    if (fullOrganisation.organisationClaim.originalSubscriptionClaimId !== INTERNAL_CLAIM_ID.TEAM) {
-      return 'alert';
-    }
-
     return 'form';
   }, [fullOrganisation]);
 
@@ -298,7 +280,7 @@ export const OrganisationMemberInviteDialog = ({
 
         {dialogState === 'loading' && <SpinnerBox className="py-32" />}
 
-        {dialogState === 'alert' && (
+        {false && (
           <>
             <Alert
               className="flex flex-col justify-between p-6 sm:flex-row sm:items-center"

@@ -5,7 +5,7 @@ import type { Team } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 
-import { mailer } from '@documenso/email/mailer';
+import { sendEmailWithNotify } from '@documenso/email/notify';
 import { ConfirmTeamEmailTemplate } from '@documenso/email/templates/confirm-team-email';
 import { NEXT_PUBLIC_WEBAPP_URL } from '@documenso/lib/constants/app';
 import { TEAM_MEMBER_ROLE_PERMISSIONS_MAP } from '@documenso/lib/constants/teams';
@@ -110,7 +110,7 @@ export const createTeamEmailVerification = async ({
  * @param teamUrl The url of the team the user is being invited to.
  */
 export const sendTeamEmailVerificationEmail = async (email: string, token: string, team: Team) => {
-  const assetBaseUrl = env('NEXT_PUBLIC_WEBAPP_URL') || 'http://localhost:4000';
+  const assetBaseUrl = env('NEXT_PUBLIC_WEBAPP_URL') || 'http://localhost:3002';
 
   const template = createElement(ConfirmTeamEmailTemplate, {
     assetBaseUrl,
@@ -120,7 +120,7 @@ export const sendTeamEmailVerificationEmail = async (email: string, token: strin
     token,
   });
 
-  const { branding, emailLanguage, senderEmail } = await getEmailContext({
+  const { branding, emailLanguage } = await getEmailContext({
     emailType: 'INTERNAL',
     source: {
       type: 'team',
@@ -128,7 +128,7 @@ export const sendTeamEmailVerificationEmail = async (email: string, token: strin
     },
   });
 
-  const [html, text] = await Promise.all([
+  const [html] = await Promise.all([
     renderEmailWithI18N(template, { lang: emailLanguage, branding }),
     renderEmailWithI18N(template, {
       lang: emailLanguage,
@@ -139,13 +139,11 @@ export const sendTeamEmailVerificationEmail = async (email: string, token: strin
 
   const i18n = await getI18nInstance(emailLanguage);
 
-  await mailer.sendMail({
-    to: email,
-    from: senderEmail,
-    subject: i18n._(
-      msg`A request to use your email has been initiated by ${team.name} on Documenso`,
-    ),
+  await sendEmailWithNotify(
+    {
+      email: email,
+    },
+    i18n._(msg`A request to use your email has been initiated by ${team.name} on Documenso`),
     html,
-    text,
-  });
+  );
 };

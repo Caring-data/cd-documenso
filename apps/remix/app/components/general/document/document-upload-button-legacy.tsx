@@ -7,10 +7,8 @@ import { EnvelopeType } from '@prisma/client';
 import { useNavigate, useParams } from 'react-router';
 import { match } from 'ts-pattern';
 
-import { useAnalytics } from '@documenso/lib/client-only/hooks/use-analytics';
 import { useCurrentOrganisation } from '@documenso/lib/client-only/providers/organisation';
 import { useSession } from '@documenso/lib/client-only/providers/session';
-import { APP_DOCUMENT_UPLOAD_SIZE_LIMIT } from '@documenso/lib/constants/app';
 import { DEFAULT_DOCUMENT_TIME_ZONE, TIME_ZONES } from '@documenso/lib/constants/time-zones';
 import { AppError, AppErrorCode } from '@documenso/lib/errors/app-error';
 import { formatDocumentsPath, formatTemplatesPath } from '@documenso/lib/utils/teams';
@@ -46,7 +44,6 @@ export const DocumentUploadButtonLegacy = ({
   const team = useCurrentTeam();
 
   const navigate = useNavigate();
-  const analytics = useAnalytics();
   const organisation = useCurrentOrganisation();
 
   const userTimezone =
@@ -93,12 +90,6 @@ export const DocumentUploadButtonLegacy = ({
           title: _(msg`Document uploaded`),
           description: _(msg`Your document has been uploaded successfully.`),
           duration: 5000,
-        });
-
-        analytics.capture('App: Document Uploaded', {
-          userId: user.id,
-          documentId: id,
-          timestamp: new Date().toISOString(),
         });
       }
 
@@ -147,7 +138,7 @@ export const DocumentUploadButtonLegacy = ({
   const onFileDropRejected = () => {
     toast({
       title: _(msg`Your document failed to upload.`),
-      description: _(msg`File cannot be larger than ${APP_DOCUMENT_UPLOAD_SIZE_LIMIT}MB`),
+      description: _(msg`The file could not be uploaded. Please check that it is a valid PDF file.`),
       duration: 5000,
       variant: 'destructive',
     });

@@ -43,6 +43,7 @@ export const getPublicProfileByUrl = async ({
       envelopes: {
         where: {
           type: EnvelopeType.TEMPLATE,
+          deletedAt: null,
           templateType: TemplateType.PUBLIC,
           directLink: {
             enabled: true,

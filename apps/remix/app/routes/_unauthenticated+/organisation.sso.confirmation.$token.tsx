@@ -158,7 +158,7 @@ export default function OrganisationSsoConfirmationTokenPage({ loaderData }: Rou
           title: _(msg`Account linked successfully`),
         });
       },
-      onError: (error) => {
+      onError: (error: { message: string }) => {
         toast({
           title: _(msg`Error linking account`),
           description: error.message,

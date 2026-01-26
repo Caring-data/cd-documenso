@@ -12,6 +12,7 @@ import {
 import { TemplateType } from '@prisma/client';
 import { z } from 'zod';
 
+import { ZPasswordSchema } from '@documenso/auth/server/types/email-password';
 import { DATE_FORMATS, DEFAULT_DOCUMENT_DATE_FORMAT } from '@documenso/lib/constants/date-formats';
 import { SUPPORTED_LANGUAGE_CODES } from '@documenso/lib/constants/i18n';
 import { DEFAULT_DOCUMENT_TIME_ZONE, TIME_ZONES } from '@documenso/lib/constants/time-zones';
@@ -83,6 +84,33 @@ export type TSuccessfulGetDocumentResponseSchema = z.infer<
 >;
 
 export type TSuccessfulDocumentResponseSchema = z.infer<typeof ZSuccessfulDocumentResponseSchema>;
+
+export const ZGetSignatureAuditResponseSchema = z.object({
+  events: z.array(
+    z.object({
+      recipientId: z.number().nullable(),
+      email: z.string().nullable(),
+      name: z.string().nullable(),
+      role: z.string().nullable(),
+      ipAddress: z.string().nullable(),
+      signingOrder: z.number().nullable(),
+      sendDate: z.string().nullable(),
+      resendDate: z.string().nullable(),
+      signatureDate: z.string().nullable(),
+      signatureStatus: z.enum(['signed', 'notSigned']),
+      status: z.string().nullable(),
+      history: z.array(
+        z.object({
+          type: z.string(),
+          timestamp: z.string(),
+          ipAddress: z.string(),
+        }),
+      ),
+    }),
+  ),
+});
+
+export type TGetSignatureAuditResponseSchema = z.infer<typeof ZGetSignatureAuditResponseSchema>;
 
 export const ZSendDocumentForSigningMutationSchema = z
   .object({
@@ -324,16 +352,18 @@ export const ZGenerateDocumentFromTemplateMutationSchema = z.object({
         email: z.string().email(),
         name: z.string().optional(),
         signingOrder: z.number().optional(),
+        expired: z
+          .union([z.date(), z.string().transform((val) => new Date(val))])
+          .nullable()
+          .optional(),
       }),
     )
-    .refine(
-      (schema) => {
-        const ids = schema.map((signer) => signer.id);
+    .describe('Recipients used to create the document')
+    .refine((recipients) => {
+      const keys = recipients.map((r) => `${r.email}-${r.signingOrder ?? 'null'}`);
 
-        return new Set(ids).size === ids.length;
-      },
-      { message: 'Recipient IDs must be unique' },
-    ),
+      return new Set(keys).size === recipients.length;
+    }, 'Recipients must have a unique combination of id and signingOrder'),
   meta: z
     .object({
       subject: z.string(),
@@ -372,6 +402,33 @@ export const ZGenerateDocumentFromTemplateMutationSchema = z.object({
 
 export type TGenerateDocumentFromTemplateMutationSchema = z.infer<
   typeof ZGenerateDocumentFromTemplateMutationSchema
+>;
+
+export const ZGenerateDocumentFromTemplateBase64MutationSchema =
+  ZGenerateDocumentFromTemplateMutationSchema.extend({
+    type: z.literal('BYTES_64').optional(),
+    data: z.string().min(1).optional(),
+    ownerId: z.string().optional(),
+    formKey: z.string().optional(),
+    folderName: z
+      .string()
+      .describe('Target folder name where the document will be created')
+      .optional(),
+    signingContext: z
+      .object({
+        companyName: z.string().optional(),
+        facilityAdministrator: z.string().optional(),
+        documentName: z.string().optional(),
+        ownerName: z.string().optional(),
+        locationName: z.string().optional(),
+        formType: z.enum(['custom', 'standard', 'custom_default']).optional(),
+        module: z.enum(['resident', 'staff', 'facility']).optional(),
+      })
+      .optional(),
+  });
+
+export type TGenerateDocumentFromTemplateBase64MutationSchema = z.infer<
+  typeof ZGenerateDocumentFromTemplateBase64MutationSchema
 >;
 
 export const ZGenerateDocumentFromTemplateMutationResponseSchema = z.object({
@@ -655,3 +712,88 @@ export const ZGetTemplatesQuerySchema = z.object({
   page: z.coerce.number().min(1).optional().default(1),
   perPage: z.coerce.number().min(1).optional().default(10),
 });
+
+/**
+ * Users
+ */
+export const ZCreateUserRequestSchema = z.object({
+  name: z.string().min(1),
+  email: z.string().email(),
+  password: ZPasswordSchema,
+});
+
+export type TCreateUserRequestSchema = z.infer<typeof ZCreateUserRequestSchema>;
+
+export const ZUpdateUserRequestSchema = z.object({
+  name: z.string().min(1).optional(),
+  email: z.string().email().optional(),
+  password: ZPasswordSchema.optional(),
+});
+
+export type TUpdateUserRequestSchema = z.infer<typeof ZUpdateUserRequestSchema>;
+
+export const ZUserResponseSchema = z.object({
+  id: z.number(),
+  name: z.string().nullable(),
+  email: z.string(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+});
+
+export type TUserResponseSchema = z.infer<typeof ZUserResponseSchema>;
+
+export const ZGetUsersQuerySchema = z.object({
+  page: z.coerce.number().min(1).optional().default(1),
+  perPage: z.coerce.number().min(1).optional().default(10),
+});
+
+export type TGetUsersQuerySchema = z.infer<typeof ZGetUsersQuerySchema>;
+
+export const ZSuccessfulGetUsersResponseSchema = z.object({
+  users: z.array(ZUserResponseSchema),
+  totalPages: z.number(),
+});
+
+export type TSuccessfulGetUsersResponseSchema = z.infer<typeof ZSuccessfulGetUsersResponseSchema>;
+
+export const ZApiKeyHeadersSchema = z.object({
+  'x-api-key': z.string(),
+});
+
+export type TApiKeyHeadersSchema = z.infer<typeof ZApiKeyHeadersSchema>;
+
+export const ZCreateEmbebedTemplateMutationSchema = z.object({
+  title: z.string().min(1).trim(),
+  type: z.nativeEnum(DocumentDataType),
+  data: z.string().min(1),
+  key: z.string().min(1).trim(),
+  externalId: z.string().nullish(),
+  meta: z.object({}).optional(),
+});
+
+export type TCreateEmbebedTemplateMutationSchema = z.infer<
+  typeof ZCreateEmbebedTemplateMutationSchema
+>;
+
+export const ZCreateEmbebedTemplateResponseSchema = ZSuccessfulGetTemplateResponseSchema;
+
+export type TCreateEmbebedTemplateResponseSchema = z.infer<
+  typeof ZCreateEmbebedTemplateResponseSchema
+>;
+
+export const ZDeleteEmbedTemplateResponseSchema = ZSuccessfulDeleteTemplateResponseSchema;
+
+export type TDeleteEmbedTemplateResponseSchema = z.infer<typeof ZDeleteEmbedTemplateResponseSchema>;
+
+export const ZReplaceEmbedTemplateRequestSchema = z.object({
+  title: z.string().min(1).trim(),
+  data: z.string().min(1),
+});
+
+export type TReplaceEmbedTemplateRequestSchema = z.infer<typeof ZReplaceEmbedTemplateRequestSchema>;
+
+export const ZReplaceEmbedTemplateResponseSchema = ZCreateEmbebedTemplateResponseSchema;
+
+export type TReplaceEmbedTemplateResponseSchema = z.infer<
+  typeof ZReplaceEmbedTemplateResponseSchema
+>;

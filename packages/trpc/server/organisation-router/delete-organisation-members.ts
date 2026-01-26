@@ -51,8 +51,6 @@ export const deleteOrganisationMembers = async ({
       roles: ORGANISATION_MEMBER_ROLE_PERMISSIONS_MAP['MANAGE_ORGANISATION'],
     }),
     include: {
-      subscription: true,
-      organisationClaim: true,
       members: {
         select: {
           id: true,

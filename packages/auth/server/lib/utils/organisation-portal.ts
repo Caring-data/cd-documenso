@@ -1,4 +1,3 @@
-import { IS_BILLING_ENABLED } from '@documenso/lib/constants/app';
 import { DOCUMENSO_ENCRYPTION_KEY } from '@documenso/lib/constants/crypto';
 import { AppError, AppErrorCode } from '@documenso/lib/errors/app-error';
 import { symmetricDecrypt } from '@documenso/lib/universal/crypto';
@@ -28,7 +27,6 @@ export const getOrganisationAuthenticationPortalOptions = async (
             id: options.organisationId,
           },
     include: {
-      organisationClaim: true,
       organisationAuthenticationPortal: true,
       groups: true,
     },
@@ -40,16 +38,7 @@ export const getOrganisationAuthenticationPortalOptions = async (
     });
   }
 
-  if (!IS_BILLING_ENABLED()) {
-    throw new AppError(AppErrorCode.NOT_SETUP, {
-      message: 'Billing is not enabled',
-    });
-  }
-
-  if (
-    !organisation.organisationClaim.flags.authenticationPortal ||
-    !organisation.organisationAuthenticationPortal.enabled
-  ) {
+  if (!organisation.organisationAuthenticationPortal.enabled) {
     throw new AppError(AppErrorCode.NOT_SETUP, {
       message: 'Authentication portal is not enabled for this organisation',
     });

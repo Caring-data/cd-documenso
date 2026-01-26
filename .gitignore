@@ -56,6 +56,8 @@ logs.json
 
 # claude
 .claude
+.claude/
+*.claude
 CLAUDE.md
 
 # agents
@@ -63,3 +65,12 @@ CLAUDE.md
 
 # scripts
 scripts/output*
+
+# docs
+docs/
+
+# cursor
+.cursor
+
+.docker/development/data
+**/.docker/development/data/

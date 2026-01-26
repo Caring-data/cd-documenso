@@ -19,9 +19,6 @@ export type OrganisationOverview = {
   name: string;
   signingVolume: number;
   createdAt: Date;
-  customerId: string;
-  subscriptionStatus?: string;
-  isActive?: boolean;
   teamCount?: number;
   memberCount?: number;
 };

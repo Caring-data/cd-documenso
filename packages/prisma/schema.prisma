@@ -24,13 +24,6 @@ datasource db {
   directUrl = env("NEXT_PRIVATE_DIRECT_DATABASE_URL")
 }
 
-// Todo: (RR7) Remove after RR7 migration.
-enum IdentityProvider {
-  DOCUMENSO
-  GOOGLE
-  OIDC
-}
-
 enum Role {
   ADMIN
   USER
@@ -48,7 +41,6 @@ model User {
   updatedAt        DateTime         @default(now()) @updatedAt
   lastSignedIn     DateTime         @default(now())
   roles            Role[]           @default([USER])
-  identityProvider IdentityProvider @default(DOCUMENSO) // Todo: (RR7) Remove after RR7 migration.
   avatarImageId    String?
   disabled         Boolean          @default(false)
 
@@ -71,7 +63,7 @@ model User {
   securityAuditLogs  UserSecurityAuditLog[]
   webhooks           Webhook[]
   siteSettings       SiteSettings[]
-  passkeys           Passkey[]
+  logs               Log[]
   avatarImage        AvatarImage?           @relation(fields: [avatarImageId], references: [id], onDelete: SetNull)
 
   @@index([email])
@@ -94,9 +86,6 @@ enum UserSecurityAuditLogType {
   ORGANISATION_SSO_UNLINK
   AUTH_2FA_DISABLE
   AUTH_2FA_ENABLE
-  PASSKEY_CREATED
-  PASSKEY_DELETED
-  PASSKEY_UPDATED
   PASSWORD_RESET
   PASSWORD_UPDATE
   SESSION_REVOKED
@@ -104,7 +93,24 @@ enum UserSecurityAuditLogType {
   SIGN_IN
   SIGN_IN_FAIL
   SIGN_IN_2FA_FAIL
-  SIGN_IN_PASSKEY_FAIL
+}
+
+enum LogLevel {
+  DEBUG
+  INFO
+  WARN
+  ERROR
+  CRITICAL
+}
+
+enum LogCategory {
+  DOCUMENT
+  TEMPLATE
+  AUTHENTICATION
+  INTEGRATION
+  SYSTEM
+  JOB
+  EMAIL
 }
 
 model UserSecurityAuditLog {
@@ -125,23 +131,6 @@ model PasswordResetToken {
   expiry    DateTime
   userId    Int
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model Passkey {
-  id                   String    @id @default(cuid())
-  userId               Int
-  name                 String
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @default(now())
-  lastUsedAt           DateTime?
-  credentialId         Bytes /// @zod.custom.use(z.instanceof(Uint8Array))
-  credentialPublicKey  Bytes /// @zod.custom.use(z.instanceof(Uint8Array))
-  counter              BigInt
-  credentialDeviceType String
-  credentialBackedUp   Boolean
-  transports           String[]
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model AnonymousVerificationToken {
@@ -223,62 +212,6 @@ model ApiToken {
   user      User?             @relation(fields: [userId], references: [id], onDelete: Cascade)
   teamId    Int
   team      Team              @relation(fields: [teamId], references: [id], onDelete: Cascade)
-}
-
-enum SubscriptionStatus {
-  ACTIVE
-  PAST_DUE
-  INACTIVE
-}
-
-model Subscription {
-  id                Int                @id @default(autoincrement())
-  status            SubscriptionStatus @default(INACTIVE)
-  planId            String             @unique
-  priceId           String
-  periodEnd         DateTime?
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  cancelAtPeriodEnd Boolean            @default(false)
-
-  customerId String
-
-  organisationId String       @unique
-  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
-
-  @@index([organisationId])
-}
-
-/// @zod.import(["import { ZClaimFlagsSchema } from '@documenso/lib/types/subscription';"])
-model SubscriptionClaim {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  name   String
-  locked Boolean @default(false)
-
-  teamCount         Int
-  memberCount       Int
-  envelopeItemCount Int
-
-  flags Json /// [ClaimFlags] @zod.custom.use(ZClaimFlagsSchema)
-}
-
-/// @zod.import(["import { ZClaimFlagsSchema } from '@documenso/lib/types/subscription';"])
-model OrganisationClaim {
-  id        String   @id
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  originalSubscriptionClaimId String?
-  organisation                Organisation?
-
-  teamCount         Int
-  memberCount       Int
-  envelopeItemCount Int
-
-  flags Json /// [ClaimFlags] @zod.custom.use(ZClaimFlagsSchema)
 }
 
 model Account {
@@ -402,6 +335,7 @@ model Envelope {
   fields        Field[]
   shareLinks    DocumentShareLink[]
   auditLogs     DocumentAuditLog[]
+  logs          Log[]
 
   // Envelope settings
   authOptions Json? /// [DocumentAuthOptions] @zod.custom.use(ZDocumentAuthOptionsSchema)
@@ -427,6 +361,12 @@ model Envelope {
 
   documentMetaId String       @unique
   documentMeta   DocumentMeta @relation(fields: [documentMetaId], references: [id])
+
+  ownerId String? @db.Uuid
+  formKey    String? @db.VarChar(255)
+  signingContext Json? /// Contextual business information used during electronic signature flows
+
+  finalDocumentUrl String? @db.VarChar(2048) /// @zod.string.describe("The URL of the final signed document stored in external storage.")
 
   envelopeAttachments EnvelopeAttachment[]
 
@@ -472,6 +412,28 @@ model DocumentAuditLog {
   ipAddress String?
 
   envelope Envelope @relation(fields: [envelopeId], references: [id], onDelete: Cascade)
+}
+
+model Log {
+  id         String      @id @default(cuid())
+  level      LogLevel     @default(ERROR)
+  category   LogCategory  @default(SYSTEM)
+  action     String
+  message    String?
+  data       Json?
+  metaData   Json?
+  userId     Int?
+  user       User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  envelopeId String?
+  envelope   Envelope?    @relation(fields: [envelopeId], references: [id], onDelete: SetNull)
+  createdAt  DateTime     @default(now())
+
+  @@index([level])
+  @@index([category])
+  @@index([createdAt])
+  @@index([userId])
+  @@index([envelopeId])
+  @@index([action])
 }
 
 enum DocumentDataType {
@@ -599,11 +561,22 @@ enum FieldType {
   NAME
   EMAIL
   DATE
+  CALENDAR
   TEXT
   NUMBER
   RADIO
   CHECKBOX
   DROPDOWN
+  RESIDENT_FIRST_NAME
+  RESIDENT_LAST_NAME
+  RESIDENT_DOB
+  RESIDENT_GENDER_IDENTITY
+  RESIDENT_LOCATION_NAME
+  RESIDENT_LOCATION_STATE
+  RESIDENT_LOCATION_ADDRESS
+  RESIDENT_LOCATION_CITY
+  RESIDENT_LOCATION_ZIP_CODE
+  RESIDENT_LOCATION_COUNTRY
 }
 
 /// @zod.import(["import { ZFieldMetaNotOptionalSchema } from '@documenso/lib/types/field-meta';"])
@@ -639,6 +612,7 @@ model Signature {
   fieldId                Int      @unique
   signatureImageAsBase64 String?
   typedSignature         String?
+  typedSignatureSettings Json?
 
   recipient Recipient @relation(fields: [recipientId], references: [id], onDelete: Cascade)
   field     Field     @relation(fields: [fieldId], references: [id], onDelete: Cascade)
@@ -673,12 +647,6 @@ model Organisation {
   name          String
   url           String           @unique
   avatarImageId String?
-
-  customerId   String?       @unique
-  subscription Subscription?
-
-  organisationClaimId String            @unique
-  organisationClaim   OrganisationClaim @relation(fields: [organisationClaimId], references: [id])
 
   members OrganisationMember[]
   invites OrganisationMemberInvite[]

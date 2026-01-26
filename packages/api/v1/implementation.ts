@@ -1,4 +1,12 @@
-import { DocumentDataType, EnvelopeType, SigningStatus } from '@prisma/client';
+import {
+  DocumentDataType,
+  EnvelopeType,
+  FolderType,
+  LogCategory,
+  LogLevel,
+  SigningStatus,
+  TemplateType,
+} from '@prisma/client';
 import { tsr } from '@ts-rest/serverless/fetch';
 import { match } from 'ts-pattern';
 
@@ -6,7 +14,7 @@ import { NEXT_PUBLIC_WEBAPP_URL } from '@documenso/lib/constants/app';
 import { DATE_FORMATS, DEFAULT_DOCUMENT_DATE_FORMAT } from '@documenso/lib/constants/date-formats';
 import '@documenso/lib/constants/time-zones';
 import { DEFAULT_DOCUMENT_TIME_ZONE, TIME_ZONES } from '@documenso/lib/constants/time-zones';
-import { AppError } from '@documenso/lib/errors/app-error';
+import { AppError, AppErrorCode } from '@documenso/lib/errors/app-error';
 import { createDocumentData } from '@documenso/lib/server-only/document-data/create-document-data';
 import { updateDocumentMeta } from '@documenso/lib/server-only/document-meta/upsert-document-meta';
 import { deleteDocument } from '@documenso/lib/server-only/document/delete-document';
@@ -26,9 +34,11 @@ import { getRecipientsForDocument } from '@documenso/lib/server-only/recipient/g
 import { setDocumentRecipients } from '@documenso/lib/server-only/recipient/set-document-recipients';
 import { updateEnvelopeRecipients } from '@documenso/lib/server-only/recipient/update-envelope-recipients';
 import { createDocumentFromTemplate } from '@documenso/lib/server-only/template/create-document-from-template';
+import { createDocumentFromTemplateBase64 } from '@documenso/lib/server-only/template/create-document-from-template-base64';
 import { deleteTemplate } from '@documenso/lib/server-only/template/delete-template';
 import { findTemplates } from '@documenso/lib/server-only/template/find-templates';
 import { getTemplateById } from '@documenso/lib/server-only/template/get-template-by-id';
+import { DOCUMENT_AUDIT_LOG_TYPE } from '@documenso/lib/types/document-audit-logs';
 import { ZRecipientAuthOptionsSchema } from '@documenso/lib/types/document-auth';
 import { extractDerivedDocumentEmailSettings } from '@documenso/lib/types/document-email';
 import {
@@ -40,21 +50,37 @@ import {
   ZTextFieldMeta,
 } from '@documenso/lib/types/field-meta';
 import { getFileServerSide } from '@documenso/lib/universal/upload/get-file.server';
-import { putPdfFileServerSide } from '@documenso/lib/universal/upload/put-file.server';
+import {
+  putNormalizedPdfFileServerSide,
+  putPdfFileServerSide,
+} from '@documenso/lib/universal/upload/put-file.server';
 import {
   getPresignGetUrl,
   getPresignPostUrl,
 } from '@documenso/lib/universal/upload/server-actions';
+import { createLog } from '@documenso/lib/utils/createLog';
 import { isDocumentCompleted } from '@documenso/lib/utils/document';
 import { createDocumentAuditLogData } from '@documenso/lib/utils/document-audit-logs';
 import {
+  mapDocumentIdToSecondaryId,
   mapSecondaryIdToDocumentId,
   mapSecondaryIdToTemplateId,
+  mapTemplateIdToSecondaryId,
 } from '@documenso/lib/utils/envelope';
+import { buildTeamWhereQuery } from '@documenso/lib/utils/teams';
 import { prisma } from '@documenso/prisma';
 
 import { ApiContractV1 } from './contract';
 import { authenticatedMiddleware } from './middleware/authenticated';
+
+type AuditLogData = {
+  recipientId?: number;
+  recipientEmail?: string;
+  emailType?: string;
+  isResending?: boolean;
+  recipientName?: string | null;
+  recipientRole?: string | null;
+};
 
 export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
   getDocuments: authenticatedMiddleware(async (args, user, team) => {
@@ -183,6 +209,288 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
             signingUrl: `${NEXT_PUBLIC_WEBAPP_URL()}/sign/${recipient.token}`,
           })),
           fields: parsedMetaFields,
+        },
+      };
+    } catch (err) {
+      return {
+        status: 404,
+        body: {
+          message: 'Document not found',
+        },
+      };
+    }
+  }),
+
+  getSignatureAudit: authenticatedMiddleware(async (args) => {
+    const { id: documentId } = args.params;
+
+    try {
+      const numericDocumentId = Number(documentId);
+
+      if (isNaN(numericDocumentId)) {
+        await createLog({
+          level: LogLevel.WARN,
+          category: LogCategory.DOCUMENT,
+          action: 'get_signature_audit_invalid_document_id',
+          message: 'Invalid document ID received',
+          data: {
+            documentId,
+          },
+        });
+
+        return {
+          status: 400,
+          body: { message: 'Invalid document ID' },
+        };
+      }
+
+      const envelopeId = mapDocumentIdToSecondaryId(numericDocumentId);
+
+      const envelope = await prisma.envelope.findFirstOrThrow({
+        where: { secondaryId: envelopeId },
+        include: {
+          documentMeta: true,
+          recipients: true,
+        },
+      });
+
+      if (!envelope) {
+        await createLog({
+          level: LogLevel.WARN,
+          category: LogCategory.DOCUMENT,
+          action: 'get_signature_audit_envelope_not_found',
+          message: 'Envelope not found for document',
+          data: {
+            envelopeId,
+          },
+        });
+
+        return {
+          status: 404,
+          body: { message: 'Document not found' },
+        };
+      }
+
+      const timezone = envelope.documentMeta?.timezone ?? 'America/Los_Angeles';
+
+      const auditLogs = await prisma.documentAuditLog.findMany({
+        where: {
+          envelopeId: envelope.id,
+          type: {
+            in: [
+              DOCUMENT_AUDIT_LOG_TYPE.DOCUMENT_CREATED,
+              DOCUMENT_AUDIT_LOG_TYPE.EMAIL_SENT,
+              DOCUMENT_AUDIT_LOG_TYPE.DOCUMENT_OPENED,
+              DOCUMENT_AUDIT_LOG_TYPE.DOCUMENT_VIEWED,
+              DOCUMENT_AUDIT_LOG_TYPE.DOCUMENT_RECIPIENT_REJECTED,
+              DOCUMENT_AUDIT_LOG_TYPE.DOCUMENT_RECIPIENT_COMPLETED,
+              DOCUMENT_AUDIT_LOG_TYPE.DOCUMENT_COMPLETED,
+            ],
+          },
+        },
+        select: {
+          name: true,
+          email: true,
+          ipAddress: true,
+          type: true,
+          createdAt: true,
+          data: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      await createLog({
+        level: LogLevel.INFO,
+        category: LogCategory.DOCUMENT,
+        action: 'get_signature_audit_logs_fetched',
+        message: 'Audit logs fetched for envelope',
+        data: {
+          envelopeId: envelope.id,
+          auditLogsCount: auditLogs.length,
+        },
+        envelopeId: envelope.id,
+      });
+
+      const formatStatus = (type: string | null | undefined) => {
+        if (!type) return null;
+
+        return type
+          .toLowerCase()
+          .split('_')
+          .map((word, index) => (index === 0 ? word : word.charAt(0).toUpperCase() + word.slice(1)))
+          .join('');
+      };
+
+      const toCamelCase = (text: string): string => {
+        return text.toLowerCase().replace(/[_\s]+(.)?/g, (_, c) => (c ? c.toUpperCase() : ''));
+      };
+
+      const formatDateWithTimeZone = (
+        date: Date | string,
+        timezone = 'America/Los_Angeles',
+        formatOptions: Intl.DateTimeFormatOptions = {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+        },
+      ) => {
+        return new Intl.DateTimeFormat('en-US', {
+          ...formatOptions,
+          timeZone: timezone,
+        }).format(new Date(date));
+      };
+
+      const groupedByRecipient = new Map<number, (typeof auditLogs)[number][]>();
+
+      const isAuditLogData = (data: unknown): data is AuditLogData => {
+        return (
+          typeof data === 'object' &&
+          data !== null &&
+          ('recipientId' in data || Object.keys(data).length === 0)
+        );
+      };
+
+      auditLogs.forEach((log) => {
+        if (!isAuditLogData(log.data)) {
+          return;
+        }
+
+        const data = log.data;
+        const recipientId = data?.recipientId;
+
+        if (!recipientId) return;
+
+        if (!groupedByRecipient.has(recipientId)) {
+          groupedByRecipient.set(recipientId, []);
+        }
+
+        groupedByRecipient.get(recipientId)!.push(log);
+      });
+
+      await createLog({
+        level: LogLevel.INFO,
+        category: LogCategory.DOCUMENT,
+        action: 'get_signature_audit_grouped_by_recipient',
+        message: 'Audit logs grouped by recipient',
+        data: {
+          recipientsCount: envelope.recipients.length,
+          recipientsWithLogs: groupedByRecipient.size,
+        },
+        envelopeId: envelope.id,
+      });
+
+      const result = envelope.recipients.map((recipient) => {
+        const logs = groupedByRecipient.get(recipient.id) || [];
+        const sortedLogs = [...logs].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+        const documentSigned = logs.find((l) => l.type === 'DOCUMENT_RECIPIENT_COMPLETED');
+
+        const emailSent = logs
+          .filter((log) => {
+            if (!isAuditLogData(log.data)) return false;
+
+            const data = log.data;
+            return log.type === 'EMAIL_SENT' && data?.emailType === 'SIGNING_REQUEST';
+          })
+          .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())[0];
+
+        const resendEmailSent = logs
+          .filter((log) => {
+            if (!isAuditLogData(log.data)) return false;
+
+            const data = log.data;
+            return log.type === 'EMAIL_SENT' && data?.isResending === true;
+          })
+          .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
+
+        const latestEvent = sortedLogs.find((log) => {
+          if (log.type !== 'EMAIL_SENT') return true;
+
+          if (!isAuditLogData(log.data)) return false;
+
+          const data = log.data;
+          return data?.emailType === 'SIGNING_REQUEST' || data?.isResending === true;
+        });
+
+        const history = sortedLogs
+          .filter((log) => {
+            const isEmailSent = log.type === 'EMAIL_SENT';
+
+            if (!isEmailSent) return true;
+            if (!isAuditLogData(log.data)) return false;
+
+            const data = log.data;
+            const isResend = data?.isResending === true;
+            const isSigningRequest = data?.emailType === 'SIGNING_REQUEST';
+
+            return isResend || isSigningRequest;
+          })
+          .map((log) => {
+            if (!isAuditLogData(log.data)) {
+              return {
+                type: toCamelCase(log.type),
+                timestamp: formatDateWithTimeZone(log.createdAt, timezone),
+                ipAddress: log.ipAddress ?? '',
+              };
+            }
+
+            const data = log.data;
+            const isResend = data?.isResending === true;
+
+            let label = log.type;
+            if (log.type === 'EMAIL_SENT') {
+              label = isResend ? 'resendEmail' : 'emailSent';
+            } else {
+              label = toCamelCase(log.type);
+            }
+
+            return {
+              type: label,
+              timestamp: formatDateWithTimeZone(log.createdAt, timezone),
+              ipAddress: log.ipAddress ?? '',
+            };
+          })
+          .filter(Boolean);
+
+        const signatureStatus: 'signed' | 'notSigned' = documentSigned ? 'signed' : 'notSigned';
+
+        return {
+          recipientId: recipient.id,
+          email: recipient.email,
+          name: recipient.name,
+          role: recipient.role,
+          signingOrder: recipient.signingOrder,
+          sendDate: emailSent ? formatDateWithTimeZone(emailSent.createdAt, timezone) : null,
+          resendDate: resendEmailSent
+            ? formatDateWithTimeZone(resendEmailSent.createdAt, timezone)
+            : null,
+          signatureDate: documentSigned
+            ? formatDateWithTimeZone(documentSigned.createdAt, timezone)
+            : null,
+          ipAddress: latestEvent?.ipAddress ?? null,
+          signatureStatus,
+          status: formatStatus(latestEvent?.type),
+          history,
+        };
+      });
+
+      await createLog({
+        level: LogLevel.INFO,
+        category: LogCategory.DOCUMENT,
+        action: 'get_signature_audit_success',
+        message: 'Signature audit retrieved successfully',
+        data: {
+          envelopeId: envelope.id,
+        },
+        envelopeId: envelope.id,
+      });
+
+      return {
+        status: 200 as const,
+        body: {
+          events: result,
         },
       };
     } catch (err) {
@@ -478,6 +786,7 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
     const {
       title,
       folderId,
+      folderName,
       externalId,
       visibility,
       globalAccessAuth,
@@ -550,6 +859,7 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
           templateType: type,
           title,
           folderId,
+          folderName,
           externalId: externalId ?? undefined,
           visibility,
           globalAccessAuth,
@@ -585,6 +895,541 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
           message: 'An error has occured while creating the template',
         },
       };
+    }
+  }),
+
+  createTemplateBase64: authenticatedMiddleware(async (args, user, team, { metadata }) => {
+    const { body } = args;
+    const {
+      title,
+      formKey,
+      data,
+      folderId,
+      folderName,
+      envelopeId,
+      envelopeItemId,
+      externalId,
+      visibility,
+      globalAccessAuth,
+      globalActionAuth,
+      publicTitle,
+      publicDescription,
+      meta,
+      attachments,
+    } = body;
+    const teamId = team.id;
+    const userId = user.id;
+
+    try {
+      if (!data || typeof data !== 'string') {
+        return {
+          status: 400,
+          body: {
+            message: 'Invalid base64 data provided',
+          },
+        };
+      }
+
+      const dateFormat = meta?.dateFormat
+        ? DATE_FORMATS.find((format) => format.value === meta?.dateFormat)
+        : DATE_FORMATS.find((format) => format.value === DEFAULT_DOCUMENT_DATE_FORMAT);
+
+      if (meta?.dateFormat && !dateFormat) {
+        return {
+          status: 400,
+          body: {
+            message: 'Invalid date format. Please provide a valid date format',
+          },
+        };
+      }
+
+      const timezone = meta?.timezone
+        ? TIME_ZONES.find((tz) => tz === meta?.timezone)
+        : DEFAULT_DOCUMENT_TIME_ZONE;
+
+      const isTimeZoneValid = meta?.timezone ? TIME_ZONES.includes(String(timezone)) : true;
+
+      if (!isTimeZoneValid) {
+        return {
+          status: 400,
+          body: {
+            message: 'Invalid timezone. Please provide a valid timezone',
+          },
+        };
+      }
+
+      const cleanBase64 = data.replace(/^data:application\/pdf;base64,/, '');
+
+      try {
+        Buffer.from(cleanBase64, 'base64');
+      } catch (error) {
+        return {
+          status: 400,
+          body: {
+            message: 'Invalid base64 encoding',
+          },
+        };
+      }
+
+      const templateDocumentData = await createDocumentData({
+        data: cleanBase64,
+        type: DocumentDataType.BYTES_64,
+      });
+
+      if (envelopeId && envelopeItemId) {
+        const envelope = await prisma.envelope.findFirst({
+          where: {
+            id: envelopeId,
+            teamId,
+            type: EnvelopeType.TEMPLATE,
+          },
+          include: {
+            envelopeItems: {
+              include: {
+                documentData: true,
+              },
+            },
+          },
+        });
+
+        if (!envelope) {
+          throw new AppError(AppErrorCode.NOT_FOUND, {
+            message: 'Template envelope not found',
+          });
+        }
+
+        const envelopeItem = envelope.envelopeItems.find((item) => item.id === envelopeItemId);
+
+        if (!envelopeItem) {
+          throw new AppError(AppErrorCode.NOT_FOUND, {
+            message: 'Envelope item not found',
+          });
+        }
+
+        const oldDocumentDataId = envelopeItem.documentDataId;
+
+        await prisma.envelopeItem.update({
+          where: { id: envelopeItem.id },
+          data: {
+            documentDataId: templateDocumentData.id,
+          },
+        });
+
+        await prisma.documentData.delete({
+          where: { id: oldDocumentDataId },
+        });
+
+        const fullTemplate = await getTemplateById({
+          id: { type: 'envelopeId', id: envelopeId },
+          userId,
+          teamId,
+        });
+
+        const legacyDocumentId = mapSecondaryIdToDocumentId(envelope.secondaryId);
+
+        return {
+          status: 200,
+          body: {
+            documentId: legacyDocumentId,
+            template: fullTemplate.envelopeItems,
+            folderId: fullTemplate.folderId,
+            message: 'Template updated successfully with base64 data',
+          },
+        };
+      }
+
+      let resolvedFolderId: string | undefined;
+
+      if (folderId) {
+        resolvedFolderId = folderId;
+      } else if (folderName) {
+        const folder = await prisma.folder.findFirst({
+          where: {
+            name: folderName,
+            type: FolderType.TEMPLATE,
+            team: buildTeamWhereQuery({ teamId, userId }),
+          },
+        });
+
+        if (!folder) {
+          throw new AppError(AppErrorCode.NOT_FOUND, {
+            message: 'Folder not found',
+          });
+        }
+
+        resolvedFolderId = folder.id;
+      }
+
+      const createdTemplate = await createEnvelope({
+        userId: user.id,
+        teamId: team.id,
+        internalVersion: 1,
+        data: {
+          type: EnvelopeType.TEMPLATE,
+          envelopeItems: [
+            {
+              documentDataId: templateDocumentData.id,
+            },
+          ],
+          templateType: TemplateType.PRIVATE,
+          title: title,
+          folderId: resolvedFolderId,
+          folderName,
+          externalId: externalId ?? undefined,
+          visibility,
+          globalAccessAuth,
+          globalActionAuth,
+          publicTitle,
+          publicDescription,
+          formKey,
+        },
+        meta,
+        attachments,
+        requestMetadata: metadata,
+      });
+
+      const fullTemplate = await getTemplateById({
+        id: {
+          type: 'envelopeId',
+          id: createdTemplate.id,
+        },
+        userId: user.id,
+        teamId: team.id,
+      });
+
+      await createLog({
+        level: LogLevel.INFO,
+        category: LogCategory.DOCUMENT,
+        action: 'template_base64_before_map_secondary_id',
+        message: 'Mapping secondaryId to legacy documentId',
+        data: {
+          envelopeId: fullTemplate.id,
+          envelopeType: fullTemplate.type,
+          secondaryId: fullTemplate.secondaryId,
+        },
+        metadata,
+        userId,
+      });
+
+      const legacyDocumentId = mapSecondaryIdToTemplateId(fullTemplate.secondaryId);
+
+      return {
+        status: 200,
+        body: {
+          documentId: legacyDocumentId,
+          template: fullTemplate.envelopeItems,
+          folderId: fullTemplate.folderId,
+          message: 'Template created successfully with base64 data',
+        },
+      };
+    } catch (err) {
+      await createLog({
+        level: LogLevel.ERROR,
+        category: LogCategory.DOCUMENT,
+        action: 'template_base64_error',
+        message: 'Error creating template with base64',
+        data: {
+          error: err instanceof Error ? err.message : err,
+          envelopeId,
+          envelopeItemId,
+          folderId,
+          folderName,
+        },
+        metadata,
+        userId,
+      });
+
+      return {
+        status: 500,
+        body: {
+          message: 'An error has occurred while creating the template',
+        },
+      };
+    }
+  }),
+
+  createEmbebedTemplate: authenticatedMiddleware(async (args, user, team, { logger, metadata }) => {
+    const { body } = args;
+    const { title, data, key, externalId } = body;
+
+    try {
+      logger.info({
+        input: {
+          title,
+          key,
+          externalId,
+        },
+      });
+
+      // Normalize filename
+      const fileName = title.endsWith('.pdf') ? title : `${title}.pdf`;
+
+      const bytes = await getFileServerSide({
+        type: DocumentDataType.BYTES_64,
+        data,
+      });
+
+      const buffer = Buffer.from(bytes);
+      const arrayBuffer = buffer.buffer.slice(
+        buffer.byteOffset,
+        buffer.byteOffset + buffer.byteLength,
+      );
+
+      const file = {
+        name: fileName,
+        type: 'application/pdf',
+        arrayBuffer: async () => Promise.resolve(arrayBuffer),
+      };
+
+      const { id: templateDocumentDataId } = await putNormalizedPdfFileServerSide(file);
+
+      const createdTemplate = await createEnvelope({
+        userId: user.id,
+        teamId: team.id,
+        internalVersion: 2,
+        data: {
+          type: EnvelopeType.TEMPLATE,
+          title: fileName,
+          envelopeItems: [
+            {
+              documentDataId: templateDocumentDataId,
+            },
+          ],
+          externalId: externalId ?? undefined,
+          templateType: TemplateType.PRIVATE,
+        },
+        requestMetadata: metadata,
+      });
+
+      const fullTemplate = await getTemplateById({
+        id: {
+          type: 'envelopeId',
+          id: createdTemplate.id,
+        },
+        userId: user.id,
+        teamId: team.id,
+      });
+
+      return {
+        status: 200,
+        body: {
+          ...fullTemplate,
+          templateMeta: fullTemplate.templateMeta
+            ? {
+                ...fullTemplate.templateMeta,
+                templateId: fullTemplate.id,
+              }
+            : null,
+          Field: fullTemplate.fields.map((field) => ({
+            ...field,
+            fieldMeta: field.fieldMeta ? ZFieldMetaSchema.parse(field.fieldMeta) : null,
+          })),
+          Recipient: fullTemplate.recipients,
+        },
+      };
+    } catch (err) {
+      return AppError.toRestAPIError(err);
+    }
+  }),
+
+  deleteEmbedTemplate: authenticatedMiddleware(async (args, user, team, { logger }) => {
+    try {
+      const { externalId } = args.params;
+
+      logger.info({
+        input: {
+          externalId,
+          userId: user.id,
+          teamId: team.id,
+        },
+      });
+
+      const templateId = Number(externalId);
+      if (isNaN(templateId)) {
+        return {
+          status: 400,
+          body: {
+            message: 'Invalid template ID',
+            externalId,
+          },
+        };
+      }
+
+      const deletedTemplate = await deleteTemplate({
+        id: {
+          type: 'templateId',
+          id: templateId,
+        },
+        userId: user.id,
+        teamId: team.id,
+      });
+
+      const legacyTemplateId = mapSecondaryIdToTemplateId(deletedTemplate.secondaryId);
+
+      return {
+        status: 200,
+        body: {
+          id: legacyTemplateId,
+          externalId: deletedTemplate.externalId,
+          type: deletedTemplate.templateType,
+          title: deletedTemplate.title,
+          userId: deletedTemplate.userId,
+          teamId: deletedTemplate.teamId,
+          createdAt: deletedTemplate.createdAt,
+          updatedAt: deletedTemplate.updatedAt,
+        },
+      };
+    } catch (err) {
+      logger.error({
+        error: err,
+        message: 'Error deleting embed template',
+      });
+
+      if (err instanceof AppError && err.code === AppErrorCode.NOT_FOUND) {
+        return {
+          status: 404,
+          body: {
+            message: 'Template not found',
+            externalId: args.params.externalId,
+          },
+        };
+      }
+
+      return AppError.toRestAPIError(err);
+    }
+  }),
+
+  replaceEmbedTemplate: authenticatedMiddleware(async (args, user, team, { logger, metadata }) => {
+    const { externalId } = args.params;
+    const { body } = args;
+    const { title, data } = body;
+
+    try {
+      logger.info({
+        input: {
+          externalId,
+          title,
+        },
+      });
+
+      const templateId = Number(externalId);
+      if (isNaN(templateId)) {
+        return {
+          status: 400,
+          body: {
+            message: 'Invalid template ID',
+          },
+        };
+      }
+
+      const secondaryId = mapTemplateIdToSecondaryId(templateId);
+
+      const envelope = await prisma.envelope.findFirst({
+        where: {
+          secondaryId,
+          type: EnvelopeType.TEMPLATE,
+          deletedAt: null,
+        },
+        include: {
+          envelopeItems: {
+            include: {
+              documentData: true,
+            },
+          },
+        },
+      });
+
+      if (!envelope) {
+        return {
+          status: 404,
+          body: {
+            message: 'Template not found',
+          },
+        };
+      }
+
+      const firstEnvelopeItem = envelope.envelopeItems[0];
+
+      if (!firstEnvelopeItem) {
+        return {
+          status: 404,
+          body: {
+            message: 'Template envelope item not found',
+          },
+        };
+      }
+
+      const fileName = title.endsWith('.pdf') ? title : `${title}.pdf`;
+
+      const bytes = await getFileServerSide({
+        type: DocumentDataType.BYTES_64,
+        data,
+      });
+
+      const buffer = Buffer.from(bytes);
+      const arrayBuffer = buffer.buffer.slice(
+        buffer.byteOffset,
+        buffer.byteOffset + buffer.byteLength,
+      );
+
+      const file = {
+        name: fileName,
+        type: 'application/pdf',
+        arrayBuffer: async () => Promise.resolve(arrayBuffer),
+      };
+
+      const { id: newTemplateDocumentDataId } = await putNormalizedPdfFileServerSide(file);
+
+      const oldDocumentDataId = firstEnvelopeItem.documentDataId;
+
+      await prisma.$transaction(async (tx) => {
+        await tx.envelope.update({
+          where: { id: envelope.id },
+          data: {
+            title: fileName,
+          },
+        });
+
+        await tx.envelopeItem.update({
+          where: { id: firstEnvelopeItem.id },
+          data: {
+            documentDataId: newTemplateDocumentDataId,
+          },
+        });
+
+        await tx.documentData.delete({
+          where: { id: oldDocumentDataId },
+        });
+      });
+
+      const fullTemplate = await getTemplateById({
+        id: {
+          type: 'envelopeId',
+          id: envelope.id,
+        },
+        userId: user.id,
+        teamId: team.id,
+      });
+
+      return {
+        status: 200,
+        body: {
+          ...fullTemplate,
+          templateMeta: fullTemplate.templateMeta
+            ? {
+                ...fullTemplate.templateMeta,
+                templateId: fullTemplate.id,
+              }
+            : null,
+          Field: fullTemplate.fields.map((field) => ({
+            ...field,
+            fieldMeta: field.fieldMeta ? ZFieldMetaSchema.parse(field.fieldMeta) : null,
+          })),
+          Recipient: fullTemplate.recipients,
+        },
+      };
+    } catch (err) {
+      return AppError.toRestAPIError(err);
     }
   }),
 
@@ -942,6 +1787,196 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
           },
         });
       }
+
+      const legacyDocumentId = mapSecondaryIdToDocumentId(envelope.secondaryId);
+
+      return {
+        status: 200,
+        body: {
+          documentId: legacyDocumentId,
+          recipients: envelope.recipients.map((recipient) => ({
+            recipientId: recipient.id,
+            name: recipient.name,
+            email: recipient.email,
+            token: recipient.token,
+            role: recipient.role,
+            signingOrder: recipient.signingOrder,
+            signingUrl: `${NEXT_PUBLIC_WEBAPP_URL()}/sign/${recipient.token}`,
+          })),
+        },
+      };
+    },
+  ),
+
+  generateDocumentFromTemplateBase64: authenticatedMiddleware(
+    async (args, user, team, { logger, metadata }) => {
+      const { body, params } = args;
+
+      logger.info({
+        input: {
+          templateId: params.templateId,
+        },
+      });
+
+      const templateId = Number(params.templateId);
+
+      await createLog({
+        level: LogLevel.INFO,
+        category: LogCategory.DOCUMENT,
+        action: 'generate_document_base64_input',
+        message: 'Received generateDocumentFromTemplateBase64 request',
+        data: {
+          templateId,
+          bodyType: body.type,
+          hasData: Boolean(body.data),
+          dataLength: body.data?.length,
+          title: body.title,
+          folderId: body.folderId,
+          folderName: body.folderName,
+          formKey: body.formKey,
+          signingContext: body.signingContext,
+        },
+        metadata,
+        userId: user.id,
+      });
+
+      let customDocumentData;
+
+      if (body.type === 'BYTES_64') {
+        await createLog({
+          level: LogLevel.INFO,
+          category: LogCategory.DOCUMENT,
+          action: 'bytes64_branch_entered',
+          message: 'Processing document from BYTES_64 payload',
+          data: {
+            hasData: Boolean(body.data),
+            dataLength: body.data?.length,
+            title: body.title,
+          },
+          metadata,
+          userId: user.id,
+        });
+
+        if (!body.data) {
+          throw new AppError(AppErrorCode.INVALID_BODY, {
+            message: 'data is required when type is BYTES_64',
+          });
+        }
+
+        const buffer = Buffer.from(body.data, 'base64');
+
+        const uploaded = await putPdfFileServerSide({
+          name: body.formKey ?? 'document.pdf',
+          type: 'application/pdf',
+          arrayBuffer: async () => Promise.resolve(buffer),
+        });
+
+        customDocumentData = [
+          {
+            documentDataId: uploaded.id,
+          },
+        ];
+      }
+
+      let envelope: Awaited<ReturnType<typeof createDocumentFromTemplate>> | null = null;
+
+      try {
+        envelope = await createDocumentFromTemplateBase64({
+          id: {
+            type: 'templateId',
+            id: templateId,
+          },
+          externalId: body.externalId || null,
+          userId: user.id,
+          teamId: team.id,
+          recipients: body.recipients,
+          prefillFields: body.prefillFields,
+          folderId: body.folderId,
+          folderName: body.folderName,
+          override: {
+            title: body.title,
+            ...body.meta,
+          },
+          requestMetadata: metadata,
+          ownerId: body.ownerId,
+          formKey: body.formKey,
+          signingContext: body.signingContext,
+          customDocumentData,
+        });
+      } catch (err) {
+        return AppError.toRestAPIError(err);
+      }
+
+      if (envelope.envelopeItems.length !== 1) {
+        throw new Error('API V1 does not support envelopes');
+      }
+
+      const firstEnvelopeDocumentData = await prisma.envelopeItem.findFirstOrThrow({
+        where: {
+          envelopeId: envelope.id,
+        },
+        include: {
+          documentData: true,
+        },
+      });
+
+      if (body.formValues) {
+        const fileName = envelope.title.endsWith('.pdf') ? envelope.title : `${envelope.title}.pdf`;
+
+        const pdf = await getFileServerSide(firstEnvelopeDocumentData.documentData);
+
+        const prefilled = await insertFormValuesInPdf({
+          pdf: Buffer.from(pdf),
+          formValues: body.formValues,
+        });
+
+        const newDocumentData = await putPdfFileServerSide({
+          name: fileName,
+          type: 'application/pdf',
+          arrayBuffer: async () => Promise.resolve(prefilled),
+        });
+
+        await prisma.envelope.update({
+          where: {
+            id: envelope.id,
+          },
+          data: {
+            formValues: body.formValues,
+            envelopeItems: {
+              update: {
+                where: {
+                  id: firstEnvelopeDocumentData.id,
+                },
+                data: {
+                  documentDataId: newDocumentData.id,
+                },
+              },
+            },
+          },
+        });
+      }
+
+      if (body.authOptions) {
+        await prisma.envelope.update({
+          where: {
+            id: envelope.id,
+          },
+          data: {
+            authOptions: body.authOptions,
+          },
+        });
+      }
+
+      await sendDocument({
+        id: {
+          type: 'envelopeId',
+          id: envelope.id,
+        },
+        userId: user.id,
+        teamId: team.id,
+        sendEmail: true,
+        requestMetadata: metadata,
+      });
 
       const legacyDocumentId = mapSecondaryIdToDocumentId(envelope.secondaryId);
 
@@ -1439,10 +2474,28 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
               .with('DROPDOWN', () => ZDropdownFieldMeta.safeParse(fieldMeta))
               .with('NUMBER', () => ZNumberFieldMeta.safeParse(fieldMeta))
               .with('TEXT', () => ZTextFieldMeta.safeParse(fieldMeta))
-              .with('SIGNATURE', 'INITIALS', 'DATE', 'EMAIL', 'NAME', () => ({
-                success: true,
-                data: undefined,
-              }))
+              .with(
+                'SIGNATURE',
+                'INITIALS',
+                'DATE',
+                'CALENDAR',
+                'EMAIL',
+                'NAME',
+                'RESIDENT_FIRST_NAME',
+                'RESIDENT_LAST_NAME',
+                'RESIDENT_DOB',
+                'RESIDENT_GENDER_IDENTITY',
+                'RESIDENT_LOCATION_NAME',
+                'RESIDENT_LOCATION_STATE',
+                'RESIDENT_LOCATION_ADDRESS',
+                'RESIDENT_LOCATION_CITY',
+                'RESIDENT_LOCATION_ZIP_CODE',
+                'RESIDENT_LOCATION_COUNTRY',
+                () => ({
+                  success: true,
+                  data: undefined,
+                }),
+              )
               .with('FREE_SIGNATURE', () => ({
                 success: false,
                 error: 'FREE_SIGNATURE is not supported',
