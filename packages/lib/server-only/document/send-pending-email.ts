@@ -80,6 +80,8 @@ export const sendPendingEmail = async ({ id, recipientId }: SendPendingEmailOpti
   const template = createElement(DocumentPendingEmailTemplate, {
     documentName: envelope.title,
     assetBaseUrl,
+    recipientName: recipient?.name,
+    signingContext: envelope?.signingContext || {},
   });
 
   const [html] = await Promise.all([

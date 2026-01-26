@@ -11,7 +11,13 @@ type DocumentRejectedEmailProps = {
   documentName: string;
   documentUrl: string;
   rejectionReason: string;
-  assetBaseUrl?: string;
+  signingContext?: {
+    companyName?: string;
+    facilityAdministrator?: string;
+    documentName?: string;
+    ownerName?: string;
+    locationName?: string;
+  };
 };
 
 export function DocumentRejectedEmail({
@@ -19,16 +25,12 @@ export function DocumentRejectedEmail({
   documentName,
   documentUrl,
   rejectionReason,
-  assetBaseUrl = 'http://localhost:3002',
+  signingContext,
 }: DocumentRejectedEmailProps) {
   const { _ } = useLingui();
   const branding = useBranding();
 
   const previewText = _(msg`${recipientName} has rejected the document '${documentName}'`);
-
-  const getAssetUrl = (path: string) => {
-    return new URL(path, assetBaseUrl).toString();
-  };
 
   return (
     <Html>
@@ -36,32 +38,30 @@ export function DocumentRejectedEmail({
       <Preview>{previewText}</Preview>
 
       <Body className="mx-auto my-auto bg-white font-sans">
-        <Section>
-          <Container className="mx-auto mb-2 mt-8 max-w-xl rounded-lg border border-solid border-slate-200 p-4 backdrop-blur-sm">
-            <Section>
-              {branding.brandingEnabled && branding.brandingLogo ? (
-                <Img src={branding.brandingLogo} alt="Branding Logo" className="mb-4 h-6" />
-              ) : (
-                <Img
-                  src={getAssetUrl('/static/logo.png')}
-                  alt="Documenso Logo"
-                  className="mb-4 h-6"
+        <div className="flex flex-col items-center justify-center gap-6 rounded-lg bg-zinc-50 p-6">
+          <Section>
+            <Container className="mx-auto mb-2 mt-8 max-w-xl rounded-lg border border-solid border-slate-200 bg-white p-6">
+              <Section>
+                {branding.brandingEnabled && branding.brandingLogo ? (
+                  <Img src={branding.brandingLogo} alt="Branding Logo" className="mb-4 h-6" />
+                ) : (
+                  <div className="mb-6 w-[97%] items-center justify-center gap-2 rounded-md bg-brand px-2 py-4">
+                    <p className="text-center text-lg font-medium text-white">Document Rejected</p>
+                  </div>
+                )}
+
+                <TemplateDocumentRejected
+                  recipientName={recipientName}
+                  documentName={documentName}
+                  documentUrl={documentUrl}
+                  rejectionReason={rejectionReason}
                 />
-              )}
+              </Section>
+            </Container>
 
-              <TemplateDocumentRejected
-                recipientName={recipientName}
-                documentName={documentName}
-                documentUrl={documentUrl}
-                rejectionReason={rejectionReason}
-              />
-            </Section>
-          </Container>
-
-          <Container className="mx-auto max-w-xl">
-            <TemplateFooter />
-          </Container>
-        </Section>
+            <TemplateFooter companyName={signingContext?.companyName || ''} />
+          </Section>
+        </div>
       </Body>
     </Html>
   );

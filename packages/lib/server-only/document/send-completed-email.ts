@@ -9,6 +9,8 @@ import { prisma } from '@documenso/prisma';
 
 import { getI18nInstance } from '../../client-only/providers/i18n-server';
 import { NEXT_PUBLIC_WEBAPP_URL } from '../../constants/app';
+import type { TSigningContext } from '../../types/document';
+import { ZSigningContextSchema } from '../../types/document';
 import { DOCUMENT_AUDIT_LOG_TYPE } from '../../types/document-audit-logs';
 import { extractDerivedDocumentEmailSettings } from '../../types/document-email';
 import type { RequestMetadata } from '../../universal/extract-request-metadata';
@@ -65,6 +67,13 @@ export const sendCompletedEmail = async ({ id, requestMetadata }: SendDocumentOp
 
   const isDirectTemplate = envelope?.source === DocumentSource.TEMPLATE_DIRECT_LINK;
 
+  const parsedSigningContext =
+    envelope.signingContext === null
+      ? null
+      : ZSigningContextSchema.safeParse(envelope.signingContext);
+
+  const documentDetails: TSigningContext = parsedSigningContext?.data || null;
+
   if (envelope.recipients.length === 0) {
     throw new Error('Document has no recipients');
   }
@@ -107,7 +116,6 @@ export const sendCompletedEmail = async ({ id, requestMetadata }: SendDocumentOp
       !isDocumentCompletedEmailEnabled)
   ) {
     const template = createElement(DocumentCompletedEmailTemplate, {
-      documentName: envelope.title,
       assetBaseUrl,
       downloadLink: documentOwnerDownloadLink,
     });
@@ -128,7 +136,7 @@ export const sendCompletedEmail = async ({ id, requestMetadata }: SendDocumentOp
         email: owner.email,
         name: owner.name ?? undefined,
       },
-      i18n._(msg`Signing Complete!`),
+      i18n._(msg`Document Completed - ${documentDetails?.documentName || ''}`),
       html,
     );
 
@@ -166,12 +174,16 @@ export const sendCompletedEmail = async ({ id, requestMetadata }: SendDocumentOp
         'document.name': envelope.title,
       };
 
-      const downloadLink = `${NEXT_PUBLIC_WEBAPP_URL()}/sign/${recipient.token}/complete`;
+      const downloadPageLink = `${NEXT_PUBLIC_WEBAPP_URL()}/sign/${recipient.token}/complete`;
+      const downloadLink = envelope?.finalDocumentUrl
+        ? envelope?.finalDocumentUrl
+        : downloadPageLink;
 
       const template = createElement(DocumentCompletedEmailTemplate, {
-        documentName: envelope.title,
         assetBaseUrl,
         downloadLink: recipient.email === owner.email ? documentOwnerDownloadLink : downloadLink,
+        recipientName: recipient.name,
+        signingContext: envelope.signingContext || {},
         customBody:
           isDirectTemplate && envelope.documentMeta?.message
             ? renderCustomEmailTemplate(envelope.documentMeta.message, customEmailTemplate)
@@ -196,7 +208,7 @@ export const sendCompletedEmail = async ({ id, requestMetadata }: SendDocumentOp
         },
         isDirectTemplate && envelope.documentMeta?.subject
           ? renderCustomEmailTemplate(envelope.documentMeta.subject, customEmailTemplate)
-          : i18n._(msg`Signing Complete!`),
+          : i18n._(msg`Document Completed - ${documentDetails?.documentName || ''}`),
         html,
       );
 

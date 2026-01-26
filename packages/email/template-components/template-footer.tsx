@@ -20,14 +20,14 @@ export const TemplateFooter = ({ isDocument = true, companyName = '' }: Template
 
   return (
     <div className="gap-6">
-      <Container className="flex w-full flex-col items-center justify-center gap-2 self-stretch rounded-lg border border-slate-200 bg-white px-6 py-4">
+      <Container className="mx-auto max-w-xl items-center justify-center gap-2 self-stretch rounded-lg border border-slate-200 bg-white px-6 py-4">
         <Section>
           {isDocument && !branding.brandingHidePoweredBy && (
-            <Text className="my-4 text-center text-xs leading-4 font-medium text-zinc-500">
+            <Text className="my-4 text-center text-xs font-medium leading-4 text-zinc-500">
               <Trans>
-                <span className="text-brand-accent font-medium">Caring Data</span> is a secure
+                <span className="font-medium text-brand-accent">Caring Data</span> is a secure
                 platform used by{' '}
-                <span className="text-brand-accent font-medium">{companyName}</span> to manage
+                <span className="font-medium text-brand-accent">{companyName}</span> to manage
                 communication and documentation. We prioritize your privacy and security. For more
                 details, please review our{' '}
                 <Link
@@ -61,7 +61,7 @@ export const TemplateFooter = ({ isDocument = true, companyName = '' }: Template
                   href="https://rise.caringdata.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-brand-accent font-medium"
+                  className="font-medium text-brand-accent"
                 >
                   www.caringdata.com
                 </a>{' '}
@@ -85,14 +85,14 @@ export const TemplateFooter = ({ isDocument = true, companyName = '' }: Template
           )}
         </Section>
       </Container>
-      <Container className="mt-4 flex w-full flex-col gap-1 self-stretch rounded-lg border border-slate-200 bg-white px-6 py-2">
+      <Container className="mx-auto mt-4 max-w-xl gap-1 self-stretch rounded-lg border border-slate-200 bg-white px-6 py-2">
         {isDocument && !branding.brandingHidePoweredBy && (
           <>
             <Text className="font-montserrat text-xs text-zinc-600">
               <Trans>
                 This document was sent using{' '}
                 <Link
-                  className="text-brand-accent font-medium underline"
+                  className="font-medium text-brand-accent underline"
                   href="https://documen.so/mail-footer"
                 >
                   Documenso

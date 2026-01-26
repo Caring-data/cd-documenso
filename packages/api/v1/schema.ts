@@ -85,6 +85,33 @@ export type TSuccessfulGetDocumentResponseSchema = z.infer<
 
 export type TSuccessfulDocumentResponseSchema = z.infer<typeof ZSuccessfulDocumentResponseSchema>;
 
+export const ZGetSignatureAuditResponseSchema = z.object({
+  events: z.array(
+    z.object({
+      recipientId: z.number().nullable(),
+      email: z.string().nullable(),
+      name: z.string().nullable(),
+      role: z.string().nullable(),
+      ipAddress: z.string().nullable(),
+      signingOrder: z.number().nullable(),
+      sendDate: z.string().nullable(),
+      resendDate: z.string().nullable(),
+      signatureDate: z.string().nullable(),
+      signatureStatus: z.enum(['signed', 'notSigned']),
+      status: z.string().nullable(),
+      history: z.array(
+        z.object({
+          type: z.string(),
+          timestamp: z.string(),
+          ipAddress: z.string(),
+        }),
+      ),
+    }),
+  ),
+});
+
+export type TGetSignatureAuditResponseSchema = z.infer<typeof ZGetSignatureAuditResponseSchema>;
+
 export const ZSendDocumentForSigningMutationSchema = z
   .object({
     sendEmail: z.boolean().optional().default(true).openapi({
