@@ -77,14 +77,14 @@ export const DocumentInviteEmailTemplate = ({
       <Preview>{_(previewText)}</Preview>
 
       <Body className="mx-auto my-auto bg-white font-sans">
-        <div className="flex w-full flex-col items-center justify-center gap-6 rounded-lg bg-zinc-50 p-6">
+        <div className="flex flex-col items-center justify-center gap-6 rounded-lg bg-zinc-50 p-6">
           <Section>
-            <Container className="mt-8 mb-4 w-full items-center justify-center rounded-lg border border-solid border-slate-200 bg-white p-6 backdrop-blur-sm">
+            <Container className="mx-auto mb-4 mt-8 max-w-xl rounded-lg border border-solid border-slate-200 bg-white p-6">
               <Section>
                 {branding.brandingEnabled && branding.brandingLogo ? (
                   <Img src={branding.brandingLogo} alt="Branding Logo" className="mb-4 h-6" />
                 ) : (
-                  <div className="bg-brand mb-6 w-[97%] items-center justify-center gap-1 rounded-md px-2 py-4 text-center">
+                  <div className="mb-6 w-[97%] items-center justify-center gap-1 rounded-md bg-brand px-2 py-4 text-center">
                     <div className="text-center text-white">
                       <Img
                         src={getAssetUrl('/static/file-pen-line-white.png')}

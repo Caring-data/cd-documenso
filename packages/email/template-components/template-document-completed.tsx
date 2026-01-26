@@ -1,64 +1,81 @@
 import { Trans } from '@lingui/react/macro';
 
-import { Button, Column, Img, Section, Text } from '../components';
-import { TemplateDocumentImage } from './template-document-image';
+import { Button, Img, Section, Text } from '../components';
 
 export interface TemplateDocumentCompletedProps {
   downloadLink: string;
-  documentName: string;
   assetBaseUrl: string;
-  customBody?: string;
+  recipientName?: string;
+  signingContext?: {
+    companyName?: string;
+    facilityAdministrator?: string;
+    documentName?: string;
+    ownerName?: string;
+    locationName?: string;
+  };
 }
 
 export const TemplateDocumentCompleted = ({
   downloadLink,
-  documentName,
   assetBaseUrl,
-  customBody,
+  recipientName,
+  signingContext,
 }: TemplateDocumentCompletedProps) => {
   const getAssetUrl = (path: string) => {
     return new URL(path, assetBaseUrl).toString();
   };
 
   return (
-    <>
-      <TemplateDocumentImage className="mt-6" assetBaseUrl={assetBaseUrl} />
-
+    <Section>
       <Section>
-        <Section className="mb-4">
-          <Column align="center">
-            <Text className="text-primary text-base font-semibold">
-              <Img
-                src={getAssetUrl('/static/completed.png')}
-                className="-mt-0.5 mr-2 inline h-7 w-7 align-middle"
-              />
-              <Trans>Completed</Trans>
+        <Text className="self-stretch text-sm font-medium leading-5 text-zinc-600">
+          <Trans>Dear </Trans> {recipientName},
+        </Text>
+        <Text className="text-sm font-medium leading-5 text-zinc-600">
+          <Trans>
+            We are pleased to inform you that all required signatures have been completed. The
+            following document is now ready for download:
+          </Trans>
+        </Text>
+        <div className="flex items-center gap-6">
+          <Img
+            src={getAssetUrl('/static/user-round.png')}
+            alt="Document Icon"
+            className="my-auto h-4 w-auto pr-2 align-middle"
+          />
+          <div className="flex flex-col text-sm font-medium leading-5 text-zinc-600">
+            <Text>
+              <Trans>Regarding: {signingContext?.ownerName}</Trans>
             </Text>
-          </Column>
-        </Section>
+          </div>
+        </div>
+        <div className="flex items-center gap-6">
+          <Img
+            src={getAssetUrl('/static/file-text.png')}
+            alt="Document Icon"
+            className="my-auto h-4 w-auto pr-2 align-middle"
+          />
+          <div className="flex flex-col justify-center text-sm font-medium leading-5 text-zinc-600">
+            <Text>
+              <Trans>Document: {signingContext?.documentName}</Trans>
+            </Text>
+          </div>
+        </div>
 
-        <Text className="text-primary mb-0 text-center text-lg font-semibold">
-          {customBody || <Trans>“{documentName}” was signed by all signers</Trans>}
+        <Text className="text-sm font-medium leading-5 text-zinc-600">
+          <Trans>You can download the final copy by clicking the button below</Trans>
         </Text>
-
-        <Text className="my-1 text-center text-base text-slate-400">
-          <Trans>Continue by downloading the document.</Trans>
-        </Text>
-
-        <Section className="mt-8 mb-6 text-center">
-          <Button
-            className="rounded-lg border border-solid border-slate-200 px-4 py-2 text-center text-sm font-medium text-black no-underline"
-            href={downloadLink}
-          >
-            <Img
-              src={getAssetUrl('/static/download.png')}
-              className="mr-2 mb-0.5 inline h-5 w-5 align-middle"
-            />
-            <Trans>Download</Trans>
-          </Button>
-        </Section>
       </Section>
-    </>
+
+      <Section className="mt-6 text-center">
+        <Button
+          className="inline-flex items-center justify-center rounded-lg bg-brand px-6 py-3 text-center text-sm font-medium text-white no-underline"
+          href={downloadLink}
+        >
+          <Trans>Download</Trans>
+        </Button>
+      </Section>
+    </Section>
   );
 };
 

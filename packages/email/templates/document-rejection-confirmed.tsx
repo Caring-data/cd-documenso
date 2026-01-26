@@ -7,28 +7,26 @@ import { TemplateDocumentRejectionConfirmed } from '../template-components/templ
 import { TemplateFooter } from '../template-components/template-footer';
 
 export type DocumentRejectionConfirmedEmailProps = {
-  recipientName: string;
   documentName: string;
-  documentOwnerName: string;
   reason: string;
-  assetBaseUrl?: string;
+  signingContext?: {
+    companyName?: string;
+    facilityAdministrator?: string;
+    documentName?: string;
+    ownerName?: string;
+    locationName?: string;
+  };
 };
 
 export function DocumentRejectionConfirmedEmail({
-  recipientName,
   documentName,
-  documentOwnerName,
   reason,
-  assetBaseUrl = 'http://localhost:3002',
+  signingContext,
 }: DocumentRejectionConfirmedEmailProps) {
   const { _ } = useLingui();
   const branding = useBranding();
 
   const previewText = _(msg`You have rejected the document '${documentName}'`);
-
-  const getAssetUrl = (path: string) => {
-    return new URL(path, assetBaseUrl).toString();
-  };
 
   return (
     <Html>
@@ -36,32 +34,30 @@ export function DocumentRejectionConfirmedEmail({
       <Preview>{previewText}</Preview>
 
       <Body className="mx-auto my-auto bg-white font-sans">
-        <Section>
-          <Container className="mx-auto mb-2 mt-8 max-w-xl rounded-lg border border-solid border-slate-200 p-4 backdrop-blur-sm">
-            <Section>
-              {branding.brandingEnabled && branding.brandingLogo ? (
-                <Img src={branding.brandingLogo} alt="Branding Logo" className="mb-4 h-6" />
-              ) : (
-                <Img
-                  src={getAssetUrl('/static/logo.png')}
-                  alt="Documenso Logo"
-                  className="mb-4 h-6"
+        <div className="flex flex-col items-center justify-center gap-6 rounded-lg bg-zinc-50 p-6">
+          <Section>
+            <Container className="mx-auto mb-2 mt-8 max-w-xl rounded-lg border border-solid border-slate-200 bg-white p-6">
+              <Section>
+                {branding.brandingEnabled && branding.brandingLogo ? (
+                  <Img src={branding.brandingLogo} alt="Branding Logo" className="mb-4 h-6" />
+                ) : (
+                  <div className="mb-6 w-[97%] items-center justify-center gap-2 rounded-md bg-brand px-2 py-4">
+                    <p className="text-center text-lg font-medium text-white">
+                      Rejection Confirmed
+                    </p>
+                  </div>
+                )}
+
+                <TemplateDocumentRejectionConfirmed
+                  reason={reason}
+                  signingContext={signingContext}
                 />
-              )}
+              </Section>
+            </Container>
 
-              <TemplateDocumentRejectionConfirmed
-                recipientName={recipientName}
-                documentName={documentName}
-                documentOwnerName={documentOwnerName}
-                reason={reason}
-              />
-            </Section>
-          </Container>
-
-          <Container className="mx-auto max-w-xl">
-            <TemplateFooter />
-          </Container>
-        </Section>
+            <TemplateFooter companyName={signingContext?.companyName || ''} />
+          </Section>
+        </div>
       </Body>
     </Html>
   );
