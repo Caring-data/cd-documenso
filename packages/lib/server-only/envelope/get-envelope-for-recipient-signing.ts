@@ -297,5 +297,5 @@ export const getEnvelopeForRecipientSigning = async ({
       brandingEnabled: settings.brandingEnabled,
       brandingLogo: settings.brandingLogo,
     },
-  } satisfies EnvelopeForSigningResponse);
+  });
 };

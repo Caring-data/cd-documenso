@@ -7,6 +7,7 @@ import { getRecipientByToken } from '@documenso/lib/server-only/recipient/get-re
 
 import { procedure } from '../trpc';
 import {
+  type TGetMultiSignDocumentResponseSchema,
   ZGetMultiSignDocumentRequestSchema,
   ZGetMultiSignDocumentResponseSchema,
 } from './get-multi-sign-document.types';
@@ -51,11 +52,13 @@ export const getMultiSignDocumentRoute = procedure
         templateId: null,
       }));
 
+      // Type assertion needed because Prisma returns `unknown` for JSON fields
+      // but Zod schema expects `JsonValue`. The schema validates at runtime.
       return {
         ...document,
         folder: null,
         fields: transformedFields,
-      };
+      } as unknown as TGetMultiSignDocumentResponseSchema;
     } catch (error) {
       if (error instanceof AppError) {
         throw error;

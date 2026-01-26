@@ -344,6 +344,7 @@ export const EnvelopeSigningProvider = ({
             // Dummy IDs.
             id: 0,
             fieldId: 0,
+            typedSignatureSettings: null,
           }
         : null;
     }
