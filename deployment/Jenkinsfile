@@ -1,11 +1,11 @@
 def branchConfig = [
-    'main'        : ['production' , 'cd_production', 'rise.caringdata.com'],
-    'staging'     : ['staging'    , 'cd_staging'   , 'staging.caringdata.com'],
-    'development' : ['development', 'cd_development', 'caringdata.at.services']
+    'main'        : ['production' , 'cd_production', 'rise.caringdata.com', '5001'],
+    'staging'     : ['staging'    , 'cd_staging'   , 'staging.caringdata.com', '4443'],
+    'development' : ['development', 'cd_development', 'caringdata.at.services', '4443']
 ]
 
 def config = branchConfig[env.BRANCH_NAME] ?: branchConfig['development']
-def (DEPLOY_ENV, AGENT_LABEL, DOMAIN_NAME) = config
+def (DEPLOY_ENV, AGENT_LABEL, DOMAIN_NAME, PORT) = config
 
 pipeline {
     agent { label "${AGENT_LABEL}" }
@@ -38,7 +38,7 @@ pipeline {
                     Environment: ${DEPLOY_ENV}
                     Agent:       ${AGENT_LABEL}
                     Domain:      ${DOMAIN_NAME}
-                    Port:        4443
+                    Port:        ${PORT}
                     ============================================
                     """
                 }
@@ -141,7 +141,7 @@ pipeline {
                             # First restore app.conf to clean state from git (fixes any corrupted files)
                             git show HEAD:deployment/nginx/conf.d/app.conf > nginx/conf.d/app.conf 2>/dev/null || true
                             # Then configure for target slot
-                            sed -i "s/app_blue:3002/app_\${NGINX_TARGET_SLOT}:3002/g" nginx/conf.d/app.conf || true
+                            sed -i "s/app_blue:5000/app_\${NGINX_TARGET_SLOT}:5000/g" nginx/conf.d/app.conf || true
                             echo "\${NGINX_TARGET_SLOT}" > nginx/conf.d/active_slot.txt || true
                         fi
                         
@@ -239,9 +239,9 @@ pipeline {
 
                         # Update nginx config to point to new slot
                         docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" \
-                            exec -T nginx sh -c "sed -i 's/app_${env.ACTIVE_SLOT}:3002/app_${env.TARGET_SLOT}:3002/g' /etc/nginx/conf.d/app.conf" || {
+                            exec -T nginx sh -c "sed -i 's/app_${env.ACTIVE_SLOT}:5000/app_${env.TARGET_SLOT}:5000/g' /etc/nginx/conf.d/app.conf" || {
                             echo "Failed to update nginx config via exec, trying direct file edit..."
-                            sed -i 's/app_${env.ACTIVE_SLOT}:3002/app_${env.TARGET_SLOT}:3002/g' nginx/conf.d/app.conf
+                            sed -i 's/app_${env.ACTIVE_SLOT}:5000/app_${env.TARGET_SLOT}:5000/g' nginx/conf.d/app.conf
                             docker compose --project-name "${env.COMPOSE_PROJECT_NAME}" restart nginx
                         }
 
@@ -273,7 +273,7 @@ pipeline {
                             script: """
                                 sleep 5
                                 curl -k -s -o /dev/null -w '%{http_code}' \
-                                    https://localhost:4443/api/health || echo '000'
+                                    https://localhost:${PORT}/api/health || echo '000'
                             """,
                             returnStdout: true
                         ).trim()
@@ -304,9 +304,9 @@ pipeline {
             ============================================
             DEPLOYMENT SUCCESSFUL
             ============================================
-            URL: https://${DOMAIN_NAME}:4443
-            Health: https://${DOMAIN_NAME}:4443/api/health
-            Certificate: https://${DOMAIN_NAME}:4443/api/certificate-status
+            URL: https://${DOMAIN_NAME}:${PORT}
+            Health: https://${DOMAIN_NAME}:${PORT}/api/health
+            Certificate: https://${DOMAIN_NAME}:${PORT}/api/certificate-status
             ============================================
             """
         }
