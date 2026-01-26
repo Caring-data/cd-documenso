@@ -1,12 +1,13 @@
 import { DocumentSource, DocumentStatus, EnvelopeType, Prisma } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import 'dotenv/config';
 import { Client } from 'pg';
 
-import { incrementTemplateId } from '@documenso/lib/server-only/envelope/increment-id';
-import { nanoid, prefixedId } from '@documenso/lib/universal/id';
-import { env } from '@documenso/lib/utils/env';
-import { mapTemplateIdToSecondaryId } from '@documenso/lib/utils/envelope';
-import { prisma } from '@documenso/prisma';
+import { prefixedId } from '../../packages/lib/universal/id';
+import { env } from '../../packages/lib/utils/env';
+import { mapTemplateIdToSecondaryId } from '../../packages/lib/utils/envelope';
+
+const prisma = new PrismaClient();
 
 const oldDb = new Client({
   connectionString: env('DATABASE_URL_OLD'),

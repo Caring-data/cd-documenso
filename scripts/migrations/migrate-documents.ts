@@ -64,7 +64,6 @@ async function migrateDocuments() {
       LEFT JOIN "DocumentData" dd ON d."documentDataId" = dd.id
       LEFT JOIN "DocumentMeta" dm ON dm."documentId" = d.id
       WHERE d."deletedAt" IS NULL
-      LIMIT 1
     `);
 
     console.log(`Found ${documents.length} documents to migrate`);
@@ -141,7 +140,7 @@ async function migrateDocuments() {
             id: prefixedId('envelope_item'),
             title: oldDoc.title,
             documentDataId: documentData.id,
-            envelopeId: oldDoc.id,
+            envelopeId: envelope.id,
             order: 1,
           },
         });
@@ -168,7 +167,7 @@ async function migrateDocuments() {
         }
 
         const { rows: recipients } = await oldDb.query(
-          `SELECT * FROM "Recipient" WHERE "templateId" = $1`,
+          `SELECT * FROM "Recipient" WHERE "documentId" = $1`,
           [oldDoc.id],
         );
 
@@ -211,10 +210,9 @@ async function migrateDocuments() {
                 width: field.width,
                 height: field.height,
                 customText:
-                  field.customText && field.customText.trim() !== '' ? field.customText : null,
+                  field.customText && field.customText.trim() !== '' ? field.customText : '',
                 inserted: field.inserted || false,
                 ...(normalizedFieldMeta !== null && { fieldMeta: normalizedFieldMeta }),
-                secondaryId: field.secondaryId,
 
                 envelope: {
                   connect: { id: envelope.id },
@@ -234,7 +232,7 @@ async function migrateDocuments() {
           }
 
           const { rows: signatures } = await oldDb.query(
-            `SELECT * FROM "Signature" WHERE "recipientId" = $1:`,
+            `SELECT * FROM "Signature" WHERE "recipientId" = $1`,
             [oldRecipient.id],
           );
 
