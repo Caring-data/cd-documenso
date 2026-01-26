@@ -71,6 +71,8 @@ RUN npm ci --legacy-peer-deps
 
 # Then copy all the source code (as it changes more often)
 COPY --from=builder /app/out/full/ .
+# Copy scripts folder (not included in turbo prune output)
+COPY --from=builder /app/scripts ./scripts
 # Finally copy the turbo.json file so that we can run turbo commands
 COPY turbo.json turbo.json
 
