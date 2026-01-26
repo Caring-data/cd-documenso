@@ -13,15 +13,15 @@ if [ -f "$CERT_PATH" ] && [ -r "$CERT_PATH" ]; then
 else
     printf "⚠️  Certificate not found or not readable\n"
     printf "💡 Tip: Documenso will still start, but document signing will be unavailable\n"
-    printf "🔧 Check: http://localhost:3002/api/certificate-status for detailed status\n"
+    printf "🔧 Check: http://localhost:5000/api/certificate-status for detailed status\n"
 fi
 
 printf "\n📚 Useful Links:\n"
 printf "📖 Documentation: https://docs.documenso.com\n"
 printf "🐳 Self-hosting guide: https://docs.documenso.com/developers/self-hosting\n"
 printf "🔐 Certificate setup: https://docs.documenso.com/developers/self-hosting/signing-certificate\n"
-printf "🏥 Health check: http://localhost:3002/api/health\n"
-printf "📊 Certificate status: http://localhost:3002/api/certificate-status\n"
+printf "🏥 Health check: http://localhost:5000/api/health\n"
+printf "📊 Certificate status: http://localhost:5000/api/certificate-status\n"
 printf "👥 Community: https://github.com/documenso/documenso\n\n"
 
 printf "🗄️  Running database migrations...\n"
