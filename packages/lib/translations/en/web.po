@@ -17,6 +17,11 @@ msgstr ""
 msgid ".PDF documents accepted"
 msgstr ".PDF documents accepted"
 
+#. placeholder {0}: signingContext?.documentName
+#: packages/email/template-components/template-document-pending.tsx
+msgid "“{0}” has been signed"
+msgstr "“{0}” has been signed"
+
 #. placeholder {0}: field.customText
 #. placeholder {1}: timezone || ''
 #: apps/remix/app/components/general/document-signing/document-signing-date-field.tsx
@@ -26,14 +31,6 @@ msgstr "\"{0}\" will appear on the document as it has a timezone of \"{1}\"."
 #: packages/email/template-components/template-document-super-delete.tsx
 msgid "\"{documentName}\" has been deleted by an admin."
 msgstr "\"{documentName}\" has been deleted by an admin."
-
-#: packages/email/template-components/template-document-pending.tsx
-msgid "“{documentName}” has been signed"
-msgstr "“{documentName}” has been signed"
-
-#: packages/email/template-components/template-document-completed.tsx
-msgid "“{documentName}” was signed by all signers"
-msgstr "“{documentName}” was signed by all signers"
 
 #: apps/remix/app/components/dialogs/document-delete-dialog.tsx
 msgid "\"{documentTitle}\" has been successfully deleted"
@@ -385,13 +382,11 @@ msgid "{recipientReference} has completed signing the document."
 msgstr "{recipientReference} has completed signing the document."
 
 #. placeholder {0}: envelope.title
+#. placeholder {0}: signingContext?.documentName
+#: packages/email/template-components/template-document-recipient-signed.tsx
 #: packages/lib/jobs/definitions/emails/send-recipient-signed-email.handler.ts
 msgid "{recipientReference} has signed \"{0}\""
 msgstr "{recipientReference} has signed \"{0}\""
-
-#: packages/email/template-components/template-document-recipient-signed.tsx
-msgid "{recipientReference} has signed \"{documentName}\""
-msgstr "{recipientReference} has signed \"{documentName}\""
 
 #: packages/email/templates/document-recipient-signed.tsx
 msgid "{recipientReference} has signed {documentName}"
@@ -716,6 +711,10 @@ msgstr "7 days"
 #: apps/remix/app/components/forms/send-confirmation-email.tsx
 msgid "A confirmation email has been sent, and it should arrive in your inbox shortly."
 msgstr "A confirmation email has been sent, and it should arrive in your inbox shortly."
+
+#: apps/remix/app/routes/_recipient+/sign.$token+/complete.tsx
+msgid "A copy of the completed document will be sent to your email shortly. You may also download it below."
+msgstr "A copy of the completed document will be sent to your email shortly. You may also download it below."
 
 #: apps/remix/app/routes/_unauthenticated+/articles.signature-disclosure.tsx
 msgid "A device capable of accessing, opening, and reading documents"
@@ -1309,10 +1308,6 @@ msgstr "All Levels"
 #: apps/remix/app/routes/_recipient+/sign.$token+/complete.tsx
 msgid "All parties have signed the document"
 msgstr "All parties have signed the document"
-
-#: apps/remix/app/routes/_recipient+/sign.$token+/complete.tsx
-msgid "All recipients have signed. The document is being processed and you will receive an email copy shortly."
-msgstr "All recipients have signed. The document is being processed and you will receive an email copy shortly."
 
 #: apps/remix/app/components/dialogs/document-delete-dialog.tsx
 msgid "All recipients will be notified"
@@ -2376,9 +2371,8 @@ msgstr "Complete the fields for the following signers."
 #: apps/remix/app/components/general/template/template-page-view-documents-table.tsx
 #: apps/remix/app/components/tables/admin-document-jobs-table.tsx
 #: apps/remix/app/components/tables/organisation-insights-table.tsx
-#: packages/email/template-components/template-document-completed.tsx
-#: packages/email/template-components/template-document-recipient-signed.tsx
 #: packages/email/template-components/template-document-self-signed.tsx
+#: packages/email/templates/document-recipient-signed.tsx
 #: packages/lib/constants/document.ts
 msgid "Completed"
 msgstr "Completed"
@@ -2536,10 +2530,6 @@ msgstr "Context"
 #: packages/ui/primitives/document-flow/document-flow-root.tsx
 msgid "Continue"
 msgstr "Continue"
-
-#: packages/email/template-components/template-document-completed.tsx
-msgid "Continue by downloading the document."
-msgstr "Continue by downloading the document."
 
 #: apps/remix/app/routes/_unauthenticated+/organisation.invite.$token.tsx
 msgid "Continue to login"
@@ -2914,7 +2904,9 @@ msgstr "Date Settings"
 msgid "David is the Employee, Lucas is the Manager"
 msgstr "David is the Employee, Lucas is the Manager"
 
+#: packages/email/template-components/template-document-completed.tsx
 #: packages/email/template-components/template-document-invite.tsx
+#: packages/email/template-components/template-document-pending.tsx
 msgid "Dear "
 msgstr "Dear "
 
@@ -3375,6 +3367,12 @@ msgctxt "Audit log format"
 msgid "Document completed"
 msgstr "Document completed"
 
+#. placeholder {0}: documentDetails?.documentName || ''
+#: packages/lib/server-only/document/send-completed-email.ts
+#: packages/lib/server-only/document/send-completed-email.ts
+msgid "Document Completed - {0}"
+msgstr "Document Completed - {0}"
+
 #: apps/remix/app/routes/_internal+/[__htmltopdf]+/certificate.tsx
 msgid "Document Completed by all parties on"
 msgstr "Document Completed by all parties on"
@@ -3478,6 +3476,10 @@ msgstr "Document inbox"
 msgid "Document is already uploaded"
 msgstr "Document is already uploaded"
 
+#: apps/remix/app/routes/_recipient+/sign.$token+/complete.tsx
+msgid "Document is preparing..."
+msgstr "Document is preparing..."
+
 #: apps/remix/app/components/general/legacy-field-warning-popover.tsx
 msgid "Document is using legacy field insertion"
 msgstr "Document is using legacy field insertion"
@@ -3534,7 +3536,6 @@ msgstr "Document rejected"
 
 #: apps/remix/app/components/embed/embed-document-rejected.tsx
 #: apps/remix/app/routes/_recipient+/sign.$token+/rejected.tsx
-#: packages/email/template-components/template-document-rejected.tsx
 msgid "Document Rejected"
 msgstr "Document Rejected"
 
@@ -3551,10 +3552,6 @@ msgstr "Document sent"
 msgid "Document Settings"
 msgstr "Document Settings"
 
-#: apps/remix/app/routes/_recipient+/sign.$token+/complete.tsx
-msgid "Document Signed"
-msgstr "Document Signed"
-
 #: packages/lib/utils/document-audit-logs.ts
 msgctxt "Audit log format"
 msgid "Document signing auth updated"
@@ -3567,6 +3564,10 @@ msgstr "Document signing process will be cancelled"
 #: apps/remix/app/routes/_authenticated+/t.$teamUrl+/documents.$id.logs.tsx
 msgid "Document status"
 msgstr "Document status"
+
+#: apps/remix/app/routes/_recipient+/sign.$token+/complete.tsx
+msgid "Document Successfully Signed"
+msgstr "Document Successfully Signed"
 
 #: apps/remix/app/routes/_authenticated+/t.$teamUrl+/documents.$id.logs.tsx
 msgid "Document title"
@@ -3622,7 +3623,9 @@ msgid "Document will be permanently deleted"
 msgstr "Document will be permanently deleted"
 
 #. placeholder {0}: signingContext?.documentName
+#: packages/email/template-components/template-document-completed.tsx
 #: packages/email/template-components/template-document-invite.tsx
+#: packages/email/template-components/template-document-pending.tsx
 msgid "Document: {0}"
 msgstr "Document: {0}"
 
@@ -4323,10 +4326,6 @@ msgstr "Everyone"
 msgid "Everyone can access and view the document"
 msgstr "Everyone can access and view the document"
 
-#: apps/remix/app/routes/_recipient+/sign.$token+/complete.tsx
-msgid "Everyone has signed! You will receive an email copy of the signed document."
-msgstr "Everyone has signed! You will receive an email copy of the signed document."
-
 #: apps/remix/app/routes/_authenticated+/t.$teamUrl+/settings._index.tsx
 msgid "Expired"
 msgstr "Expired"
@@ -4488,6 +4487,10 @@ msgstr "Fields updated"
 #: apps/remix/app/components/general/envelope/envelope-drop-zone-wrapper.tsx
 msgid "File is too small"
 msgstr "File is too small"
+
+#: packages/email/templates/document-completed.tsx
+msgid "Final Document Available for Download"
+msgstr "Final Document Available for Download"
 
 #: apps/remix/app/routes/embed+/components/template-flow/add-template-fields.tsx
 msgid "First Name"
@@ -6435,10 +6438,6 @@ msgstr "Private templates can only be modified and viewed by you."
 msgid "Proceed"
 msgstr "Proceed"
 
-#: apps/remix/app/routes/_recipient+/sign.$token+/complete.tsx
-msgid "Processing document"
-msgstr "Processing document"
-
 #: apps/remix/app/components/general/app-command-menu.tsx
 #: apps/remix/app/components/general/settings-nav-desktop.tsx
 #: apps/remix/app/components/general/settings-nav-mobile.tsx
@@ -6692,7 +6691,9 @@ msgid "Redirecting"
 msgstr "Redirecting"
 
 #. placeholder {0}: signingContext?.ownerName
+#: packages/email/template-components/template-document-completed.tsx
 #: packages/email/template-components/template-document-invite.tsx
+#: packages/email/template-components/template-document-pending.tsx
 msgid "Regarding: {0}"
 msgstr "Regarding: {0}"
 
@@ -6719,10 +6720,6 @@ msgstr "Reject Document"
 #: packages/lib/constants/document.ts
 msgid "Rejected"
 msgstr "Rejected"
-
-#: packages/email/template-components/template-document-rejection-confirmed.tsx
-msgid "Rejection Confirmed"
-msgstr "Rejection Confirmed"
 
 #: packages/email/template-components/template-document-rejection-confirmed.tsx
 msgid "Rejection reason: {reason}"
@@ -7006,7 +7003,6 @@ msgstr "Retention of Documents"
 msgid "Retried"
 msgstr "Retried"
 
-#: apps/remix/app/components/general/document-signing/document-signing-page-view-v2.tsx
 #: apps/remix/app/routes/_unauthenticated+/o.$orgUrl.signin.tsx
 #: apps/remix/app/routes/_unauthenticated+/organisation.decline.$token.tsx
 #: apps/remix/app/routes/_unauthenticated+/organisation.invite.$token.tsx
@@ -7732,11 +7728,6 @@ msgctxt "Recipient role progressive verb"
 msgid "Signing"
 msgstr "Signing"
 
-#: packages/lib/server-only/document/send-completed-email.ts
-#: packages/lib/server-only/document/send-completed-email.ts
-msgid "Signing Complete!"
-msgstr "Signing Complete!"
-
 #: apps/remix/app/components/embed/embed-document-signing-page-v1.tsx
 msgid "Signing for"
 msgstr "Signing for"
@@ -7932,6 +7923,10 @@ msgstr "Stats"
 #: apps/remix/app/routes/_internal+/[__htmltopdf]+/audit-log.tsx
 msgid "Status"
 msgstr "Status"
+
+#: packages/email/template-components/template-document-pending.tsx
+msgid "Status: We're still waiting for other signers to sign this document.<0/>We'll notify you as soon as it's ready."
+msgstr "Status: We're still waiting for other signers to sign this document.<0/>We'll notify you as soon as it's ready."
 
 #. placeholder {0}: currentStepData.order
 #. placeholder {1}: envelopeEditorSteps.length
@@ -8428,6 +8423,10 @@ msgstr "The document has been successfully rejected."
 msgid "The document is already saved and cannot be changed."
 msgstr "The document is already saved and cannot be changed."
 
+#: apps/remix/app/routes/_recipient+/sign.$token+/complete.tsx
+msgid "The document is being prepared. You'll receive a copy once it's ready."
+msgstr "The document is being prepared. You'll receive a copy once it's ready."
+
 #: apps/remix/app/components/embed/embed-document-completed.tsx
 msgid "The document is now completed, please follow any instructions provided within the parent application."
 msgstr "The document is now completed, please follow any instructions provided within the parent application."
@@ -8853,9 +8852,11 @@ msgstr "This document was sent using <0>Documenso</0>."
 msgid "This document will be duplicated."
 msgstr "This document will be duplicated."
 
+#. placeholder {0}: signingContext?.documentName
+#. placeholder {1}: signingContext?.facilityAdministrator
 #: packages/email/template-components/template-document-rejection-confirmed.tsx
-msgid "This email confirms that you have rejected the document <0>\"{documentName}\"</0> sent by {documentOwnerName}."
-msgstr "This email confirms that you have rejected the document <0>\"{documentName}\"</0> sent by {documentOwnerName}."
+msgid "This email confirms that you have rejected the document <0>\"{0}\"</0> sent by {1}."
+msgstr "This email confirms that you have rejected the document <0>\"{0}\"</0> sent by {1}."
 
 #: apps/remix/app/components/dialogs/team-email-add-dialog.tsx
 msgid "This email is already being used by another team."
@@ -9880,7 +9881,7 @@ msgstr "Visibility"
 msgid "Waiting"
 msgstr "Waiting"
 
-#: packages/email/template-components/template-document-pending.tsx
+#: packages/email/templates/document-pending.tsx
 msgid "Waiting for others"
 msgstr "Waiting for others"
 
@@ -9917,6 +9918,10 @@ msgstr "Want your own public profile?"
 #: packages/ui/primitives/template-flow/add-template-placeholder-recipients.tsx
 msgid "Warning: Assistant as last signer"
 msgstr "Warning: Assistant as last signer"
+
+#: packages/email/template-components/template-document-completed.tsx
+msgid "We are pleased to inform you that all required signatures have been completed. The following document is now ready for download:"
+msgstr "We are pleased to inform you that all required signatures have been completed. The following document is now ready for download:"
 
 #: apps/remix/app/components/dialogs/ai-features-enable-dialog.tsx
 msgid "We couldn't enable AI features right now. Please try again."
@@ -10203,10 +10208,6 @@ msgstr "We'll send a 6-digit code to your email"
 #: apps/remix/app/routes/_authenticated+/t.$teamUrl+/templates._index.tsx
 msgid "We're all empty"
 msgstr "We're all empty"
-
-#: packages/email/template-components/template-document-pending.tsx
-msgid "We're still waiting for other signers to sign this document.<0/>We'll notify you as soon as it's ready."
-msgstr "We're still waiting for other signers to sign this document.<0/>We'll notify you as soon as it's ready."
 
 #: packages/email/templates/reset-password.tsx
 msgid "We've changed your password as you asked. You can now sign in with your new password."
@@ -10496,6 +10497,10 @@ msgstr "You can choose to enable or disable the profile for public view."
 #: apps/remix/app/components/general/document/document-recipient-link-copy-dialog.tsx
 msgid "You can copy and share these links to recipients so they can action the document."
 msgstr "You can copy and share these links to recipients so they can action the document."
+
+#: packages/email/template-components/template-document-completed.tsx
+msgid "You can download the final copy by clicking the button below"
+msgstr "You can download the final copy by clicking the button below"
 
 #: apps/remix/app/components/general/teams/team-inherit-member-alert.tsx
 msgid "You can enable access to allow all organisation members to access this team by default."
@@ -10792,8 +10797,8 @@ msgid "You will now be required to enter a code from your authenticator app when
 msgstr "You will now be required to enter a code from your authenticator app when signing in."
 
 #: apps/remix/app/routes/_recipient+/sign.$token+/complete.tsx
-msgid "You will receive an email copy of the signed document once everyone has signed."
-msgstr "You will receive an email copy of the signed document once everyone has signed."
+msgid "You will receive an Email copy of the signed document once everyone has signed."
+msgstr "You will receive an Email copy of the signed document once everyone has signed."
 
 #: apps/remix/app/components/dialogs/ai-features-enable-dialog.tsx
 msgid "You're an admin. You can enable AI features for this team right away. Everyone on the team will see AI detection once enabled."
