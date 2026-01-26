@@ -1,31 +1,30 @@
 import { Trans } from '@lingui/react/macro';
 
-import { Container, Heading, Section, Text } from '../components';
+import { Container, Section, Text } from '../components';
 
 interface TemplateDocumentRejectionConfirmedProps {
-  recipientName: string;
-  documentName: string;
-  documentOwnerName: string;
   reason?: string;
+  signingContext?: {
+    companyName?: string;
+    facilityAdministrator?: string;
+    documentName?: string;
+    ownerName?: string;
+    locationName?: string;
+  };
 }
 
 export function TemplateDocumentRejectionConfirmed({
-  recipientName,
-  documentName,
-  documentOwnerName,
   reason,
+  signingContext,
 }: TemplateDocumentRejectionConfirmedProps) {
   return (
     <Container>
       <Section>
-        <Heading className="text-2xl font-semibold">
-          <Trans>Rejection Confirmed</Trans>
-        </Heading>
-
-        <Text className="text-primary text-base">
+        <Text className="text-base text-primary">
           <Trans>
             This email confirms that you have rejected the document{' '}
-            <strong className="font-bold">"{documentName}"</strong> sent by {documentOwnerName}.
+            <strong className="font-bold">"{signingContext?.documentName}"</strong> sent by{' '}
+            {signingContext?.facilityAdministrator}.
           </Trans>
         </Text>
 

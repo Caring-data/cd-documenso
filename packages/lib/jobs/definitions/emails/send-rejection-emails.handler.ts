@@ -88,11 +88,9 @@ export const run = async ({
   if (isRecipientEmailValidForSending(recipient)) {
     await io.runTask('send-rejection-confirmation-email', async () => {
       const recipientTemplate = createElement(DocumentRejectionConfirmedEmail, {
-        recipientName: recipient.name,
         documentName: envelope.title,
-        documentOwnerName: envelope.user.name || envelope.user.email,
         reason: recipient.rejectionReason || '',
-        assetBaseUrl: NEXT_PUBLIC_WEBAPP_URL(),
+        signingContext: envelope?.signingContext || {},
       });
 
       const [html] = await Promise.all([
@@ -124,7 +122,7 @@ export const run = async ({
         envelope.id
       }`,
       rejectionReason: recipient.rejectionReason || '',
-      assetBaseUrl: NEXT_PUBLIC_WEBAPP_URL(),
+      signingContext: envelope?.signingContext || {},
     });
 
     const [html] = await Promise.all([

@@ -29,6 +29,7 @@ import {
   ZGenerateDocumentFromTemplateMutationResponseSchema,
   ZGenerateDocumentFromTemplateMutationSchema,
   ZGetDocumentsQuerySchema,
+  ZGetSignatureAuditResponseSchema,
   ZGetTemplatesQuerySchema,
   ZGetUsersQuerySchema,
   ZNoBodyMutationSchema,
@@ -80,6 +81,17 @@ export const ApiContractV1 = c.router(
         404: ZUnsuccessfulResponseSchema,
       },
       summary: 'Get a single document',
+    },
+
+    getSignatureAudit: {
+      method: 'GET',
+      path: '/api/v1/documents/:id/signature-audit',
+      responses: {
+        200: ZGetSignatureAuditResponseSchema,
+        404: ZUnsuccessfulResponseSchema,
+        500: ZUnsuccessfulResponseSchema,
+      },
+      summary: 'Get electronic signature audit trail for a document',
     },
 
     downloadSignedDocument: {
