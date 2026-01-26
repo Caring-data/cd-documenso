@@ -246,7 +246,7 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
       const envelopeId = mapDocumentIdToSecondaryId(numericDocumentId);
 
       const envelope = await prisma.envelope.findFirstOrThrow({
-        where: { id: envelopeId },
+        where: { secondaryId: envelopeId },
         include: {
           documentMeta: true,
           recipients: true,
@@ -296,6 +296,18 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
           data: true,
         },
         orderBy: { createdAt: 'desc' },
+      });
+
+      await createLog({
+        level: LogLevel.INFO,
+        category: LogCategory.DOCUMENT,
+        action: 'get_signature_audit_logs_fetched',
+        message: 'Audit logs fetched for envelope',
+        data: {
+          envelopeId: envelope.id,
+          auditLogsCount: auditLogs.length,
+        },
+        envelopeId: envelope.id,
       });
 
       const formatStatus = (type: string | null | undefined) => {
@@ -354,6 +366,18 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
         }
 
         groupedByRecipient.get(recipientId)!.push(log);
+      });
+
+      await createLog({
+        level: LogLevel.INFO,
+        category: LogCategory.DOCUMENT,
+        action: 'get_signature_audit_grouped_by_recipient',
+        message: 'Audit logs grouped by recipient',
+        data: {
+          recipientsCount: envelope.recipients.length,
+          recipientsWithLogs: groupedByRecipient.size,
+        },
+        envelopeId: envelope.id,
       });
 
       const result = envelope.recipients.map((recipient) => {
@@ -449,6 +473,17 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
           status: formatStatus(latestEvent?.type),
           history,
         };
+      });
+
+      await createLog({
+        level: LogLevel.INFO,
+        category: LogCategory.DOCUMENT,
+        action: 'get_signature_audit_success',
+        message: 'Signature audit retrieved successfully',
+        data: {
+          envelopeId: envelope.id,
+        },
+        envelopeId: envelope.id,
       });
 
       return {
