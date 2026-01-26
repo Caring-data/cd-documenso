@@ -1,51 +1,78 @@
 import { Trans } from '@lingui/react/macro';
 
-import { Column, Img, Section, Text } from '../components';
-import { TemplateDocumentImage } from './template-document-image';
+import { Img, Section, Text } from '../components';
 
 export interface TemplateDocumentPendingProps {
-  documentName: string;
+  documentName?: string;
   assetBaseUrl: string;
+  recipientName?: string;
+  signingContext?: {
+    companyName?: string;
+    facilityAdministrator?: string;
+    documentName?: string;
+    ownerName?: string;
+    locationName?: string;
+  };
 }
 
 export const TemplateDocumentPending = ({
-  documentName,
   assetBaseUrl,
+  signingContext,
+  recipientName,
 }: TemplateDocumentPendingProps) => {
   const getAssetUrl = (path: string) => {
     return new URL(path, assetBaseUrl).toString();
   };
 
   return (
-    <>
-      <TemplateDocumentImage className="mt-6" assetBaseUrl={assetBaseUrl} />
-
-      <Section>
-        <Section className="mb-4">
-          <Column align="center">
-            <Text className="text-base font-semibold text-blue-500">
-              <Img
-                src={getAssetUrl('/static/clock.png')}
-                className="-mt-0.5 mr-2 inline h-7 w-7 align-middle"
-              />
-              <Trans>Waiting for others</Trans>
-            </Text>
-          </Column>
-        </Section>
-
-        <Text className="text-primary mb-0 text-center text-lg font-semibold">
-          <Trans>“{documentName}” has been signed</Trans>
-        </Text>
-
-        <Text className="mx-auto mb-6 mt-1 max-w-[80%] text-center text-base text-slate-400">
-          <Trans>
-            We're still waiting for other signers to sign this document.
-            <br />
-            We'll notify you as soon as it's ready.
-          </Trans>
-        </Text>
-      </Section>
-    </>
+    <Section>
+      <Text className="self-stretch text-sm font-medium leading-5 text-zinc-600">
+        <Trans>Dear </Trans> {recipientName},
+      </Text>
+      <Text className="mb-0 text-center text-base font-semibold leading-5 text-zinc-600">
+        <Trans>“{signingContext?.documentName}” has been signed</Trans>
+      </Text>
+      <div className="flex items-center gap-6">
+        <Img
+          src={getAssetUrl('/static/user-round.png')}
+          alt="Document Icon"
+          className="my-auto h-4 w-auto pr-2 align-middle"
+        />
+        <div className="flex flex-col text-sm font-medium leading-5 text-zinc-600">
+          <Text>
+            <Trans>Regarding: {signingContext?.ownerName}</Trans>
+          </Text>
+        </div>
+      </div>
+      <div className="flex items-center gap-6">
+        <Img
+          src={getAssetUrl('/static/file-text.png')}
+          alt="Document Icon"
+          className="my-auto h-4 w-auto pr-2 align-middle"
+        />
+        <div className="flex flex-col justify-center text-sm font-medium leading-5 text-zinc-600">
+          <Text>
+            <Trans>Document: {signingContext?.documentName}</Trans>
+          </Text>
+        </div>
+      </div>
+      <div className="flex items-center gap-6">
+        <Img
+          src={getAssetUrl('/static/file-clock.png')}
+          alt="Document Icon"
+          className="my-auto h-4 w-auto pr-2 align-middle"
+        />
+        <div className="flex flex-col text-sm font-medium leading-5 text-zinc-600">
+          <Text>
+            <Trans>
+              Status: We're still waiting for other signers to sign this document.
+              <br />
+              We'll notify you as soon as it's ready.
+            </Trans>
+          </Text>
+        </div>
+      </div>
+    </Section>
   );
 };
 

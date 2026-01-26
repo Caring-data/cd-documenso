@@ -9,6 +9,13 @@ export interface TemplateDocumentCancelProps {
   documentName: string;
   assetBaseUrl: string;
   cancellationReason?: string;
+  signingContext?: {
+    companyName?: string;
+    facilityAdministrator?: string;
+    documentName?: string;
+    ownerName?: string;
+    locationName?: string;
+  };
 }
 
 export const TemplateDocumentCancel = ({
@@ -22,7 +29,7 @@ export const TemplateDocumentCancel = ({
       <TemplateDocumentImage className="mt-6" assetBaseUrl={assetBaseUrl} />
 
       <Section>
-        <Text className="text-primary mx-auto mb-0 max-w-[80%] text-center text-lg font-semibold">
+        <Text className="mx-auto mb-0 max-w-[80%] text-center text-lg font-semibold text-primary">
           <Trans>
             {inviterName} has cancelled the document
             <br />"{documentName}"

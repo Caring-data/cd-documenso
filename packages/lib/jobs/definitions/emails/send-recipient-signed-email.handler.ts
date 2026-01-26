@@ -103,6 +103,7 @@ export const run = async ({
     recipientName,
     recipientEmail,
     assetBaseUrl,
+    signingContext: envelope?.signingContext || {},
   });
 
   await io.runTask('send-recipient-signed-email', async () => {

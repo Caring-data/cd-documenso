@@ -38,6 +38,7 @@ import { createDocumentFromTemplateBase64 } from '@documenso/lib/server-only/tem
 import { deleteTemplate } from '@documenso/lib/server-only/template/delete-template';
 import { findTemplates } from '@documenso/lib/server-only/template/find-templates';
 import { getTemplateById } from '@documenso/lib/server-only/template/get-template-by-id';
+import { DOCUMENT_AUDIT_LOG_TYPE } from '@documenso/lib/types/document-audit-logs';
 import { ZRecipientAuthOptionsSchema } from '@documenso/lib/types/document-auth';
 import { extractDerivedDocumentEmailSettings } from '@documenso/lib/types/document-email';
 import {
@@ -61,6 +62,7 @@ import { createLog } from '@documenso/lib/utils/createLog';
 import { isDocumentCompleted } from '@documenso/lib/utils/document';
 import { createDocumentAuditLogData } from '@documenso/lib/utils/document-audit-logs';
 import {
+  mapDocumentIdToSecondaryId,
   mapSecondaryIdToDocumentId,
   mapSecondaryIdToTemplateId,
   mapTemplateIdToSecondaryId,
@@ -70,6 +72,15 @@ import { prisma } from '@documenso/prisma';
 
 import { ApiContractV1 } from './contract';
 import { authenticatedMiddleware } from './middleware/authenticated';
+
+type AuditLogData = {
+  recipientId?: number;
+  recipientEmail?: string;
+  emailType?: string;
+  isResending?: boolean;
+  recipientName?: string | null;
+  recipientRole?: string | null;
+};
 
 export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
   getDocuments: authenticatedMiddleware(async (args, user, team) => {
@@ -198,6 +209,253 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
             signingUrl: `${NEXT_PUBLIC_WEBAPP_URL()}/sign/${recipient.token}`,
           })),
           fields: parsedMetaFields,
+        },
+      };
+    } catch (err) {
+      return {
+        status: 404,
+        body: {
+          message: 'Document not found',
+        },
+      };
+    }
+  }),
+
+  getSignatureAudit: authenticatedMiddleware(async (args) => {
+    const { id: documentId } = args.params;
+
+    try {
+      const numericDocumentId = Number(documentId);
+
+      if (isNaN(numericDocumentId)) {
+        await createLog({
+          level: LogLevel.WARN,
+          category: LogCategory.DOCUMENT,
+          action: 'get_signature_audit_invalid_document_id',
+          message: 'Invalid document ID received',
+          data: {
+            documentId,
+          },
+        });
+
+        return {
+          status: 400,
+          body: { message: 'Invalid document ID' },
+        };
+      }
+
+      const envelopeId = mapDocumentIdToSecondaryId(numericDocumentId);
+
+      const envelope = await prisma.envelope.findFirstOrThrow({
+        where: { id: envelopeId },
+        include: {
+          documentMeta: true,
+          recipients: true,
+        },
+      });
+
+      if (!envelope) {
+        await createLog({
+          level: LogLevel.WARN,
+          category: LogCategory.DOCUMENT,
+          action: 'get_signature_audit_envelope_not_found',
+          message: 'Envelope not found for document',
+          data: {
+            envelopeId,
+          },
+        });
+
+        return {
+          status: 404,
+          body: { message: 'Document not found' },
+        };
+      }
+
+      const timezone = envelope.documentMeta?.timezone ?? 'America/Los_Angeles';
+
+      const auditLogs = await prisma.documentAuditLog.findMany({
+        where: {
+          envelopeId: envelope.id,
+          type: {
+            in: [
+              DOCUMENT_AUDIT_LOG_TYPE.DOCUMENT_CREATED,
+              DOCUMENT_AUDIT_LOG_TYPE.EMAIL_SENT,
+              DOCUMENT_AUDIT_LOG_TYPE.DOCUMENT_OPENED,
+              DOCUMENT_AUDIT_LOG_TYPE.DOCUMENT_VIEWED,
+              DOCUMENT_AUDIT_LOG_TYPE.DOCUMENT_RECIPIENT_REJECTED,
+              DOCUMENT_AUDIT_LOG_TYPE.DOCUMENT_RECIPIENT_COMPLETED,
+              DOCUMENT_AUDIT_LOG_TYPE.DOCUMENT_COMPLETED,
+            ],
+          },
+        },
+        select: {
+          name: true,
+          email: true,
+          ipAddress: true,
+          type: true,
+          createdAt: true,
+          data: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      const formatStatus = (type: string | null | undefined) => {
+        if (!type) return null;
+
+        return type
+          .toLowerCase()
+          .split('_')
+          .map((word, index) => (index === 0 ? word : word.charAt(0).toUpperCase() + word.slice(1)))
+          .join('');
+      };
+
+      const toCamelCase = (text: string): string => {
+        return text.toLowerCase().replace(/[_\s]+(.)?/g, (_, c) => (c ? c.toUpperCase() : ''));
+      };
+
+      const formatDateWithTimeZone = (
+        date: Date | string,
+        timezone = 'America/Los_Angeles',
+        formatOptions: Intl.DateTimeFormatOptions = {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+        },
+      ) => {
+        return new Intl.DateTimeFormat('en-US', {
+          ...formatOptions,
+          timeZone: timezone,
+        }).format(new Date(date));
+      };
+
+      const groupedByRecipient = new Map<number, (typeof auditLogs)[number][]>();
+
+      const isAuditLogData = (data: unknown): data is AuditLogData => {
+        return (
+          typeof data === 'object' &&
+          data !== null &&
+          ('recipientId' in data || Object.keys(data).length === 0)
+        );
+      };
+
+      auditLogs.forEach((log) => {
+        if (!isAuditLogData(log.data)) {
+          return;
+        }
+
+        const data = log.data;
+        const recipientId = data?.recipientId;
+
+        if (!recipientId) return;
+
+        if (!groupedByRecipient.has(recipientId)) {
+          groupedByRecipient.set(recipientId, []);
+        }
+
+        groupedByRecipient.get(recipientId)!.push(log);
+      });
+
+      const result = envelope.recipients.map((recipient) => {
+        const logs = groupedByRecipient.get(recipient.id) || [];
+        const sortedLogs = [...logs].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+        const documentSigned = logs.find((l) => l.type === 'DOCUMENT_RECIPIENT_COMPLETED');
+
+        const emailSent = logs
+          .filter((log) => {
+            if (!isAuditLogData(log.data)) return false;
+
+            const data = log.data;
+            return log.type === 'EMAIL_SENT' && data?.emailType === 'SIGNING_REQUEST';
+          })
+          .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())[0];
+
+        const resendEmailSent = logs
+          .filter((log) => {
+            if (!isAuditLogData(log.data)) return false;
+
+            const data = log.data;
+            return log.type === 'EMAIL_SENT' && data?.isResending === true;
+          })
+          .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
+
+        const latestEvent = sortedLogs.find((log) => {
+          if (log.type !== 'EMAIL_SENT') return true;
+
+          if (!isAuditLogData(log.data)) return false;
+
+          const data = log.data;
+          return data?.emailType === 'SIGNING_REQUEST' || data?.isResending === true;
+        });
+
+        const history = sortedLogs
+          .filter((log) => {
+            const isEmailSent = log.type === 'EMAIL_SENT';
+
+            if (!isEmailSent) return true;
+            if (!isAuditLogData(log.data)) return false;
+
+            const data = log.data;
+            const isResend = data?.isResending === true;
+            const isSigningRequest = data?.emailType === 'SIGNING_REQUEST';
+
+            return isResend || isSigningRequest;
+          })
+          .map((log) => {
+            if (!isAuditLogData(log.data)) {
+              return {
+                type: toCamelCase(log.type),
+                timestamp: formatDateWithTimeZone(log.createdAt, timezone),
+                ipAddress: log.ipAddress ?? '',
+              };
+            }
+
+            const data = log.data;
+            const isResend = data?.isResending === true;
+
+            let label = log.type;
+            if (log.type === 'EMAIL_SENT') {
+              label = isResend ? 'resendEmail' : 'emailSent';
+            } else {
+              label = toCamelCase(log.type);
+            }
+
+            return {
+              type: label,
+              timestamp: formatDateWithTimeZone(log.createdAt, timezone),
+              ipAddress: log.ipAddress ?? '',
+            };
+          })
+          .filter(Boolean);
+
+        const signatureStatus: 'signed' | 'notSigned' = documentSigned ? 'signed' : 'notSigned';
+
+        return {
+          recipientId: recipient.id,
+          email: recipient.email,
+          name: recipient.name,
+          role: recipient.role,
+          signingOrder: recipient.signingOrder,
+          sendDate: emailSent ? formatDateWithTimeZone(emailSent.createdAt, timezone) : null,
+          resendDate: resendEmailSent
+            ? formatDateWithTimeZone(resendEmailSent.createdAt, timezone)
+            : null,
+          signatureDate: documentSigned
+            ? formatDateWithTimeZone(documentSigned.createdAt, timezone)
+            : null,
+          ipAddress: latestEvent?.ipAddress ?? null,
+          signatureStatus,
+          status: formatStatus(latestEvent?.type),
+          history,
+        };
+      });
+
+      return {
+        status: 200 as const,
+        body: {
+          events: result,
         },
       };
     } catch (err) {
