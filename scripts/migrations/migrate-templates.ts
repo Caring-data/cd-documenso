@@ -5,6 +5,7 @@ import { Client } from 'pg';
 import { incrementTemplateId } from '@documenso/lib/server-only/envelope/increment-id';
 import { nanoid, prefixedId } from '@documenso/lib/universal/id';
 import { env } from '@documenso/lib/utils/env';
+import { mapTemplateIdToSecondaryId } from '@documenso/lib/utils/envelope';
 import { prisma } from '@documenso/prisma';
 
 const oldDb = new Client({
@@ -28,19 +29,15 @@ const normalizeJson = (value: any) => {
   return value === 'null' ? null : value;
 };
 
-const normalizeAuthOptions = () => {
-  return {
-    globalAccessAuth: [],
-    globalActionAuth: [],
-  };
-};
+const normalizeAuthOptions = () => ({
+  globalAccessAuth: [],
+  globalActionAuth: [],
+});
 
-const normalizeRecipientAuthOptions = () => {
-  return {
-    accessAuth: [],
-    actionAuth: [],
-  };
-};
+const normalizeRecipientAuthOptions = () => ({
+  accessAuth: [],
+  actionAuth: [],
+});
 
 async function migrateTemplates() {
   await oldDb.connect();
@@ -108,12 +105,12 @@ async function migrateTemplates() {
           },
         });
 
-        const templateId = await incrementTemplateId();
+        const newTemplateId = mapTemplateIdToSecondaryId(template.id);
 
         const envelope = await prisma.envelope.create({
           data: {
             id: prefixedId('envelope'),
-            secondaryId: templateId.formattedTemplateId,
+            secondaryId: newTemplateId,
             externalId: template.externalId,
             type: EnvelopeType.TEMPLATE,
             title: template.title,

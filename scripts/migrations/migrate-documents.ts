@@ -12,13 +12,33 @@ const oldDb = new Client({
 });
 
 const normalizeJson = (value: any) => {
-  if (value === null) return null;
-  if (value === 'null') return null;
-  if (typeof value === 'string' && value.trim() === '') return null;
-  return value;
+  if (!value || value === 'null' || value === '"null"' || value === '""') {
+    return null;
+  }
+
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return parsed === 'null' || parsed === null ? null : parsed;
+    } catch {
+      return null;
+    }
+  }
+
+  return value === 'null' ? null : value;
 };
 
 const emptyToNull = (value?: string | null) => (value && value.trim() !== '' ? value : null);
+
+const normalizeAuthOptions = () => ({
+  globalAccessAuth: [],
+  globalActionAuth: [],
+});
+
+const normalizeRecipientAuthOptions = () => ({
+  accessAuth: [],
+  actionAuth: [],
+});
 
 async function migrateDocuments() {
   await oldDb.connect();
@@ -62,25 +82,30 @@ async function migrateDocuments() {
           },
         });
 
+        const normalizedSubject = emptyToNull(oldDoc.subject);
+        const normalizedMessage = emptyToNull(oldDoc.message);
+        const normalizedEmailSettings = normalizeJson(oldDoc.emailSettings);
+
         const documentMeta = await prisma.documentMeta.create({
           data: {
-            subject: emptyToNull(oldDoc.subject),
-            message: emptyToNull(oldDoc.message),
-            timezone: oldDoc.timezone,
-            dateFormat: oldDoc.dateFormat,
-            signingOrder: oldDoc.signingOrder,
-            typedSignatureEnabled: oldDoc.typedSignatureEnabled ?? true,
-            distributionMethod: oldDoc.distributionMethod,
-            emailSettings: normalizeJson(oldDoc.emailSettings),
-            language: oldDoc.language ?? 'en',
+            ...(normalizedSubject !== null && { subject: normalizedSubject }),
+            ...(normalizedMessage !== null && { message: normalizedMessage }),
+            timezone: oldDoc.timezone || 'Etc/UTC',
+            dateFormat: oldDoc.dateFormat || 'MM/dd/yyyy',
+            signingOrder: oldDoc.signingOrder || 'SEQUENTIAL',
+            typedSignatureEnabled: true,
+            distributionMethod: 'EMAIL',
+            ...(normalizedEmailSettings !== null && { emailSettings: normalizedEmailSettings }),
+            language: 'en',
             drawSignatureEnabled: true,
             uploadSignatureEnabled: true,
             allowDictateNextSigner: false,
           },
         });
-        console.log(`newEnvelopeId ${oldDoc.id}`);
+
         const newEnvelopeId = mapDocumentIdToSecondaryId(oldDoc.id);
-        console.log(`newEnvelopeId ${newEnvelopeId}`);
+        const normalizedSigningContext = normalizeJson(oldDoc.documentDetails);
+
         const envelope = await prisma.envelope.create({
           data: {
             id: prefixedId('envelope'),
@@ -91,9 +116,9 @@ async function migrateDocuments() {
             status: oldDoc.status ?? DocumentStatus.DRAFT,
             source: oldDoc.source ?? DocumentSource.DOCUMENT,
             qrToken: prefixedId('qr'),
-            internalVersion: 1,
+            internalVersion: 2,
             useLegacyFieldInsertion: false,
-            authOptions: normalizeJson(oldDoc.authOptions),
+            authOptions: normalizeAuthOptions(),
             visibility: oldDoc.visibility ?? 'EVERYONE',
             templateType: 'PRIVATE',
             userId: 3,
@@ -102,7 +127,7 @@ async function migrateDocuments() {
             documentMetaId: documentMeta.id,
             formKey: oldDoc.formKey,
             ownerId: oldDoc.residentId,
-            signingContext: normalizeJson(oldDoc.documentDetails),
+            ...(normalizedSigningContext !== null && { signingContext: normalizedSigningContext }),
             finalDocumentUrl: oldDoc.documentUrl,
             createdAt: oldDoc.createdAt,
             updatedAt: oldDoc.updatedAt,
@@ -132,7 +157,7 @@ async function migrateDocuments() {
               envelopeId: envelope.id,
               createdAt: log.createdAt,
               type: log.type,
-              data: normalizeJson(log.data),
+              data: log.data,
               name: log.name,
               email: log.email,
               userId: 3,
@@ -159,7 +184,7 @@ async function migrateDocuments() {
               sendStatus: oldRecipient.sendStatus || 'NOT_SENT',
               signedAt: oldRecipient.signedAt,
               role: oldRecipient.role || 'SIGNER',
-              authOptions: oldRecipient.authOptions,
+              authOptions: normalizeRecipientAuthOptions(),
               documentDeletedAt: oldRecipient.documentDeletedAt,
               signingOrder: oldRecipient.signingOrder,
               rejectionReason: oldRecipient.rejectionReason,
@@ -175,11 +200,10 @@ async function migrateDocuments() {
           );
 
           for (const field of fields) {
+            const normalizedFieldMeta = normalizeJson(field.fieldMeta);
+
             const newField = await prisma.field.create({
               data: {
-                envelopeId: envelope.id,
-                envelopeItemId: envelopeItem.id,
-                recipientId: newRecipient.id,
                 type: field.type,
                 page: field.page,
                 positionX: field.positionX,
@@ -189,8 +213,20 @@ async function migrateDocuments() {
                 customText:
                   field.customText && field.customText.trim() !== '' ? field.customText : null,
                 inserted: field.inserted || false,
-                fieldMeta: normalizeJson(field.fieldMeta),
+                ...(normalizedFieldMeta !== null && { fieldMeta: normalizedFieldMeta }),
                 secondaryId: field.secondaryId,
+
+                envelope: {
+                  connect: { id: envelope.id },
+                },
+
+                envelopeItem: {
+                  connect: { id: envelopeItem.id },
+                },
+
+                recipient: {
+                  connect: { id: newRecipient.id },
+                },
               },
             });
 
@@ -212,6 +248,8 @@ async function migrateDocuments() {
               continue;
             }
 
+            const normalizedTypedSignatureSettings = normalizeJson(sig.typedSignatureSettings);
+
             await prisma.signature.create({
               data: {
                 created: sig.created,
@@ -219,7 +257,9 @@ async function migrateDocuments() {
                 fieldId: newFieldId,
                 signatureImageAsBase64: sig.signatureImageAsBase64,
                 typedSignature: sig.typedSignature,
-                typedSignatureSettings: normalizeJson(sig.typedSignatureSettings),
+                ...(normalizedTypedSignatureSettings !== null && {
+                  typedSignatureSettings: normalizedTypedSignatureSettings,
+                }),
               },
             });
           }
