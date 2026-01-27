@@ -79,6 +79,11 @@ const FieldSettingsTypeTranslations: Record<FieldType, MessageDescriptor> = {
   [FieldType.RESIDENT_LOCATION_CITY]: msg`City Settings`,
   [FieldType.RESIDENT_LOCATION_ZIP_CODE]: msg`ZIP Code Settings`,
   [FieldType.RESIDENT_LOCATION_COUNTRY]: msg`Country Settings`,
+  [FieldType.RESIDENT_LOCATION_FAX]: msg`Fax Settings`,
+  [FieldType.RESIDENT_LOCATION_LICENSING]: msg`Licensing Settings`,
+  [FieldType.RESIDENT_LOCATION_LICENSING_NAME]: msg`Licensing Name Settings`,
+  [FieldType.RESIDENT_LOCATION_ADMINISTRATOR_NAME]: msg`Administrator Name Settings`,
+  [FieldType.RESIDENT_LOCATION_ADMINISTRATOR_PHONE]: msg`Administrator Phone Settings`,
 };
 
 export const EnvelopeEditorFieldsPage = () => {
@@ -396,6 +401,36 @@ export const EnvelopeEditorFieldsPage = () => {
                       />
                     ))
                     .with(FieldType.TEXT, () => (
+                      <EditorFieldTextForm
+                        value={selectedField?.fieldMeta as TTextFieldMeta | undefined}
+                        onValueChange={(value) => updateSelectedFieldMeta(value)}
+                      />
+                    ))
+                    .with(FieldType.RESIDENT_LOCATION_FAX, () => (
+                      <EditorFieldTextForm
+                        value={selectedField?.fieldMeta as TTextFieldMeta | undefined}
+                        onValueChange={(value) => updateSelectedFieldMeta(value)}
+                      />
+                    ))
+                    .with(FieldType.RESIDENT_LOCATION_LICENSING, () => (
+                      <EditorFieldTextForm
+                        value={selectedField?.fieldMeta as TTextFieldMeta | undefined}
+                        onValueChange={(value) => updateSelectedFieldMeta(value)}
+                      />
+                    ))
+                    .with(FieldType.RESIDENT_LOCATION_LICENSING_NAME, () => (
+                      <EditorFieldTextForm
+                        value={selectedField?.fieldMeta as TTextFieldMeta | undefined}
+                        onValueChange={(value) => updateSelectedFieldMeta(value)}
+                      />
+                    ))
+                    .with(FieldType.RESIDENT_LOCATION_ADMINISTRATOR_NAME, () => (
+                      <EditorFieldTextForm
+                        value={selectedField?.fieldMeta as TTextFieldMeta | undefined}
+                        onValueChange={(value) => updateSelectedFieldMeta(value)}
+                      />
+                    ))
+                    .with(FieldType.RESIDENT_LOCATION_ADMINISTRATOR_PHONE, () => (
                       <EditorFieldTextForm
                         value={selectedField?.fieldMeta as TTextFieldMeta | undefined}
                         onValueChange={(value) => updateSelectedFieldMeta(value)}

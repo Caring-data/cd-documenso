@@ -124,5 +124,10 @@ export const getClientSideFieldTranslations = ({ t }: I18n): Record<FieldType, s
     [FieldType.RESIDENT_LOCATION_CITY]: t(msg`City`),
     [FieldType.RESIDENT_LOCATION_ZIP_CODE]: t(msg`ZIP Code`),
     [FieldType.RESIDENT_LOCATION_COUNTRY]: t(msg`Country`),
+    [FieldType.RESIDENT_LOCATION_FAX]: t(msg`Fax`),
+    [FieldType.RESIDENT_LOCATION_LICENSING]: t(msg`Licensing`),
+    [FieldType.RESIDENT_LOCATION_LICENSING_NAME]: t(msg`Licensing Name`),
+    [FieldType.RESIDENT_LOCATION_ADMINISTRATOR_NAME]: t(msg`Administrator Name`),
+    [FieldType.RESIDENT_LOCATION_ADMINISTRATOR_PHONE]: t(msg`Administrator Phone`),
   };
 };

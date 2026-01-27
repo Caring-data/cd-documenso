@@ -38,6 +38,16 @@ export const getResidentValue = (
       return location?.zip || '';
     case FieldType.RESIDENT_LOCATION_COUNTRY:
       return location?.country || '';
+    case FieldType.RESIDENT_LOCATION_FAX:
+      return location?.location_fax || '';
+    case FieldType.RESIDENT_LOCATION_LICENSING:
+      return location?.licensing || '';
+    case FieldType.RESIDENT_LOCATION_LICENSING_NAME:
+      return location?.licensing_name || '';
+    case FieldType.RESIDENT_LOCATION_ADMINISTRATOR_NAME:
+      return location?.admin || '';
+    case FieldType.RESIDENT_LOCATION_ADMINISTRATOR_PHONE:
+      return location?.phone_lic || '';
     default:
       return '';
   }
@@ -55,6 +65,11 @@ export const isResidentFieldType = (fieldType: FieldType): boolean => {
     FieldType.RESIDENT_LOCATION_CITY,
     FieldType.RESIDENT_LOCATION_ZIP_CODE,
     FieldType.RESIDENT_LOCATION_COUNTRY,
+    FieldType.RESIDENT_LOCATION_FAX,
+    FieldType.RESIDENT_LOCATION_LICENSING,
+    FieldType.RESIDENT_LOCATION_LICENSING_NAME,
+    FieldType.RESIDENT_LOCATION_ADMINISTRATOR_NAME,
+    FieldType.RESIDENT_LOCATION_ADMINISTRATOR_PHONE,
   ] as const satisfies readonly FieldType[];
   return (residentFieldTypes as readonly FieldType[]).includes(fieldType);
 };

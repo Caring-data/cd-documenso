@@ -1,13 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import type { TLocalField } from '@documenso/lib/client-only/hooks/use-editor-fields';
-
 import type { MessageDescriptor } from '@lingui/core';
 import { msg } from '@lingui/core/macro';
 import { useLingui } from '@lingui/react';
 import { Trans } from '@lingui/react/macro';
 import { FieldType, RecipientRole } from '@prisma/client';
-
 import {
   CalendarDays,
   CheckSquare,
@@ -26,6 +23,7 @@ import { match } from 'ts-pattern';
 
 import { getBoundingClientRect } from '@documenso/lib/client-only/get-bounding-client-rect';
 import { useDocumentElement } from '@documenso/lib/client-only/hooks/use-document-element';
+import type { TLocalField } from '@documenso/lib/client-only/hooks/use-editor-fields';
 import { useCurrentEnvelopeRender } from '@documenso/lib/client-only/providers/envelope-render-provider';
 import { PDF_VIEWER_PAGE_SELECTOR } from '@documenso/lib/constants/pdf-viewer';
 import {
@@ -43,9 +41,15 @@ import {
   type TTextFieldMeta,
 } from '@documenso/lib/types/field-meta';
 import { parseMessageDescriptor } from '@documenso/lib/utils/i18n';
+import { AnimateGenericFadeInOut } from '@documenso/ui/components/animate/animate-generic-fade-in-out';
 import { RECIPIENT_COLOR_STYLES } from '@documenso/ui/lib/recipient-colors';
 import { cn } from '@documenso/ui/lib/utils';
-import { AnimateGenericFadeInOut } from '@documenso/ui/components/animate/animate-generic-fade-in-out';
+import { Accordion } from '@documenso/ui/primitives/accordion';
+import {
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@documenso/ui/primitives/accordion';
 import { Card, CardContent } from '@documenso/ui/primitives/card';
 import {
   DocumentFlowFormContainerActions,
@@ -54,7 +58,11 @@ import {
   DocumentFlowFormContainerHeader,
   DocumentFlowFormContainerStep,
 } from '@documenso/ui/primitives/document-flow/document-flow-root';
-import { FRIENDLY_FIELD_TYPE, type DocumentFlowStep } from '@documenso/ui/primitives/document-flow/types';
+import {
+  type DocumentFlowStep,
+  FRIENDLY_FIELD_TYPE,
+} from '@documenso/ui/primitives/document-flow/types';
+import { Label } from '@documenso/ui/primitives/label';
 import { RecipientSelector } from '@documenso/ui/primitives/recipient-selector';
 import { Separator } from '@documenso/ui/primitives/separator';
 import { useStep } from '@documenso/ui/primitives/stepper';
@@ -71,10 +79,6 @@ import { EditorFieldSignatureForm } from '~/components/forms/editor/editor-field
 import { EditorFieldTextForm } from '~/components/forms/editor/editor-field-text-form';
 
 import { useCurrentEmbedTemplateEditor } from '../providers/embed-template-editor-provider';
-import { Accordion } from '@documenso/ui/primitives/accordion';
-import { AccordionItem, AccordionTrigger, AccordionContent } from '@documenso/ui/primitives/accordion';
-import { Input } from '@documenso/ui/primitives/input';
-import { Label } from '@documenso/ui/primitives/label';
 
 const MIN_HEIGHT_PX = 12;
 const MIN_WIDTH_PX = 36;
@@ -105,6 +109,11 @@ const FieldSettingsTypeTranslations: Record<FieldType, MessageDescriptor> = {
   [FieldType.RESIDENT_LOCATION_CITY]: msg`Resident Location City Settings`,
   [FieldType.RESIDENT_LOCATION_ZIP_CODE]: msg`Resident Location Zip Code Settings`,
   [FieldType.RESIDENT_LOCATION_COUNTRY]: msg`Resident Location Country Settings`,
+  [FieldType.RESIDENT_LOCATION_FAX]: msg`Resident Location Fax Settings`,
+  [FieldType.RESIDENT_LOCATION_LICENSING]: msg`Resident Location Licensing Settings`,
+  [FieldType.RESIDENT_LOCATION_LICENSING_NAME]: msg`Resident Location Licensing Name Settings`,
+  [FieldType.RESIDENT_LOCATION_ADMINISTRATOR_NAME]: msg`Resident Location Administrator Name Settings`,
+  [FieldType.RESIDENT_LOCATION_ADMINISTRATOR_PHONE]: msg`Resident Location Administrator Phone Settings`,
 };
 
 export type EmbedAddTemplateFieldsFormProps = {
@@ -124,7 +133,7 @@ export const EmbedAddTemplateFieldsFormPartial = ({
   const { stepIndex, currentStep, totalSteps, previousStep } = useStep();
 
   const [selectedField, setSelectedField] = useState<FieldType | null>(null);
-  const [selectedSigner, setSelectedSigner] = useState<typeof recipients[0] | null>(null);
+  const [selectedSigner, setSelectedSigner] = useState<(typeof recipients)[0] | null>(null);
 
   const selectedFieldFromEditor = useMemo(
     () => structuredClone(editorFields.selectedField),
@@ -132,7 +141,8 @@ export const EmbedAddTemplateFieldsFormPartial = ({
   );
 
   const selectedSignerIndex = recipients.findIndex((r) => r.id === selectedSigner?.id);
-  const selectedSignerColor = selectedSignerIndex === -1 ? 'blue' : getRecipientColorKey(selectedSigner?.id || 0);
+  const selectedSignerColor =
+    selectedSignerIndex === -1 ? 'blue' : getRecipientColorKey(selectedSigner?.id || 0);
 
   const { isWithinPageBounds, getPage } = useDocumentElement();
 
@@ -149,7 +159,10 @@ export const EmbedAddTemplateFieldsFormPartial = ({
 
   const initialFieldsRef = useRef<TLocalField[]>([]);
 
-  const filterFieldsWithEmptyValues = (fields: typeof editorFields.localFields, fieldType: string) =>
+  const filterFieldsWithEmptyValues = (
+    fields: typeof editorFields.localFields,
+    fieldType: string,
+  ) =>
     fields
       .filter((field) => field.type === fieldType)
       .filter((field) => {
@@ -284,7 +297,7 @@ export const EmbedAddTemplateFieldsFormPartial = ({
     }
   }, [editorFields.localFields]);
 
-  const handleRecipientChange = (recipient: typeof recipients[0] | null) => {
+  const handleRecipientChange = (recipient: (typeof recipients)[0] | null) => {
     setSelectedSigner(recipient);
     if (recipient) {
       editorFields.setSelectedRecipient(recipient.id);
@@ -368,17 +381,14 @@ export const EmbedAddTemplateFieldsFormPartial = ({
 
   return (
     <div className="flex h-full flex-col">
-      <DocumentFlowFormContainerHeader
-        title={flowStep.title}
-        description={flowStep.description}
-      />
+      <DocumentFlowFormContainerHeader title={flowStep.title} description={flowStep.description} />
 
       <DocumentFlowFormContainerContent>
         <div className="flex flex-col">
           {selectedField && (
             <div
               className={cn(
-                'text-muted-foreground dark:text-muted-background pointer-events-none fixed z-50 flex cursor-pointer flex-col items-center justify-center rounded-[2px] bg-white ring-2 transition duration-200 [container-type:size]',
+                'dark:text-muted-background pointer-events-none fixed z-50 flex cursor-pointer flex-col items-center justify-center rounded-[2px] bg-white text-muted-foreground ring-2 transition duration-200 [container-type:size]',
                 RECIPIENT_COLOR_STYLES[selectedSignerColor]?.base,
                 {
                   '-rotate-6 scale-90 opacity-50 dark:bg-black/20': !isFieldWithinBounds,
@@ -494,9 +504,7 @@ export const EmbedAddTemplateFieldsFormPartial = ({
                 icon={ChevronDown}
                 label={<Trans>Dropdown</Trans>}
               />
-
             </fieldset>
-
 
             <div className="mt-4 flex flex-col gap-2">
               <Separator />
@@ -543,7 +551,6 @@ export const EmbedAddTemplateFieldsFormPartial = ({
                 </AccordionItem>
               </Accordion>
             </div>
-
 
             <div className="mt-4 flex flex-col gap-2">
               <Separator />
@@ -601,6 +608,46 @@ export const EmbedAddTemplateFieldsFormPartial = ({
                         icon={MapPin}
                         label={<Trans>Country</Trans>}
                       />
+
+                      <FieldButton
+                        type={FieldType.RESIDENT_LOCATION_FAX}
+                        selectedField={selectedField}
+                        onSelect={setSelectedField}
+                        icon={MapPin}
+                        label={<Trans>Fax</Trans>}
+                      />
+
+                      <FieldButton
+                        type={FieldType.RESIDENT_LOCATION_LICENSING}
+                        selectedField={selectedField}
+                        onSelect={setSelectedField}
+                        icon={MapPin}
+                        label={<Trans>Licensing</Trans>}
+                      />
+
+                      <FieldButton
+                        type={FieldType.RESIDENT_LOCATION_LICENSING_NAME}
+                        selectedField={selectedField}
+                        onSelect={setSelectedField}
+                        icon={MapPin}
+                        label={<Trans>Licensing Name</Trans>}
+                      />
+
+                      <FieldButton
+                        type={FieldType.RESIDENT_LOCATION_ADMINISTRATOR_NAME}
+                        selectedField={selectedField}
+                        onSelect={setSelectedField}
+                        icon={MapPin}
+                        label={<Trans>Administrator Name</Trans>}
+                      />
+
+                      <FieldButton
+                        type={FieldType.RESIDENT_LOCATION_ADMINISTRATOR_PHONE}
+                        selectedField={selectedField}
+                        onSelect={setSelectedField}
+                        icon={MapPin}
+                        label={<Trans>Administrator Phone</Trans>}
+                      />
                     </fieldset>
                   </AccordionContent>
                 </AccordionItem>
@@ -621,7 +668,9 @@ export const EmbedAddTemplateFieldsFormPartial = ({
                   {match(selectedFieldFromEditor.type)
                     .with(FieldType.SIGNATURE, () => (
                       <EditorFieldSignatureForm
-                        value={selectedFieldFromEditor?.fieldMeta as TSignatureFieldMeta | undefined}
+                        value={
+                          selectedFieldFromEditor?.fieldMeta as TSignatureFieldMeta | undefined
+                        }
                         onValueChange={(value) => updateSelectedFieldMeta(value)}
                       />
                     ))
@@ -745,6 +794,36 @@ export const EmbedAddTemplateFieldsFormPartial = ({
                         onValueChange={(value) => updateSelectedFieldMeta(value)}
                       />
                     ))
+                    .with(FieldType.RESIDENT_LOCATION_FAX, () => (
+                      <EditorFieldTextForm
+                        value={selectedFieldFromEditor?.fieldMeta as TTextFieldMeta | undefined}
+                        onValueChange={(value) => updateSelectedFieldMeta(value)}
+                      />
+                    ))
+                    .with(FieldType.RESIDENT_LOCATION_LICENSING, () => (
+                      <EditorFieldTextForm
+                        value={selectedFieldFromEditor?.fieldMeta as TTextFieldMeta | undefined}
+                        onValueChange={(value) => updateSelectedFieldMeta(value)}
+                      />
+                    ))
+                    .with(FieldType.RESIDENT_LOCATION_LICENSING_NAME, () => (
+                      <EditorFieldTextForm
+                        value={selectedFieldFromEditor?.fieldMeta as TTextFieldMeta | undefined}
+                        onValueChange={(value) => updateSelectedFieldMeta(value)}
+                      />
+                    ))
+                    .with(FieldType.RESIDENT_LOCATION_ADMINISTRATOR_NAME, () => (
+                      <EditorFieldTextForm
+                        value={selectedFieldFromEditor?.fieldMeta as TTextFieldMeta | undefined}
+                        onValueChange={(value) => updateSelectedFieldMeta(value)}
+                      />
+                    ))
+                    .with(FieldType.RESIDENT_LOCATION_ADMINISTRATOR_PHONE, () => (
+                      <EditorFieldTextForm
+                        value={selectedFieldFromEditor?.fieldMeta as TTextFieldMeta | undefined}
+                        onValueChange={(value) => updateSelectedFieldMeta(value)}
+                      />
+                    ))
                     .otherwise(() => null)}
                 </div>
               </div>
@@ -796,7 +875,14 @@ type FieldButtonProps = {
   className?: string;
 };
 
-const FieldButton = ({ type, selectedField, onSelect, icon: Icon, label, className }: FieldButtonProps) => {
+const FieldButton = ({
+  type,
+  selectedField,
+  onSelect,
+  icon: Icon,
+  label,
+  className,
+}: FieldButtonProps) => {
   return (
     <button
       type="button"
@@ -819,7 +905,7 @@ const FieldButton = ({ type, selectedField, onSelect, icon: Icon, label, classNa
         <CardContent className="flex flex-col items-center justify-center px-6 py-4">
           <p
             className={cn(
-              'text-muted-foreground group-data-[selected]:text-foreground flex items-center justify-center gap-x-1.5 text-sm font-normal',
+              'flex items-center justify-center gap-x-1.5 text-sm font-normal text-muted-foreground group-data-[selected]:text-foreground',
               className,
             )}
           >

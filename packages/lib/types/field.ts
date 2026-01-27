@@ -264,6 +264,47 @@ export const ZFieldResidentLocationCountrySchema = BaseFieldSchemaUsingNumbers.e
 
 export type TFieldResidentLocationCountry = z.infer<typeof ZFieldResidentLocationCountrySchema>;
 
+export const ZFieldResidentLocationFaxSchema = BaseFieldSchemaUsingNumbers.extend({
+  type: z.literal(FieldType.RESIDENT_LOCATION_FAX),
+  fieldMeta: ZTextFieldMeta,
+});
+
+export type TFieldResidentLocationFax = z.infer<typeof ZFieldResidentLocationFaxSchema>;
+
+export const ZFieldResidentLocationLicensingSchema = BaseFieldSchemaUsingNumbers.extend({
+  type: z.literal(FieldType.RESIDENT_LOCATION_LICENSING),
+  fieldMeta: ZTextFieldMeta,
+});
+
+export type TFieldResidentLocationLicensing = z.infer<typeof ZFieldResidentLocationLicensingSchema>;
+
+export const ZFieldResidentLocationLicensingNameSchema = BaseFieldSchemaUsingNumbers.extend({
+  type: z.literal(FieldType.RESIDENT_LOCATION_LICENSING_NAME),
+  fieldMeta: ZTextFieldMeta,
+});
+
+export type TFieldResidentLocationLicensingName = z.infer<
+  typeof ZFieldResidentLocationLicensingNameSchema
+>;
+
+export const ZFieldResidentLocationAdministratorNameSchema = BaseFieldSchemaUsingNumbers.extend({
+  type: z.literal(FieldType.RESIDENT_LOCATION_ADMINISTRATOR_NAME),
+  fieldMeta: ZTextFieldMeta,
+});
+
+export type TFieldResidentLocationAdministratorName = z.infer<
+  typeof ZFieldResidentLocationAdministratorNameSchema
+>;
+
+export const ZFieldResidentLocationAdministratorPhoneSchema = BaseFieldSchemaUsingNumbers.extend({
+  type: z.literal(FieldType.RESIDENT_LOCATION_ADMINISTRATOR_PHONE),
+  fieldMeta: ZTextFieldMeta,
+});
+
+export type TFieldResidentLocationAdministratorPhone = z.infer<
+  typeof ZFieldResidentLocationAdministratorPhoneSchema
+>;
+
 /**
  * The full field schema which will enforce all types and meta fields.
  */
@@ -289,6 +330,11 @@ export const ZFullFieldSchema = z.discriminatedUnion('type', [
   ZFieldResidentLocationCitySchema,
   ZFieldResidentLocationZipCodeSchema,
   ZFieldResidentLocationCountrySchema,
+  ZFieldResidentLocationFaxSchema,
+  ZFieldResidentLocationLicensingSchema,
+  ZFieldResidentLocationLicensingNameSchema,
+  ZFieldResidentLocationAdministratorNameSchema,
+  ZFieldResidentLocationAdministratorPhoneSchema,
 ]);
 
 export type TFullFieldSchema = z.infer<typeof ZFullFieldSchema>;

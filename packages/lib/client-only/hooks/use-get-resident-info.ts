@@ -20,6 +20,11 @@ export type ResidentInfo = {
     city: string;
     zip: string;
     country: string;
+    location_fax: string;
+    licensing: string;
+    licensing_name: string;
+    admin: string;
+    phone_lic: string;
   };
 };
 
@@ -45,7 +50,9 @@ export const useGetResidentInfo = ({ residentId }: UseGetResidentInfoOptions) =>
       });
 
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: 'Failed to fetch resident info' }));
+        const error = await response
+          .json()
+          .catch(() => ({ message: 'Failed to fetch resident info' }));
         throw new Error(error.message || `Failed to fetch resident info: ${response.status}`);
       }
 

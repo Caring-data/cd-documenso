@@ -64,6 +64,11 @@ export const FRIENDLY_FIELD_TYPE: Record<FieldType, MessageDescriptor> = {
   [FieldType.RESIDENT_LOCATION_CITY]: msg`Resident Location City`,
   [FieldType.RESIDENT_LOCATION_ZIP_CODE]: msg`Resident Location Zip Code`,
   [FieldType.RESIDENT_LOCATION_COUNTRY]: msg`Resident Location Country`,
+  [FieldType.RESIDENT_LOCATION_FAX]: msg`Resident Location Fax`,
+  [FieldType.RESIDENT_LOCATION_LICENSING]: msg`Resident Location Licensing`,
+  [FieldType.RESIDENT_LOCATION_LICENSING_NAME]: msg`Resident Location Licensing Name`,
+  [FieldType.RESIDENT_LOCATION_ADMINISTRATOR_NAME]: msg`Resident Location Administrator Name`,
+  [FieldType.RESIDENT_LOCATION_ADMINISTRATOR_PHONE]: msg`Resident Location Administrator Phone`,
 };
 
 export interface DocumentFlowStep {
