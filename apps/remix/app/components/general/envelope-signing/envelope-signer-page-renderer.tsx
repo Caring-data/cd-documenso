@@ -46,8 +46,11 @@ import { handleSignatureFieldClick } from '~/utils/field-signing/signature-field
 import { handleTextFieldClick } from '~/utils/field-signing/text-field';
 
 import { useRequiredDocumentSigningAuthContext } from '../document-signing/document-signing-auth-provider';
+import {
+  getResidentValue,
+  isResidentFieldType,
+} from '../document-signing/document-signing-resident-helper';
 import { useRequiredEnvelopeSigningContext } from '../document-signing/envelope-signing-provider';
-import { getResidentValue, isResidentFieldType } from '../document-signing/document-signing-resident-helper';
 
 type GenericLocalField = TEnvelope['fields'][number] & {
   recipient: Pick<Recipient, 'id' | 'name' | 'email' | 'signingStatus'>;
@@ -97,9 +100,10 @@ export default function EnvelopeSignerPageRenderer() {
 
   // Check if there are any resident fields to enable automatic fetching
   const hasResidentFields = useMemo(() => {
-    const fieldsToCheck = recipient.role === RecipientRole.ASSISTANT
-      ? selectedAssistantRecipientFields
-      : recipientFields;
+    const fieldsToCheck =
+      recipient.role === RecipientRole.ASSISTANT
+        ? selectedAssistantRecipientFields
+        : recipientFields;
     return fieldsToCheck.some((field) => isResidentFieldType(field.type));
   }, [recipientFields, selectedAssistantRecipientFields, recipient.role]);
 
@@ -236,14 +240,21 @@ export default function EnvelopeSignerPageRenderer() {
       const handleResidentFieldClick = async (field: typeof parsedFoundField) => {
         try {
           // Get resident value from already fetched residentInfo
-          const residentValue = residentInfo && isResidentFieldType(field.type) && recipient.role !== RecipientRole.ASSISTANT
-            ? getResidentValue(field.type, residentInfo) || null
-            : null;
+          const residentValue =
+            residentInfo &&
+            isResidentFieldType(field.type) &&
+            recipient.role !== RecipientRole.ASSISTANT
+              ? getResidentValue(field.type, residentInfo) || null
+              : null;
 
           let payload;
 
           // For RESIDENT_DOB without value, use calendar picker
-          if (field.type === FieldType.RESIDENT_DOB && !residentValue && recipient.role !== RecipientRole.ASSISTANT) {
+          if (
+            field.type === FieldType.RESIDENT_DOB &&
+            !residentValue &&
+            recipient.role !== RecipientRole.ASSISTANT
+          ) {
             payload = await handleCalendarFieldClick({ field, date: null });
           } else {
             // Use residentValue if available, otherwise show dialog
@@ -363,6 +374,21 @@ export default function EnvelopeSignerPageRenderer() {
           void handleResidentFieldClick(field);
         })
         .with({ type: FieldType.RESIDENT_LOCATION_COUNTRY }, (field) => {
+          void handleResidentFieldClick(field);
+        })
+        .with({ type: FieldType.RESIDENT_LOCATION_FAX }, (field) => {
+          void handleResidentFieldClick(field);
+        })
+        .with({ type: FieldType.RESIDENT_LOCATION_LICENSING }, (field) => {
+          void handleResidentFieldClick(field);
+        })
+        .with({ type: FieldType.RESIDENT_LOCATION_LICENSING_NAME }, (field) => {
+          void handleResidentFieldClick(field);
+        })
+        .with({ type: FieldType.RESIDENT_LOCATION_ADMINISTRATOR_NAME }, (field) => {
+          void handleResidentFieldClick(field);
+        })
+        .with({ type: FieldType.RESIDENT_LOCATION_ADMINISTRATOR_PHONE }, (field) => {
           void handleResidentFieldClick(field);
         })
         /**

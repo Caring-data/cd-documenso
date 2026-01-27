@@ -316,22 +316,66 @@ export const signFieldWithToken = async ({
                 data: updatedField.customText,
               }),
             )
-            .with(
-              FieldType.RESIDENT_FIRST_NAME,
-              FieldType.RESIDENT_LAST_NAME,
-              FieldType.RESIDENT_DOB,
-              FieldType.RESIDENT_GENDER_IDENTITY,
-              FieldType.RESIDENT_LOCATION_NAME,
-              FieldType.RESIDENT_LOCATION_STATE,
-              FieldType.RESIDENT_LOCATION_ADDRESS,
-              FieldType.RESIDENT_LOCATION_CITY,
-              FieldType.RESIDENT_LOCATION_ZIP_CODE,
-              FieldType.RESIDENT_LOCATION_COUNTRY,
-              (type) => ({
-                type,
-                data: updatedField.customText,
-              }),
-            )
+            .with(FieldType.RESIDENT_FIRST_NAME, (type) => ({
+              type,
+              data: updatedField.customText,
+            }))
+            .with(FieldType.RESIDENT_LAST_NAME, (type) => ({
+              type,
+              data: updatedField.customText,
+            }))
+            .with(FieldType.RESIDENT_DOB, (type) => ({
+              type,
+              data: updatedField.customText,
+            }))
+            .with(FieldType.RESIDENT_GENDER_IDENTITY, (type) => ({
+              type,
+              data: updatedField.customText,
+            }))
+            .with(FieldType.RESIDENT_LOCATION_NAME, (type) => ({
+              type,
+              data: updatedField.customText,
+            }))
+            .with(FieldType.RESIDENT_LOCATION_STATE, (type) => ({
+              type,
+              data: updatedField.customText,
+            }))
+            .with(FieldType.RESIDENT_LOCATION_ADDRESS, (type) => ({
+              type,
+              data: updatedField.customText,
+            }))
+            .with(FieldType.RESIDENT_LOCATION_CITY, (type) => ({
+              type,
+              data: updatedField.customText,
+            }))
+            .with(FieldType.RESIDENT_LOCATION_ZIP_CODE, (type) => ({
+              type,
+              data: updatedField.customText,
+            }))
+            .with(FieldType.RESIDENT_LOCATION_COUNTRY, (type) => ({
+              type,
+              data: updatedField.customText,
+            }))
+            .with(FieldType.RESIDENT_LOCATION_FAX, (type) => ({
+              type,
+              data: updatedField.customText,
+            }))
+            .with(FieldType.RESIDENT_LOCATION_LICENSING, (type) => ({
+              type,
+              data: updatedField.customText,
+            }))
+            .with(FieldType.RESIDENT_LOCATION_LICENSING_NAME, (type) => ({
+              type,
+              data: updatedField.customText,
+            }))
+            .with(FieldType.RESIDENT_LOCATION_ADMINISTRATOR_NAME, (type) => ({
+              type,
+              data: updatedField.customText,
+            }))
+            .with(FieldType.RESIDENT_LOCATION_ADMINISTRATOR_PHONE, (type) => ({
+              type,
+              data: updatedField.customText,
+            }))
             .exhaustive(),
           fieldSecurity: derivedRecipientActionAuth
             ? {

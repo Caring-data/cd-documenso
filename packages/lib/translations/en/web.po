@@ -1225,6 +1225,24 @@ msgstr "Admin panel"
 msgid "Admin Panel"
 msgstr "Admin Panel"
 
+#: apps/remix/app/routes/embed+/components/template-flow/add-template-fields.tsx
+#: packages/lib/utils/fields.ts
+msgid "Administrator Name"
+msgstr "Administrator Name"
+
+#: apps/remix/app/components/general/envelope-editor/envelope-editor-fields-page.tsx
+msgid "Administrator Name Settings"
+msgstr "Administrator Name Settings"
+
+#: apps/remix/app/routes/embed+/components/template-flow/add-template-fields.tsx
+#: packages/lib/utils/fields.ts
+msgid "Administrator Phone"
+msgstr "Administrator Phone"
+
+#: apps/remix/app/components/general/envelope-editor/envelope-editor-fields-page.tsx
+msgid "Administrator Phone Settings"
+msgstr "Administrator Phone Settings"
+
 #: apps/remix/app/components/dialogs/folder-update-dialog.tsx
 msgid "Admins only"
 msgstr "Admins only"
@@ -4429,6 +4447,15 @@ msgstr "Failed to upload CSV. Please check the file format and try again."
 msgid "Failed: {failedCount}"
 msgstr "Failed: {failedCount}"
 
+#: apps/remix/app/routes/embed+/components/template-flow/add-template-fields.tsx
+#: packages/lib/utils/fields.ts
+msgid "Fax"
+msgstr "Fax"
+
+#: apps/remix/app/components/general/envelope-editor/envelope-editor-fields-page.tsx
+msgid "Fax Settings"
+msgstr "Fax Settings"
+
 #: packages/ui/primitives/document-flow/field-items-advanced-settings/text-field.tsx
 msgid "Field character limit"
 msgstr "Field character limit"
@@ -5220,6 +5247,24 @@ msgstr "Letter Spacing"
 #: apps/remix/app/routes/_authenticated+/admin+/logs._index.tsx
 msgid "Level"
 msgstr "Level"
+
+#: apps/remix/app/routes/embed+/components/template-flow/add-template-fields.tsx
+#: packages/lib/utils/fields.ts
+msgid "Licensing"
+msgstr "Licensing"
+
+#: apps/remix/app/routes/embed+/components/template-flow/add-template-fields.tsx
+#: packages/lib/utils/fields.ts
+msgid "Licensing Name"
+msgstr "Licensing Name"
+
+#: apps/remix/app/components/general/envelope-editor/envelope-editor-fields-page.tsx
+msgid "Licensing Name Settings"
+msgstr "Licensing Name Settings"
+
+#: apps/remix/app/components/general/envelope-editor/envelope-editor-fields-page.tsx
+msgid "Licensing Settings"
+msgstr "Licensing Settings"
 
 #: apps/remix/app/components/general/app-command-menu.tsx
 msgid "Light Mode"
@@ -6940,6 +6985,22 @@ msgid "Resident Location Address Settings"
 msgstr "Resident Location Address Settings"
 
 #: packages/ui/primitives/document-flow/types.ts
+msgid "Resident Location Administrator Name"
+msgstr "Resident Location Administrator Name"
+
+#: apps/remix/app/routes/embed+/components/template-flow/add-template-fields.tsx
+msgid "Resident Location Administrator Name Settings"
+msgstr "Resident Location Administrator Name Settings"
+
+#: packages/ui/primitives/document-flow/types.ts
+msgid "Resident Location Administrator Phone"
+msgstr "Resident Location Administrator Phone"
+
+#: apps/remix/app/routes/embed+/components/template-flow/add-template-fields.tsx
+msgid "Resident Location Administrator Phone Settings"
+msgstr "Resident Location Administrator Phone Settings"
+
+#: packages/ui/primitives/document-flow/types.ts
 msgid "Resident Location City"
 msgstr "Resident Location City"
 
@@ -6954,6 +7015,30 @@ msgstr "Resident Location Country"
 #: apps/remix/app/routes/embed+/components/template-flow/add-template-fields.tsx
 msgid "Resident Location Country Settings"
 msgstr "Resident Location Country Settings"
+
+#: packages/ui/primitives/document-flow/types.ts
+msgid "Resident Location Fax"
+msgstr "Resident Location Fax"
+
+#: apps/remix/app/routes/embed+/components/template-flow/add-template-fields.tsx
+msgid "Resident Location Fax Settings"
+msgstr "Resident Location Fax Settings"
+
+#: packages/ui/primitives/document-flow/types.ts
+msgid "Resident Location Licensing"
+msgstr "Resident Location Licensing"
+
+#: packages/ui/primitives/document-flow/types.ts
+msgid "Resident Location Licensing Name"
+msgstr "Resident Location Licensing Name"
+
+#: apps/remix/app/routes/embed+/components/template-flow/add-template-fields.tsx
+msgid "Resident Location Licensing Name Settings"
+msgstr "Resident Location Licensing Name Settings"
+
+#: apps/remix/app/routes/embed+/components/template-flow/add-template-fields.tsx
+msgid "Resident Location Licensing Settings"
+msgstr "Resident Location Licensing Settings"
 
 #: packages/ui/primitives/document-flow/types.ts
 msgid "Resident Location Name"

@@ -647,6 +647,26 @@ export const createDocumentFromDirectTemplate = async ({
                   data: field.customText,
                 }),
               )
+              .with(FieldType.RESIDENT_LOCATION_FAX, (type) => ({
+                type,
+                data: field.customText,
+              }))
+              .with(FieldType.RESIDENT_LOCATION_LICENSING, (type) => ({
+                type,
+                data: field.customText,
+              }))
+              .with(FieldType.RESIDENT_LOCATION_LICENSING_NAME, (type) => ({
+                type,
+                data: field.customText,
+              }))
+              .with(FieldType.RESIDENT_LOCATION_ADMINISTRATOR_NAME, (type) => ({
+                type,
+                data: field.customText,
+              }))
+              .with(FieldType.RESIDENT_LOCATION_ADMINISTRATOR_PHONE, (type) => ({
+                type,
+                data: field.customText,
+              }))
               .exhaustive(),
             fieldSecurity: derivedRecipientActionAuth
               ? {
