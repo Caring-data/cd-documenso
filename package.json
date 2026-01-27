@@ -29,6 +29,7 @@
     "prisma:migrate-reset": "npm run with:env -- npm run prisma:migrate-reset --workspace=@documenso/prisma",
     "prisma:seed": "npm run with:env -- npm run prisma:seed --workspace=@documenso/prisma",
     "prisma:studio": "npm run with:env -- npm run prisma:studio --workspace=@documenso/prisma",
+    "seed:folders": "npm run with:env -- npx tsx scripts/seeders/folders-seed.ts",
     "with:env": "dotenv -e .env -e .env.local --",
     "reset:hard": "npm run clean && npm install --legacy-peer-deps && npm run prisma:generate",
     "precommit": "npm install --legacy-peer-deps && git add package.json package-lock.json",
