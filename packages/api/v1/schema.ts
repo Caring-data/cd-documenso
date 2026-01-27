@@ -131,6 +131,10 @@ export const ZResendDocumentForSigningMutationSchema = z.object({
   recipients: z.array(z.number()),
 });
 
+export const ZResendDocumentByEmailSchema = z.object({
+  recipientEmail: z.string().email(),
+});
+
 export type TResendDocumentForSigningMutationSchema = z.infer<
   typeof ZResendDocumentForSigningMutationSchema
 >;

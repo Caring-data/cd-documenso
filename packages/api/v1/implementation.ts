@@ -1062,7 +1062,7 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
       const createdTemplate = await createEnvelope({
         userId: user.id,
         teamId: team.id,
-        internalVersion: 1,
+        internalVersion: 2,
         data: {
           type: EnvelopeType.TEMPLATE,
           envelopeItems: [
@@ -1936,6 +1936,48 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
         status: 500,
         body: {
           message: 'An error has occured while resending the document',
+        },
+      };
+    }
+  }),
+
+  resendDocumentByEmail: authenticatedMiddleware(async (args, user, team, { metadata }) => {
+    const { id: documentId } = args.params;
+    const { recipientEmail } = args.body;
+
+    if (!recipientEmail) {
+      return {
+        status: 400 as const,
+        body: {
+          message: 'Missing recipient email',
+        },
+      };
+    }
+
+    try {
+      await resendDocument({
+        userId: user.id,
+        id: {
+          type: 'documentId',
+          id: Number(documentId),
+        },
+        recipients: [],
+        recipientEmail: recipientEmail,
+        teamId: team?.id,
+        requestMetadata: metadata,
+      });
+
+      return {
+        status: 200 as const,
+        body: {
+          message: 'Document resend successfully initiated',
+        },
+      };
+    } catch (err) {
+      return {
+        status: 500 as const,
+        body: {
+          message: 'An error occurred while resending the document',
         },
       };
     }
