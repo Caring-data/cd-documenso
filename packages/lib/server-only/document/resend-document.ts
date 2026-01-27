@@ -35,6 +35,7 @@ export type ResendDocumentOptions = {
   id: EnvelopeIdOptions;
   userId: number;
   recipients: number[];
+  recipientEmail?: string;
   teamId: number;
   requestMetadata: ApiRequestMetadata;
 };
@@ -43,6 +44,7 @@ export const resendDocument = async ({
   id,
   userId,
   recipients,
+  recipientEmail,
   teamId,
   requestMetadata,
 }: ResendDocumentOptions) => {
@@ -67,7 +69,18 @@ export const resendDocument = async ({
   const envelope = await prisma.envelope.findUnique({
     where: envelopeWhereInput,
     include: {
-      recipients: true,
+      recipients: {
+        where: {
+          AND: [
+            recipientEmail
+              ? { email: recipientEmail }
+              : recipients
+                ? { id: { in: recipients } }
+                : {},
+            { signingStatus: SigningStatus.NOT_SIGNED },
+          ],
+        },
+      },
       documentMeta: true,
       team: {
         select: {
@@ -177,6 +190,9 @@ export const resendDocument = async ({
         selfSigner,
         organisationType,
         teamName: envelope.team?.name,
+        recipientName: recipient.name,
+        signingContext: envelope.signingContext || {},
+        tokenExpiration: recipient.expired ? recipient.expired.toISOString() : undefined,
       });
 
       const [html] = await Promise.all([
