@@ -784,3 +784,20 @@ export const ZCreateEmbebedTemplateResponseSchema = ZSuccessfulGetTemplateRespon
 export type TCreateEmbebedTemplateResponseSchema = z.infer<
   typeof ZCreateEmbebedTemplateResponseSchema
 >;
+
+export const ZDeleteEmbedTemplateResponseSchema = ZSuccessfulDeleteTemplateResponseSchema;
+
+export type TDeleteEmbedTemplateResponseSchema = z.infer<typeof ZDeleteEmbedTemplateResponseSchema>;
+
+export const ZReplaceEmbedTemplateRequestSchema = z.object({
+  title: z.string().min(1).trim(),
+  data: z.string().min(1),
+});
+
+export type TReplaceEmbedTemplateRequestSchema = z.infer<typeof ZReplaceEmbedTemplateRequestSchema>;
+
+export const ZReplaceEmbedTemplateResponseSchema = ZCreateEmbebedTemplateResponseSchema;
+
+export type TReplaceEmbedTemplateResponseSchema = z.infer<
+  typeof ZReplaceEmbedTemplateResponseSchema
+>;
