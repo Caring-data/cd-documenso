@@ -33,6 +33,7 @@ import {
   ZGetTemplatesQuerySchema,
   ZGetUsersQuerySchema,
   ZNoBodyMutationSchema,
+  ZResendDocumentByEmailSchema,
   ZReplaceEmbedTemplateRequestSchema,
   ZReplaceEmbedTemplateResponseSchema,
   ZResendDocumentForSigningMutationSchema,
@@ -299,6 +300,20 @@ export const ApiContractV1 = c.router(
         500: ZUnsuccessfulResponseSchema,
       },
       summary: 'Re-send a document for signing',
+    },
+
+    resendDocumentByEmail: {
+      method: 'POST',
+      path: '/api/v1/documents/:id/resendByEmail',
+      body: ZResendDocumentByEmailSchema,
+      responses: {
+        200: ZSuccessfulResendDocumentResponseSchema,
+        400: ZUnsuccessfulResponseSchema,
+        401: ZUnsuccessfulResponseSchema,
+        404: ZUnsuccessfulResponseSchema,
+        500: ZUnsuccessfulResponseSchema,
+      },
+      summary: 'Re-send a document for a specific recipient email',
     },
 
     deleteDocument: {
