@@ -15,20 +15,4 @@ module.exports = {
     `${path.join(require.resolve('@documenso/email'), '..')}/template-components/**/*.{ts,tsx}`,
     `${path.join(require.resolve('@documenso/email'), '..')}/providers/**/*.{ts,tsx}`,
   ],
-  theme: {
-    ...baseConfig.theme,
-    extend: {
-      ...baseConfig.theme?.extend,
-      fontFamily: {
-        sans: ['Inter', 'sans-serif'],
-        serif: ['Caveat', 'cursive'],
-        dancing: ['"Dancing Script"', 'cursive'],
-        greatVibes: ['"Great Vibes"', 'cursive'],
-        cookie: ['Cookie', 'cursive'],
-        monteCarlo: ['"Monte Carlo"', 'cursive'],
-        lato: ['Lato', 'sans-serif'],
-        arial: ['Arial', 'sans-serif'],
-      },
-    },
-  },
 };

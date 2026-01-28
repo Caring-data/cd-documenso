@@ -6,17 +6,25 @@ import { useLingui } from '@lingui/react';
 import { Trans } from '@lingui/react/macro';
 import { FieldType, RecipientRole } from '@prisma/client';
 import {
+  Building,
   CalendarDays,
   CheckSquare,
   ChevronDown,
+  Clipboard,
   Contact,
   Disc,
+  Flag,
   Hash,
+  Home,
+  Info,
   Mail,
   MapPin,
+  Phone,
+  Printer,
   Type,
   User,
-  UserCircle,
+  UserCheck,
+  UserCircle2,
 } from 'lucide-react';
 import { isDeepEqual } from 'remeda';
 import { match } from 'ts-pattern';
@@ -384,7 +392,7 @@ export const EmbedAddTemplateFieldsFormPartial = ({
       <DocumentFlowFormContainerHeader title={flowStep.title} description={flowStep.description} />
 
       <DocumentFlowFormContainerContent>
-        <div className="flex flex-col">
+        <div className="mt-2 flex flex-col">
           {selectedField && (
             <div
               className={cn(
@@ -415,14 +423,14 @@ export const EmbedAddTemplateFieldsFormPartial = ({
             className="mb-4"
           />
 
-          <div className="-mx-2 flex-1 overflow-y-auto px-2">
+          <div className="-mx-2 flex-1 px-2">
             <fieldset disabled={isFieldsDisabled} className="my-2 grid grid-cols-3 gap-4">
               <FieldButton
                 type={FieldType.SIGNATURE}
                 selectedField={selectedField}
                 onSelect={setSelectedField}
                 label={<Trans>Signature</Trans>}
-                className="font-signature text-lg"
+                className="font-signature text-[16px]"
               />
 
               <FieldButton
@@ -506,20 +514,26 @@ export const EmbedAddTemplateFieldsFormPartial = ({
               />
             </fieldset>
 
-            <div className="mt-4 flex flex-col gap-2">
+            <div className="flex flex-col gap-1 pt-2">
               <Separator />
+              <div className="mt-2 flex items-start gap-2">
+                <Info className="mt-0.5 h-4 w-4 shrink-0 items-center text-zinc-400" />
+                <span className="inline-flex max-w-full px-1.5 py-0.5 text-sm leading-snug text-zinc-700">
+                  Resident fields will auto-fill when the document is sent
+                </span>
+              </div>
               <Accordion type="single" collapsible>
                 <AccordionItem value="resident-fields">
                   <AccordionTrigger>
                     <Label>Resident Fields</Label>
                   </AccordionTrigger>
                   <AccordionContent>
-                    <fieldset disabled={isFieldsDisabled} className="grid grid-cols-3 gap-4">
+                    <fieldset disabled={isFieldsDisabled} className="grid grid-cols-2 gap-4">
                       <FieldButton
                         type={FieldType.RESIDENT_FIRST_NAME}
                         selectedField={selectedField}
                         onSelect={setSelectedField}
-                        icon={UserCircle}
+                        icon={User}
                         label={<Trans>First Name</Trans>}
                       />
 
@@ -527,7 +541,7 @@ export const EmbedAddTemplateFieldsFormPartial = ({
                         type={FieldType.RESIDENT_LAST_NAME}
                         selectedField={selectedField}
                         onSelect={setSelectedField}
-                        icon={UserCircle}
+                        icon={User}
                         label={<Trans>Last Name</Trans>}
                       />
 
@@ -543,7 +557,7 @@ export const EmbedAddTemplateFieldsFormPartial = ({
                         type={FieldType.RESIDENT_GENDER_IDENTITY}
                         selectedField={selectedField}
                         onSelect={setSelectedField}
-                        icon={User}
+                        icon={UserCircle2}
                         label={<Trans>Gender Identity</Trans>}
                       />
                     </fieldset>
@@ -552,20 +566,19 @@ export const EmbedAddTemplateFieldsFormPartial = ({
               </Accordion>
             </div>
 
-            <div className="mt-4 flex flex-col gap-2">
-              <Separator />
+            <div className="mt-3 flex flex-col gap-2">
               <Accordion type="single" collapsible>
                 <AccordionItem value="resident-location-fields">
                   <AccordionTrigger>
                     <Label>Resident Location Fields</Label>
                   </AccordionTrigger>
                   <AccordionContent>
-                    <fieldset disabled={isFieldsDisabled} className="grid grid-cols-3 gap-4">
+                    <fieldset disabled={isFieldsDisabled} className="grid gap-4 sm:grid-cols-2">
                       <FieldButton
                         type={FieldType.RESIDENT_LOCATION_NAME}
                         selectedField={selectedField}
                         onSelect={setSelectedField}
-                        icon={MapPin}
+                        icon={Building}
                         label={<Trans>Location Name</Trans>}
                       />
 
@@ -573,7 +586,7 @@ export const EmbedAddTemplateFieldsFormPartial = ({
                         type={FieldType.RESIDENT_LOCATION_STATE}
                         selectedField={selectedField}
                         onSelect={setSelectedField}
-                        icon={MapPin}
+                        icon={Flag}
                         label={<Trans>State</Trans>}
                       />
 
@@ -581,7 +594,7 @@ export const EmbedAddTemplateFieldsFormPartial = ({
                         type={FieldType.RESIDENT_LOCATION_ADDRESS}
                         selectedField={selectedField}
                         onSelect={setSelectedField}
-                        icon={MapPin}
+                        icon={Home}
                         label={<Trans>Address</Trans>}
                       />
 
@@ -589,7 +602,7 @@ export const EmbedAddTemplateFieldsFormPartial = ({
                         type={FieldType.RESIDENT_LOCATION_CITY}
                         selectedField={selectedField}
                         onSelect={setSelectedField}
-                        icon={MapPin}
+                        icon={Building}
                         label={<Trans>City</Trans>}
                       />
 
@@ -597,7 +610,7 @@ export const EmbedAddTemplateFieldsFormPartial = ({
                         type={FieldType.RESIDENT_LOCATION_ZIP_CODE}
                         selectedField={selectedField}
                         onSelect={setSelectedField}
-                        icon={MapPin}
+                        icon={Hash}
                         label={<Trans>ZIP Code</Trans>}
                       />
 
@@ -613,7 +626,7 @@ export const EmbedAddTemplateFieldsFormPartial = ({
                         type={FieldType.RESIDENT_LOCATION_FAX}
                         selectedField={selectedField}
                         onSelect={setSelectedField}
-                        icon={MapPin}
+                        icon={Printer}
                         label={<Trans>Fax</Trans>}
                       />
 
@@ -621,7 +634,7 @@ export const EmbedAddTemplateFieldsFormPartial = ({
                         type={FieldType.RESIDENT_LOCATION_LICENSING}
                         selectedField={selectedField}
                         onSelect={setSelectedField}
-                        icon={MapPin}
+                        icon={Clipboard}
                         label={<Trans>Licensing</Trans>}
                       />
 
@@ -629,7 +642,7 @@ export const EmbedAddTemplateFieldsFormPartial = ({
                         type={FieldType.RESIDENT_LOCATION_LICENSING_NAME}
                         selectedField={selectedField}
                         onSelect={setSelectedField}
-                        icon={MapPin}
+                        icon={UserCircle2}
                         label={<Trans>Licensing Name</Trans>}
                       />
 
@@ -637,7 +650,7 @@ export const EmbedAddTemplateFieldsFormPartial = ({
                         type={FieldType.RESIDENT_LOCATION_ADMINISTRATOR_NAME}
                         selectedField={selectedField}
                         onSelect={setSelectedField}
-                        icon={MapPin}
+                        icon={UserCheck}
                         label={<Trans>Administrator Name</Trans>}
                       />
 
@@ -645,7 +658,7 @@ export const EmbedAddTemplateFieldsFormPartial = ({
                         type={FieldType.RESIDENT_LOCATION_ADMINISTRATOR_PHONE}
                         selectedField={selectedField}
                         onSelect={setSelectedField}
-                        icon={MapPin}
+                        icon={Phone}
                         label={<Trans>Administrator Phone</Trans>}
                       />
                     </fieldset>
@@ -888,11 +901,9 @@ const FieldButton = ({
       type="button"
       className="group h-full w-full"
       onClick={() => {
-        console.log('FieldButton clicked:', type);
         onSelect(type);
       }}
       onMouseDown={() => {
-        console.log('FieldButton mousedown:', type);
         onSelect(type);
       }}
       data-selected={selectedField === type ? true : undefined}
@@ -902,7 +913,7 @@ const FieldButton = ({
           'flex h-full w-full cursor-pointer items-center justify-center group-disabled:opacity-50',
         )}
       >
-        <CardContent className="flex flex-col items-center justify-center px-6 py-4">
+        <CardContent className="flex flex-col items-center justify-center px-6 py-[10px]">
           <p
             className={cn(
               'flex items-center justify-center gap-x-1.5 text-sm font-normal text-muted-foreground group-data-[selected]:text-foreground',

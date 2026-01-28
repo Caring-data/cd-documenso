@@ -227,7 +227,7 @@ export const AddTemplateSettingsFormPartial = ({
 
       <DocumentFlowFormContainerContent>
         <Form {...form}>
-          <fieldset disabled={form.formState.isSubmitting} className="space-y-4">
+          <fieldset disabled={form.formState.isSubmitting} className="space-y-3">
             <FormField
               control={form.control}
               name="title"
@@ -255,8 +255,6 @@ export const AddTemplateSettingsFormPartial = ({
                 Set the number of recipients you'll later assign fields and signatures to.
               </Trans>
             </p>
-
-            <hr className="mb-8 mt-4 border-border" />
 
             {fields.map((field, index) => (
               <div key={field.id} className="flex items-center gap-2">
