@@ -4,8 +4,8 @@ import type { MessageDescriptor } from '@lingui/core';
 import { msg } from '@lingui/core/macro';
 import { useLingui } from '@lingui/react';
 import { Trans } from '@lingui/react/macro';
-import { DocumentStatus, FieldType, RecipientRole } from '@prisma/client';
-import { FileTextIcon, SparklesIcon } from 'lucide-react';
+import { FieldType, RecipientRole } from '@prisma/client';
+import { FileTextIcon } from 'lucide-react';
 import { Link, useRevalidator, useSearchParams } from 'react-router';
 import { isDeepEqual } from 'remeda';
 import { match } from 'ts-pattern';
@@ -265,7 +265,7 @@ export const EnvelopeEditorFieldsPage = () => {
               selectedEnvelopeItemId={currentEnvelopeItem?.id ?? null}
             />
 
-            <Button
+            {/* <Button
               type="button"
               variant="outline"
               size="sm"
@@ -280,7 +280,7 @@ export const EnvelopeEditorFieldsPage = () => {
             >
               <SparklesIcon className="-ml-1 mr-2 h-4 w-4" />
               <Trans>Detect with AI</Trans>
-            </Button>
+            </Button> */}
 
             <AiFieldDetectionDialog
               open={isAiFieldDialogOpen}

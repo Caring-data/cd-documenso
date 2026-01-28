@@ -457,6 +457,7 @@ export const EmbedSignDocumentV1ClientPage = ({
                             disabled={isThrottled || isSubmitting}
                             disableAnimation
                             fullName={fullName}
+                            recipientEmail={recipient?.email}
                             value={signature ?? ''}
                             onChange={(v) => setSignature(v ?? '')}
                             typedSignatureEnabled={metadata?.typedSignatureEnabled}

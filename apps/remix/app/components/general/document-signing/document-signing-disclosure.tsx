@@ -1,7 +1,6 @@
 import type { HTMLAttributes } from 'react';
 
 import { Trans } from '@lingui/react/macro';
-import { Link } from 'react-router';
 
 import { cn } from '@documenso/ui/lib/utils';
 
@@ -12,26 +11,13 @@ export const DocumentSigningDisclosure = ({
   ...props
 }: DocumentSigningDisclosureProps) => {
   return (
-    <p className={cn('text-muted-foreground text-xs', className)} {...props}>
+    <p className={cn('text-xs text-muted-foreground dark:text-zinc-300', className)} {...props}>
       <Trans>
-        By proceeding with your electronic signature, you acknowledge and consent that it will be
-        used to sign the given document and holds the same legal validity as a handwritten
-        signature. By completing the electronic signing process, you affirm your understanding and
-        acceptance of these conditions.
+        By clicking the <strong>"I ACCEPT"</strong> button, you agree to review the documents and
+        provide your electronic signature. You acknowledge that your electronic signature will have
+        the same legal validity and effect as a handwritten signature, ensuring the document is
+        complete and legally binding.{' '}
       </Trans>
-      <span className="mt-2 block">
-        <Trans>
-          Read the full{' '}
-          <Link
-            className="text-documenso-700 underline"
-            to="/articles/signature-disclosure"
-            target="_blank"
-          >
-            signature disclosure
-          </Link>
-          .
-        </Trans>
-      </span>
     </p>
   );
 };
