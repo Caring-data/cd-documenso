@@ -302,6 +302,26 @@ export const signEnvelopeFieldRoute = procedure
                   data: updatedField.customText,
                 }),
               )
+              .with(FieldType.RESIDENT_LOCATION_FAX, (type) => ({
+                type,
+                data: updatedField.customText,
+              }))
+              .with(FieldType.RESIDENT_LOCATION_LICENSING, (type) => ({
+                type,
+                data: updatedField.customText,
+              }))
+              .with(FieldType.RESIDENT_LOCATION_LICENSING_NAME, (type) => ({
+                type,
+                data: updatedField.customText,
+              }))
+              .with(FieldType.RESIDENT_LOCATION_ADMINISTRATOR_NAME, (type) => ({
+                type,
+                data: updatedField.customText,
+              }))
+              .with(FieldType.RESIDENT_LOCATION_ADMINISTRATOR_PHONE, (type) => ({
+                type,
+                data: updatedField.customText,
+              }))
               .exhaustive(),
             fieldSecurity: derivedRecipientActionAuth
               ? {

@@ -8,11 +8,11 @@ export const seedDatabase = async () => {
   const ADMIN_NAME = env('SEED_ADMIN_NAME');
   const ADMIN_PASSWORD = env('SEED_ADMIN_PASSWORD');
 
-  const exampleUserExists = await prisma.user.findFirst({
-    where: {
-      email: 'example@caringdata.com',
-    },
-  });
+  if (!ADMIN_EMAIL || !ADMIN_NAME || !ADMIN_PASSWORD) {
+    throw new Error(
+      'Missing required environment variables: SEED_ADMIN_EMAIL, SEED_ADMIN_NAME, SEED_ADMIN_PASSWORD',
+    );
+  }
 
   const adminUserExists = await prisma.user.findFirst({
     where: {
@@ -20,7 +20,8 @@ export const seedDatabase = async () => {
     },
   });
 
-  if (exampleUserExists || adminUserExists) {
+  if (adminUserExists) {
+    console.log('Admin user already exists, skipping...');
     return;
   }
 
@@ -43,21 +44,5 @@ export const seedDatabase = async () => {
     data: { name: 'Caring Data' },
   });
 
-  // Create Example User
-  const exampleUser = await seedUser({
-    name: 'Example User',
-    email: 'example@caringdata.com',
-    password: 'password',
-  });
-
-  // Rename Example Organisation and Team
-  await prisma.organisation.update({
-    where: { id: exampleUser.organisation.id },
-    data: { name: 'Example Caring Data' },
-  });
-
-  await prisma.team.update({
-    where: { id: exampleUser.team.id },
-    data: { name: 'Example Caring Data' },
-  });
+  console.log('Production seed completed successfully');
 };

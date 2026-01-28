@@ -72,5 +72,4 @@ docs/
 # cursor
 .cursor
 
-.docker/development/data
-**/.docker/development/data/
+docker/development/data/

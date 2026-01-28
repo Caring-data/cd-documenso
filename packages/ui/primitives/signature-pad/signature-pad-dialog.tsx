@@ -6,7 +6,14 @@ import { Trans, useLingui } from '@lingui/react/macro';
 import { motion } from 'framer-motion';
 
 import { parseMessageDescriptor } from '@documenso/lib/utils/i18n';
-import { Dialog, DialogClose, DialogContent, DialogFooter } from '@documenso/ui/primitives/dialog';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@documenso/ui/primitives/dialog';
 
 import { cn } from '../../lib/utils';
 import { Button } from '../button';
@@ -16,6 +23,7 @@ import { SignatureRender } from './signature-render';
 export type SignaturePadDialogProps = Omit<HTMLAttributes<HTMLCanvasElement>, 'onChange'> & {
   disabled?: boolean;
   fullName?: string;
+  recipientEmail?: string;
   value?: string;
   onChange: (_value: string) => void;
   dialogConfirmText?: MessageDescriptor | string;
@@ -28,6 +36,7 @@ export type SignaturePadDialogProps = Omit<HTMLAttributes<HTMLCanvasElement>, 'o
 export const SignaturePadDialog = ({
   className,
   fullName,
+  recipientEmail,
   value,
   onChange,
   disabled = false,
@@ -112,6 +121,17 @@ export const SignaturePadDialog = ({
 
       <Dialog open={showSignatureModal} onOpenChange={disabled ? undefined : setShowSignatureModal}>
         <DialogContent hideClose={true} className="p-6 pt-4">
+          <DialogHeader>
+            <DialogTitle>
+              <Trans>
+                Sign as {fullName}{' '}
+                {recipientEmail && (
+                  <div className="mb-2 h-5 text-muted-foreground">({recipientEmail})</div>
+                )}
+              </Trans>
+            </DialogTitle>
+          </DialogHeader>
+
           <SignaturePad
             id="signature"
             fullName={fullName}

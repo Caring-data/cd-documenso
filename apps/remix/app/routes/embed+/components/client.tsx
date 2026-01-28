@@ -138,8 +138,8 @@ function ClientInner({ envelopeId, initialEnvelope }: ClientInnerProps) {
       stepIndex: 1,
     },
     fields: {
-      title: msg`Add Template Fields`,
-      description: msg`Add template fields to your envelope.`,
+      title: msg`Add Fields`,
+      description: msg`Add all relevant fields for each recipient. Drag the fields you need and edit, duplicate, or delete them.`,
       stepIndex: 2,
     },
   };
@@ -234,7 +234,7 @@ function ClientInner({ envelopeId, initialEnvelope }: ClientInnerProps) {
   }, [envelope.recipients]);
 
   return (
-    <div className="bg-muted/10 flex h-screen w-full overflow-hidden">
+    <div className="flex h-screen w-full overflow-hidden bg-muted/10">
       <main className="relative flex-1 overflow-y-auto scroll-smooth p-4 lg:p-8">
         <div className="mx-auto flex min-h-full max-w-[800px] flex-col items-center justify-center">
           <Suspense
@@ -249,10 +249,10 @@ function ClientInner({ envelopeId, initialEnvelope }: ClientInnerProps) {
         </div>
       </main>
 
-      <aside className="bg-background flex w-full max-w-md flex-col border-l shadow-2xl lg:w-[550px] xl:max-w-lg 2xl:max-w-xl">
-        <div className="flex h-full flex-col overflow-y-auto p-6">
+      <aside className="flex w-full max-w-md flex-col border-l bg-background shadow-2xl lg:w-[550px] xl:max-w-lg 2xl:max-w-xl">
+        <div className="flex h-full flex-col overflow-y-auto p-4">
           <DocumentFlowFormContainer
-            className="flex flex-1 flex-col gap-6"
+            className="flex flex-1 flex-col gap-6 py-4"
             onSubmit={(e) => e.preventDefault()}
           >
             <Stepper currentStep={currentStep} setCurrentStep={handleStepChange}>
