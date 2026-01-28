@@ -419,6 +419,7 @@ export const DirectTemplateSigningForm = ({
                 className="mt-2"
                 disabled={isSubmitting}
                 fullName={fullName}
+                recipientEmail={nextRecipient?.email}
                 value={signature ?? ''}
                 onChange={(value) => setSignature(value)}
                 typedSignatureEnabled={template.templateMeta?.typedSignatureEnabled}

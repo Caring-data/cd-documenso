@@ -139,7 +139,7 @@ export const SignaturePad = ({
   return (
     <Tabs
       defaultValue={tab}
-      className={cn({
+      className={cn('mt-0', {
         'pointer-events-none': disabled,
       })}
       // eslint-disable-next-line @typescript-eslint/consistent-type-assertions

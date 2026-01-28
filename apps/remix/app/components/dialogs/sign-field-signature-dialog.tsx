@@ -43,7 +43,7 @@ export const SignFieldSignatureDialog = createCallable<
           <div>
             <DialogHeader>
               <DialogTitle>
-                <Trans>Sign Signature Field</Trans>
+                <Trans>Sign as {fullName}</Trans>
               </DialogTitle>
             </DialogHeader>
 

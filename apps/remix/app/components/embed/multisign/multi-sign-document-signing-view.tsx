@@ -320,6 +320,7 @@ export const MultiSignDocumentSigningView = ({
                                     disabled={isSubmitting}
                                     disableAnimation
                                     fullName={fullName}
+                                    recipientEmail={email}
                                     value={signature ?? ''}
                                     onChange={(v) => setSignature(v ?? '')}
                                     typedSignatureEnabled={

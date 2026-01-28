@@ -234,7 +234,7 @@ export const AddTemplateSettingsFormPartial = ({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
-                    <Trans>Title</Trans>
+                    <Trans>Template Title</Trans>
                   </FormLabel>
                   <FormControl>
                     <Input placeholder={t`Enter template title`} {...field} />
@@ -246,17 +246,17 @@ export const AddTemplateSettingsFormPartial = ({
 
             <Separator />
 
-            <h3 className="text-foreground text-xl font-semibold">
-              <Trans>Add Placeholders</Trans>
+            <h3 className="text-xl font-semibold text-foreground">
+              <Trans>Add Participants</Trans>
             </h3>
 
-            <p className="text-muted-foreground mt-2 text-sm">
+            <p className="mt-2 text-sm text-muted-foreground">
               <Trans>
                 Set the number of recipients you'll later assign fields and signatures to.
               </Trans>
             </p>
 
-            <hr className="border-border mt-4 mb-8" />
+            <hr className="mb-8 mt-4 border-border" />
 
             {fields.map((field, index) => (
               <div key={field.id} className="flex items-center gap-2">
