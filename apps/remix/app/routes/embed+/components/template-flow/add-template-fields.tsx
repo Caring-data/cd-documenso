@@ -52,12 +52,6 @@ import { parseMessageDescriptor } from '@documenso/lib/utils/i18n';
 import { AnimateGenericFadeInOut } from '@documenso/ui/components/animate/animate-generic-fade-in-out';
 import { RECIPIENT_COLOR_STYLES } from '@documenso/ui/lib/recipient-colors';
 import { cn } from '@documenso/ui/lib/utils';
-import { Accordion } from '@documenso/ui/primitives/accordion';
-import {
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@documenso/ui/primitives/accordion';
 import { Card, CardContent } from '@documenso/ui/primitives/card';
 import {
   DocumentFlowFormContainerActions,
@@ -70,10 +64,10 @@ import {
   type DocumentFlowStep,
   FRIENDLY_FIELD_TYPE,
 } from '@documenso/ui/primitives/document-flow/types';
-import { Label } from '@documenso/ui/primitives/label';
 import { RecipientSelector } from '@documenso/ui/primitives/recipient-selector';
 import { Separator } from '@documenso/ui/primitives/separator';
 import { useStep } from '@documenso/ui/primitives/stepper';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@documenso/ui/primitives/tabs';
 
 import { EditorFieldCheckboxForm } from '~/components/forms/editor/editor-field-checkbox-form';
 import { EditorFieldDateForm } from '~/components/forms/editor/editor-field-date-form';
@@ -111,17 +105,17 @@ const FieldSettingsTypeTranslations: Record<FieldType, MessageDescriptor> = {
   [FieldType.RESIDENT_LAST_NAME]: msg`Resident Last Name Settings`,
   [FieldType.RESIDENT_DOB]: msg`Resident Date of Birth Settings`,
   [FieldType.RESIDENT_GENDER_IDENTITY]: msg`Resident Gender Identity Settings`,
-  [FieldType.RESIDENT_LOCATION_NAME]: msg`Resident Location Name Settings`,
-  [FieldType.RESIDENT_LOCATION_STATE]: msg`Resident Location State Settings`,
-  [FieldType.RESIDENT_LOCATION_ADDRESS]: msg`Resident Location Address Settings`,
-  [FieldType.RESIDENT_LOCATION_CITY]: msg`Resident Location City Settings`,
-  [FieldType.RESIDENT_LOCATION_ZIP_CODE]: msg`Resident Location Zip Code Settings`,
-  [FieldType.RESIDENT_LOCATION_COUNTRY]: msg`Resident Location Country Settings`,
-  [FieldType.RESIDENT_LOCATION_FAX]: msg`Resident Location Fax Settings`,
-  [FieldType.RESIDENT_LOCATION_LICENSING]: msg`Resident Location Licensing Settings`,
-  [FieldType.RESIDENT_LOCATION_LICENSING_NAME]: msg`Resident Location Licensing Name Settings`,
-  [FieldType.RESIDENT_LOCATION_ADMINISTRATOR_NAME]: msg`Resident Location Administrator Name Settings`,
-  [FieldType.RESIDENT_LOCATION_ADMINISTRATOR_PHONE]: msg`Resident Location Administrator Phone Settings`,
+  [FieldType.RESIDENT_LOCATION_NAME]: msg`Location Name Settings`,
+  [FieldType.RESIDENT_LOCATION_STATE]: msg`Location State Settings`,
+  [FieldType.RESIDENT_LOCATION_ADDRESS]: msg`Location Address Settings`,
+  [FieldType.RESIDENT_LOCATION_CITY]: msg`Location City Settings`,
+  [FieldType.RESIDENT_LOCATION_ZIP_CODE]: msg`Location Zip Code Settings`,
+  [FieldType.RESIDENT_LOCATION_COUNTRY]: msg`Location Country Settings`,
+  [FieldType.RESIDENT_LOCATION_FAX]: msg`Location Fax Settings`,
+  [FieldType.RESIDENT_LOCATION_LICENSING]: msg`Location Licensing Settings`,
+  [FieldType.RESIDENT_LOCATION_LICENSING_NAME]: msg`Location Licensing Name Settings`,
+  [FieldType.RESIDENT_LOCATION_ADMINISTRATOR_NAME]: msg`Location Admin Name Settings`,
+  [FieldType.RESIDENT_LOCATION_ADMINISTRATOR_PHONE]: msg`Location Admin Phone Settings`,
 };
 
 export type EmbedAddTemplateFieldsFormProps = {
@@ -423,249 +417,250 @@ export const EmbedAddTemplateFieldsFormPartial = ({
             className="mb-4"
           />
 
-          <div className="-mx-2 flex-1 px-2">
-            <fieldset disabled={isFieldsDisabled} className="my-2 grid grid-cols-3 gap-4">
-              <FieldButton
-                type={FieldType.SIGNATURE}
-                selectedField={selectedField}
-                onSelect={setSelectedField}
-                label={<Trans>Signature</Trans>}
-                className="font-signature text-[16px]"
-              />
+          <div className="flex h-full flex-col">
+            <Tabs defaultValue="default" className="w-full">
+              <TabsList className="mb-3 flex h-[120px] w-full flex-col gap-1 sm:h-auto sm:flex-row sm:items-center sm:justify-center">
+                <TabsTrigger className="w-full sm:w-auto" value="default">
+                  <Trans>Main Fields</Trans>
+                </TabsTrigger>
 
-              <FieldButton
-                type={FieldType.INITIALS}
-                selectedField={selectedField}
-                onSelect={setSelectedField}
-                icon={Contact}
-                label="Initials"
-              />
+                <TabsTrigger className="w-full sm:w-auto" value="resident">
+                  <Trans>Resident Fields</Trans>
+                </TabsTrigger>
 
-              <FieldButton
-                type={FieldType.EMAIL}
-                selectedField={selectedField}
-                onSelect={setSelectedField}
-                icon={Mail}
-                label={<Trans>Email</Trans>}
-              />
+                <TabsTrigger className="w-full sm:w-auto" value="resident-location">
+                  <Trans>Location Fields</Trans>
+                </TabsTrigger>
+              </TabsList>
 
-              <FieldButton
-                type={FieldType.NAME}
-                selectedField={selectedField}
-                onSelect={setSelectedField}
-                icon={User}
-                label={<Trans>Name</Trans>}
-              />
+              <TabsContent value="default">
+                <fieldset disabled={isFieldsDisabled} className="my-2 grid grid-cols-3 gap-4">
+                  <FieldButton
+                    type={FieldType.SIGNATURE}
+                    selectedField={selectedField}
+                    onSelect={setSelectedField}
+                    label={<Trans>Signature</Trans>}
+                    className="font-signature text-[16px]"
+                  />
 
-              <FieldButton
-                type={FieldType.DATE}
-                selectedField={selectedField}
-                onSelect={setSelectedField}
-                icon={CalendarDays}
-                label={<Trans>Date</Trans>}
-              />
+                  <FieldButton
+                    type={FieldType.INITIALS}
+                    selectedField={selectedField}
+                    onSelect={setSelectedField}
+                    icon={Contact}
+                    label="Initials"
+                  />
 
-              <FieldButton
-                type={FieldType.CALENDAR}
-                selectedField={selectedField}
-                onSelect={setSelectedField}
-                icon={CalendarDays}
-                label={<Trans>Calendar</Trans>}
-              />
+                  <FieldButton
+                    type={FieldType.EMAIL}
+                    selectedField={selectedField}
+                    onSelect={setSelectedField}
+                    icon={Mail}
+                    label={<Trans>Email</Trans>}
+                  />
 
-              <FieldButton
-                type={FieldType.TEXT}
-                selectedField={selectedField}
-                onSelect={setSelectedField}
-                icon={Type}
-                label={<Trans>Text</Trans>}
-              />
+                  <FieldButton
+                    type={FieldType.NAME}
+                    selectedField={selectedField}
+                    onSelect={setSelectedField}
+                    icon={User}
+                    label={<Trans>Name</Trans>}
+                  />
 
-              <FieldButton
-                type={FieldType.NUMBER}
-                selectedField={selectedField}
-                onSelect={setSelectedField}
-                icon={Hash}
-                label={<Trans>Number</Trans>}
-              />
+                  <FieldButton
+                    type={FieldType.DATE}
+                    selectedField={selectedField}
+                    onSelect={setSelectedField}
+                    icon={CalendarDays}
+                    label={<Trans>Date</Trans>}
+                  />
 
-              <FieldButton
-                type={FieldType.RADIO}
-                selectedField={selectedField}
-                onSelect={setSelectedField}
-                icon={Disc}
-                label="Radio"
-              />
+                  <FieldButton
+                    type={FieldType.CALENDAR}
+                    selectedField={selectedField}
+                    onSelect={setSelectedField}
+                    icon={CalendarDays}
+                    label={<Trans>Calendar</Trans>}
+                  />
 
-              <FieldButton
-                type={FieldType.CHECKBOX}
-                selectedField={selectedField}
-                onSelect={setSelectedField}
-                icon={CheckSquare}
-                label="Checkbox"
-              />
+                  <FieldButton
+                    type={FieldType.TEXT}
+                    selectedField={selectedField}
+                    onSelect={setSelectedField}
+                    icon={Type}
+                    label={<Trans>Text</Trans>}
+                  />
 
-              <FieldButton
-                type={FieldType.DROPDOWN}
-                selectedField={selectedField}
-                onSelect={setSelectedField}
-                icon={ChevronDown}
-                label={<Trans>Dropdown</Trans>}
-              />
-            </fieldset>
+                  <FieldButton
+                    type={FieldType.NUMBER}
+                    selectedField={selectedField}
+                    onSelect={setSelectedField}
+                    icon={Hash}
+                    label={<Trans>Number</Trans>}
+                  />
 
-            <div className="flex flex-col gap-1 pt-2">
-              <Separator />
-              <div className="mt-2 flex items-start gap-2">
-                <Info className="mt-0.5 h-4 w-4 shrink-0 items-center text-zinc-400" />
-                <span className="inline-flex max-w-full px-1.5 py-0.5 text-sm leading-snug text-zinc-700">
-                  Resident fields will auto-fill when the document is sent
-                </span>
-              </div>
-              <Accordion type="single" collapsible>
-                <AccordionItem value="resident-fields">
-                  <AccordionTrigger>
-                    <Label>Resident Fields</Label>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <fieldset disabled={isFieldsDisabled} className="grid grid-cols-2 gap-4">
-                      <FieldButton
-                        type={FieldType.RESIDENT_FIRST_NAME}
-                        selectedField={selectedField}
-                        onSelect={setSelectedField}
-                        icon={User}
-                        label={<Trans>First Name</Trans>}
-                      />
+                  <FieldButton
+                    type={FieldType.RADIO}
+                    selectedField={selectedField}
+                    onSelect={setSelectedField}
+                    icon={Disc}
+                    label="Radio"
+                  />
 
-                      <FieldButton
-                        type={FieldType.RESIDENT_LAST_NAME}
-                        selectedField={selectedField}
-                        onSelect={setSelectedField}
-                        icon={User}
-                        label={<Trans>Last Name</Trans>}
-                      />
+                  <FieldButton
+                    type={FieldType.CHECKBOX}
+                    selectedField={selectedField}
+                    onSelect={setSelectedField}
+                    icon={CheckSquare}
+                    label="Checkbox"
+                  />
 
-                      <FieldButton
-                        type={FieldType.RESIDENT_DOB}
-                        selectedField={selectedField}
-                        onSelect={setSelectedField}
-                        icon={CalendarDays}
-                        label={<Trans>Date of Birth</Trans>}
-                      />
+                  <FieldButton
+                    type={FieldType.DROPDOWN}
+                    selectedField={selectedField}
+                    onSelect={setSelectedField}
+                    icon={ChevronDown}
+                    label={<Trans>Dropdown</Trans>}
+                  />
+                </fieldset>
+              </TabsContent>
 
-                      <FieldButton
-                        type={FieldType.RESIDENT_GENDER_IDENTITY}
-                        selectedField={selectedField}
-                        onSelect={setSelectedField}
-                        icon={UserCircle2}
-                        label={<Trans>Gender Identity</Trans>}
-                      />
-                    </fieldset>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            </div>
+              <TabsContent value="resident">
+                <>
+                  <fieldset disabled={isFieldsDisabled} className="grid grid-cols-2 gap-4">
+                    <FieldButton
+                      type={FieldType.RESIDENT_FIRST_NAME}
+                      selectedField={selectedField}
+                      onSelect={setSelectedField}
+                      icon={User}
+                      label={<Trans>First Name</Trans>}
+                    />
 
-            <div className="mt-3 flex flex-col gap-2">
-              <Accordion type="single" collapsible>
-                <AccordionItem value="resident-location-fields">
-                  <AccordionTrigger>
-                    <Label>Resident Location Fields</Label>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <fieldset disabled={isFieldsDisabled} className="grid gap-4 sm:grid-cols-2">
-                      <FieldButton
-                        type={FieldType.RESIDENT_LOCATION_NAME}
-                        selectedField={selectedField}
-                        onSelect={setSelectedField}
-                        icon={Building}
-                        label={<Trans>Location Name</Trans>}
-                      />
+                    <FieldButton
+                      type={FieldType.RESIDENT_LAST_NAME}
+                      selectedField={selectedField}
+                      onSelect={setSelectedField}
+                      icon={User}
+                      label={<Trans>Last Name</Trans>}
+                    />
 
-                      <FieldButton
-                        type={FieldType.RESIDENT_LOCATION_STATE}
-                        selectedField={selectedField}
-                        onSelect={setSelectedField}
-                        icon={Flag}
-                        label={<Trans>State</Trans>}
-                      />
+                    <FieldButton
+                      type={FieldType.RESIDENT_DOB}
+                      selectedField={selectedField}
+                      onSelect={setSelectedField}
+                      icon={CalendarDays}
+                      label={<Trans>Date of Birth</Trans>}
+                    />
 
-                      <FieldButton
-                        type={FieldType.RESIDENT_LOCATION_ADDRESS}
-                        selectedField={selectedField}
-                        onSelect={setSelectedField}
-                        icon={Home}
-                        label={<Trans>Address</Trans>}
-                      />
+                    <FieldButton
+                      type={FieldType.RESIDENT_GENDER_IDENTITY}
+                      selectedField={selectedField}
+                      onSelect={setSelectedField}
+                      icon={UserCircle2}
+                      label={<Trans>Gender Identity</Trans>}
+                    />
+                  </fieldset>
+                  <div className="mb-1 mt-2 flex items-start gap-1">
+                    <Info className="mt-0.5 h-4 w-4 shrink-0 items-center text-zinc-400" />
+                    <span className="inline-flex max-w-full py-0.5 text-sm leading-snug text-zinc-700">
+                      These fields will auto-fill when the document is sent.
+                    </span>
+                  </div>
+                </>
+              </TabsContent>
 
-                      <FieldButton
-                        type={FieldType.RESIDENT_LOCATION_CITY}
-                        selectedField={selectedField}
-                        onSelect={setSelectedField}
-                        icon={Building}
-                        label={<Trans>City</Trans>}
-                      />
+              <TabsContent value="resident-location">
+                <fieldset disabled={isFieldsDisabled} className="grid gap-4 sm:grid-cols-2">
+                  <FieldButton
+                    type={FieldType.RESIDENT_LOCATION_NAME}
+                    selectedField={selectedField}
+                    onSelect={setSelectedField}
+                    icon={Building}
+                    label={<Trans>Location Name</Trans>}
+                  />
 
-                      <FieldButton
-                        type={FieldType.RESIDENT_LOCATION_ZIP_CODE}
-                        selectedField={selectedField}
-                        onSelect={setSelectedField}
-                        icon={Hash}
-                        label={<Trans>ZIP Code</Trans>}
-                      />
+                  <FieldButton
+                    type={FieldType.RESIDENT_LOCATION_STATE}
+                    selectedField={selectedField}
+                    onSelect={setSelectedField}
+                    icon={Flag}
+                    label={<Trans>State</Trans>}
+                  />
 
-                      <FieldButton
-                        type={FieldType.RESIDENT_LOCATION_COUNTRY}
-                        selectedField={selectedField}
-                        onSelect={setSelectedField}
-                        icon={MapPin}
-                        label={<Trans>Country</Trans>}
-                      />
+                  <FieldButton
+                    type={FieldType.RESIDENT_LOCATION_ADDRESS}
+                    selectedField={selectedField}
+                    onSelect={setSelectedField}
+                    icon={Home}
+                    label={<Trans>Address</Trans>}
+                  />
 
-                      <FieldButton
-                        type={FieldType.RESIDENT_LOCATION_FAX}
-                        selectedField={selectedField}
-                        onSelect={setSelectedField}
-                        icon={Printer}
-                        label={<Trans>Fax</Trans>}
-                      />
+                  <FieldButton
+                    type={FieldType.RESIDENT_LOCATION_CITY}
+                    selectedField={selectedField}
+                    onSelect={setSelectedField}
+                    icon={Building}
+                    label={<Trans>City</Trans>}
+                  />
 
-                      <FieldButton
-                        type={FieldType.RESIDENT_LOCATION_LICENSING}
-                        selectedField={selectedField}
-                        onSelect={setSelectedField}
-                        icon={Clipboard}
-                        label={<Trans>Licensing</Trans>}
-                      />
+                  <FieldButton
+                    type={FieldType.RESIDENT_LOCATION_ZIP_CODE}
+                    selectedField={selectedField}
+                    onSelect={setSelectedField}
+                    icon={Hash}
+                    label={<Trans>ZIP Code</Trans>}
+                  />
 
-                      <FieldButton
-                        type={FieldType.RESIDENT_LOCATION_LICENSING_NAME}
-                        selectedField={selectedField}
-                        onSelect={setSelectedField}
-                        icon={UserCircle2}
-                        label={<Trans>Licensing Name</Trans>}
-                      />
+                  <FieldButton
+                    type={FieldType.RESIDENT_LOCATION_COUNTRY}
+                    selectedField={selectedField}
+                    onSelect={setSelectedField}
+                    icon={MapPin}
+                    label={<Trans>Country</Trans>}
+                  />
 
-                      <FieldButton
-                        type={FieldType.RESIDENT_LOCATION_ADMINISTRATOR_NAME}
-                        selectedField={selectedField}
-                        onSelect={setSelectedField}
-                        icon={UserCheck}
-                        label={<Trans>Administrator Name</Trans>}
-                      />
+                  <FieldButton
+                    type={FieldType.RESIDENT_LOCATION_FAX}
+                    selectedField={selectedField}
+                    onSelect={setSelectedField}
+                    icon={Printer}
+                    label={<Trans>Fax</Trans>}
+                  />
 
-                      <FieldButton
-                        type={FieldType.RESIDENT_LOCATION_ADMINISTRATOR_PHONE}
-                        selectedField={selectedField}
-                        onSelect={setSelectedField}
-                        icon={Phone}
-                        label={<Trans>Administrator Phone</Trans>}
-                      />
-                    </fieldset>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            </div>
+                  <FieldButton
+                    type={FieldType.RESIDENT_LOCATION_LICENSING}
+                    selectedField={selectedField}
+                    onSelect={setSelectedField}
+                    icon={Clipboard}
+                    label={<Trans>Licensing</Trans>}
+                  />
+
+                  <FieldButton
+                    type={FieldType.RESIDENT_LOCATION_LICENSING_NAME}
+                    selectedField={selectedField}
+                    onSelect={setSelectedField}
+                    icon={UserCircle2}
+                    label={<Trans>Licensing Name</Trans>}
+                  />
+
+                  <FieldButton
+                    type={FieldType.RESIDENT_LOCATION_ADMINISTRATOR_NAME}
+                    selectedField={selectedField}
+                    onSelect={setSelectedField}
+                    icon={UserCheck}
+                    label={<Trans>Admin Name</Trans>}
+                  />
+
+                  <FieldButton
+                    type={FieldType.RESIDENT_LOCATION_ADMINISTRATOR_PHONE}
+                    selectedField={selectedField}
+                    onSelect={setSelectedField}
+                    icon={Phone}
+                    label={<Trans>Admin Phone</Trans>}
+                  />
+                </fieldset>
+              </TabsContent>
+            </Tabs>
           </div>
 
           <AnimateGenericFadeInOut key={editorFields.selectedField?.formId}>
@@ -913,7 +908,7 @@ const FieldButton = ({
           'flex h-full w-full cursor-pointer items-center justify-center group-disabled:opacity-50',
         )}
       >
-        <CardContent className="flex flex-col items-center justify-center px-6 py-[10px]">
+        <CardContent className="flex flex-col items-center justify-center px-5 py-[10px]">
           <p
             className={cn(
               'flex items-center justify-center gap-x-1.5 text-sm font-normal text-muted-foreground group-data-[selected]:text-foreground',

@@ -250,7 +250,7 @@ function ClientInner({ envelopeId, initialEnvelope }: ClientInnerProps) {
       </main>
 
       <aside className="flex w-full max-w-md flex-col border-l bg-background shadow-2xl lg:w-[550px] xl:max-w-lg 2xl:max-w-xl">
-        <div className="flex h-full flex-col overflow-y-auto p-4">
+        <div className="flex h-full flex-col overflow-y-auto p-3">
           <DocumentFlowFormContainer
             className="flex flex-1 flex-col gap-6 py-4"
             onSubmit={(e) => e.preventDefault()}
