@@ -82,8 +82,8 @@ const FieldSettingsTypeTranslations: Record<FieldType, MessageDescriptor> = {
   [FieldType.RESIDENT_LOCATION_FAX]: msg`Fax Settings`,
   [FieldType.RESIDENT_LOCATION_LICENSING]: msg`Licensing Settings`,
   [FieldType.RESIDENT_LOCATION_LICENSING_NAME]: msg`Licensing Name Settings`,
-  [FieldType.RESIDENT_LOCATION_ADMINISTRATOR_NAME]: msg`Administrator Name Settings`,
-  [FieldType.RESIDENT_LOCATION_ADMINISTRATOR_PHONE]: msg`Administrator Phone Settings`,
+  [FieldType.RESIDENT_LOCATION_ADMINISTRATOR_NAME]: msg`Admin Name Settings`,
+  [FieldType.RESIDENT_LOCATION_ADMINISTRATOR_PHONE]: msg`Admin Phone Settings`,
 };
 
 export const EnvelopeEditorFieldsPage = () => {

@@ -127,7 +127,7 @@ export const getClientSideFieldTranslations = ({ t }: I18n): Record<FieldType, s
     [FieldType.RESIDENT_LOCATION_FAX]: t(msg`Fax`),
     [FieldType.RESIDENT_LOCATION_LICENSING]: t(msg`Licensing`),
     [FieldType.RESIDENT_LOCATION_LICENSING_NAME]: t(msg`Licensing Name`),
-    [FieldType.RESIDENT_LOCATION_ADMINISTRATOR_NAME]: t(msg`Administrator Name`),
-    [FieldType.RESIDENT_LOCATION_ADMINISTRATOR_PHONE]: t(msg`Administrator Phone`),
+    [FieldType.RESIDENT_LOCATION_ADMINISTRATOR_NAME]: t(msg`Admin Name`),
+    [FieldType.RESIDENT_LOCATION_ADMINISTRATOR_PHONE]: t(msg`Admin Phone`),
   };
 };
