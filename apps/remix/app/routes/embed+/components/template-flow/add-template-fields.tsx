@@ -417,9 +417,9 @@ export const EmbedAddTemplateFieldsFormPartial = ({
             className="mb-4"
           />
 
-          <div className="-mx-2 flex-1 px-2">
+          <div className="flex h-full flex-col">
             <Tabs defaultValue="default" className="w-full">
-              <TabsList className="mb-4 flex w-full flex-col items-stretch gap-1 sm:flex-row sm:items-center sm:justify-start">
+              <TabsList className="mb-3 flex h-[120px] w-full flex-col gap-1 sm:h-auto sm:flex-row sm:items-center sm:justify-center">
                 <TabsTrigger className="w-full sm:w-auto" value="default">
                   <Trans>Main Fields</Trans>
                 </TabsTrigger>
