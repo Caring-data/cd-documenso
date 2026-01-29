@@ -36,7 +36,7 @@ export type ClientProps = {
   initialEnvelope: TEnvelope;
 };
 
-export function Client({ envelopeId, externalId: _externalId, initialEnvelope }: ClientProps) {
+export function Client({ envelopeId, externalId, initialEnvelope }: ClientProps) {
   return (
     <EmbedTemplateEditorProvider initialEnvelope={initialEnvelope}>
       <EnvelopeRenderProvider
@@ -45,7 +45,11 @@ export function Client({ envelopeId, externalId: _externalId, initialEnvelope }:
         fields={initialEnvelope.fields}
         recipients={initialEnvelope.recipients}
       >
-        <ClientInner envelopeId={envelopeId} initialEnvelope={initialEnvelope} />
+        <ClientInner
+          envelopeId={envelopeId}
+          externalId={externalId}
+          initialEnvelope={initialEnvelope}
+        />
       </EnvelopeRenderProvider>
     </EmbedTemplateEditorProvider>
   );
@@ -53,10 +57,11 @@ export function Client({ envelopeId, externalId: _externalId, initialEnvelope }:
 
 type ClientInnerProps = {
   envelopeId: string;
+  externalId: string;
   initialEnvelope: TEnvelope;
 };
 
-function ClientInner({ envelopeId, initialEnvelope }: ClientInnerProps) {
+function ClientInner({ envelopeId, externalId, initialEnvelope }: ClientInnerProps) {
   const { t } = useLingui();
   const { toast } = useToast();
   const { revalidate } = useRevalidator();
@@ -75,7 +80,7 @@ function ClientInner({ envelopeId, initialEnvelope }: ClientInnerProps) {
   }, []);
 
   const { mutateAsync: updateTemplateSettings, isPending: _isPending } =
-    trpc.template.updateTemplateSettings.useMutation({
+    trpc.template.updateTemplateSettingsByExternalId.useMutation({
       onSuccess: async (data) => {
         await revalidate();
 
@@ -113,7 +118,7 @@ function ClientInner({ envelopeId, initialEnvelope }: ClientInnerProps) {
       },
     });
 
-  const { mutateAsync: setEnvelopeFields } = trpc.envelope.field.set.useMutation({
+  const { mutateAsync: setEnvelopeFields } = trpc.envelope.field.setByExternalId.useMutation({
     onSuccess: () => {
       toast({
         title: t`Success`,
@@ -177,7 +182,7 @@ function ClientInner({ envelopeId, initialEnvelope }: ClientInnerProps) {
       });
 
       await updateTemplateSettings({
-        envelopeId,
+        externalId,
         title: data.title,
         recipients: mappedRecipients,
       });
@@ -207,8 +212,7 @@ function ClientInner({ envelopeId, initialEnvelope }: ClientInnerProps) {
       });
 
       await setEnvelopeFields({
-        envelopeId: initialEnvelope.id,
-        envelopeType: initialEnvelope.type,
+        externalId,
         fields: fields,
       });
     } catch (error) {

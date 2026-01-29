@@ -25,6 +25,7 @@ import { getEnvelopeItemsByTokenRoute } from './get-envelope-items-by-token';
 import { getResidentInfoRoute } from './get-resident-info';
 import { redistributeEnvelopeRoute } from './redistribute-envelope';
 import { setEnvelopeFieldsRoute } from './set-envelope-fields';
+import { setEnvelopeFieldsByExternalIdRoute } from './set-envelope-fields-by-external-id';
 import { setEnvelopeRecipientsRoute } from './set-envelope-recipients';
 import { signEnvelopeFieldRoute } from './sign-envelope-field';
 import { signingStatusEnvelopeRoute } from './signing-status-envelope';
@@ -65,6 +66,7 @@ export const envelopeRouter = router({
     updateMany: updateEnvelopeFieldsRoute,
     delete: deleteEnvelopeFieldRoute,
     set: setEnvelopeFieldsRoute,
+    setByExternalId: setEnvelopeFieldsByExternalIdRoute,
     sign: signEnvelopeFieldRoute,
   },
   auditLog: {
