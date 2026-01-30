@@ -273,10 +273,15 @@ export const AddTemplateSettingsFormPartial = ({
                 <FormField
                   control={form.control}
                   name={`recipients.${index}.role`}
-                  render={({ field: formField }) => (
+                  render={({ field }) => (
                     <FormItem>
                       <FormControl>
-                        <RecipientRoleSelect {...formField} hideAssistant />
+                        <RecipientRoleSelect
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          showAdvancedRoles={false}
+                          hideAssistant
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
