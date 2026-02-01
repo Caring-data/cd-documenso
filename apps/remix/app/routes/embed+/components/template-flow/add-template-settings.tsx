@@ -7,6 +7,7 @@ import { Plus, Trash } from 'lucide-react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
+import { useGetContactCategories } from '@documenso/lib/client-only/hooks/use-get-contact-categories';
 import type { TEnvelope } from '@documenso/lib/types/envelope';
 import { ZRecipientEmailSchema } from '@documenso/lib/types/recipient';
 import { generateRecipientPlaceholder } from '@documenso/lib/utils/templates';
@@ -29,6 +30,15 @@ import {
   FormMessage,
 } from '@documenso/ui/primitives/form/form';
 import { Input } from '@documenso/ui/primitives/input';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '@documenso/ui/primitives/select';
 import { Separator } from '@documenso/ui/primitives/separator';
 import { useStep } from '@documenso/ui/primitives/stepper';
 
@@ -39,6 +49,7 @@ const ZAddTemplateSettingsFormSchema = z.object({
       id: z.number().optional(),
       formId: z.string().min(1),
       name: z.string().min(1, { message: 'Name is required' }),
+      contactCategoryKey: z.string().optional(),
       email: ZRecipientEmailSchema,
       role: z.nativeEnum(RecipientRole),
       signingOrder: z.number().optional(),
@@ -64,6 +75,8 @@ export const AddTemplateSettingsFormPartial = ({
 }: AddTemplateSettingsFormProps) => {
   const { t } = useLingui();
 
+  const { data: categories } = useGetContactCategories();
+
   const generateDefaultRecipients = () => {
     if (envelope.recipients.length === 0) {
       const placeholder = generateRecipientPlaceholder(1);
@@ -72,6 +85,7 @@ export const AddTemplateSettingsFormPartial = ({
           formId: 'recipient-new-1',
           name: 'Recipient 1',
           email: placeholder.email,
+          contactCategoryKey: undefined,
           role: RecipientRole.SIGNER,
           signingOrder: 1,
         },
@@ -142,6 +156,7 @@ export const AddTemplateSettingsFormPartial = ({
       email,
       role: recipient.role,
       signingOrder: recipient.signingOrder ?? 0,
+      contactCategoryKey: recipient.contactCategoryKey ?? null,
     };
   };
 
@@ -168,7 +183,8 @@ export const AddTemplateSettingsFormPartial = ({
         currentRecipient.name !== initialRecipient.name ||
         currentRecipient.email !== initialRecipient.email ||
         currentRecipient.role !== initialRecipient.role ||
-        currentRecipient.signingOrder !== initialRecipient.signingOrder
+        currentRecipient.signingOrder !== initialRecipient.signingOrder ||
+        currentRecipient.contactCategoryKey !== initialRecipient.contactCategoryKey
       ) {
         return true;
       }
@@ -215,6 +231,7 @@ export const AddTemplateSettingsFormPartial = ({
       return {
         ...recipient,
         email,
+        contactCategoryKey: recipient.contactCategoryKey,
       };
     });
 
@@ -256,50 +273,86 @@ export const AddTemplateSettingsFormPartial = ({
               </Trans>
             </p>
 
-            {fields.map((field, index) => (
-              <div key={field.id} className="flex items-center gap-2">
-                <FormField
-                  control={form.control}
-                  name={`recipients.${index}.name`}
-                  render={({ field: formField }) => (
-                    <FormItem className="flex-1">
-                      <FormControl>
-                        <Input disabled {...formField} className="bg-muted" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+            {fields.map((field, index) => {
+              return (
+                <div key={field.id} className="flex items-center gap-2">
+                  <FormField
+                    control={form.control}
+                    name={`recipients.${index}.contactCategoryKey`}
+                    render={({ field: selectField }) => {
+                      const categoryName = categories?.find(
+                        (c) => c.key === selectField.value,
+                      )?.name;
+
+                      return (
+                        <FormItem className="flex-1">
+                          <FormControl>
+                            <Select
+                              value={selectField.value || ''}
+                              onValueChange={(value) => {
+                                selectField.onChange(value === '' ? undefined : value);
+                              }}
+                            >
+                              <SelectTrigger className="truncate bg-white">
+                                <SelectValue placeholder={`Recipient ${index + 1} - Select`}>
+                                  {selectField.value && categoryName
+                                    ? `Recipient ${index + 1} - ${categoryName}`
+                                    : undefined}
+                                </SelectValue>
+                              </SelectTrigger>
+
+                              <SelectContent>
+                                <SelectGroup>
+                                  <SelectLabel>
+                                    <Trans>Category</Trans>
+                                  </SelectLabel>
+
+                                  {categories?.map((category) => (
+                                    <SelectItem key={category.key} value={category.key}>
+                                      {category.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectGroup>
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      );
+                    }}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name={`recipients.${index}.role`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <RecipientRoleSelect
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            showAdvancedRoles={false}
+                            hideAssistant
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  {fields.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => remove(index)}
+                      className="h-10 w-10 p-0"
+                    >
+                      <Trash className="h-4 w-4" />
+                    </Button>
                   )}
-                />
-                <FormField
-                  control={form.control}
-                  name={`recipients.${index}.role`}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <RecipientRoleSelect
-                          value={field.value}
-                          onValueChange={field.onChange}
-                          showAdvancedRoles={false}
-                          hideAssistant
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                {fields.length > 1 && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => remove(index)}
-                    className="h-10 w-10 p-0"
-                  >
-                    <Trash className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-            ))}
+                </div>
+              );
+            })}
 
             <Button type="button" variant="outline" onClick={handleAddRecipient} className="w-full">
               <Plus className="mr-2 h-4 w-4" />

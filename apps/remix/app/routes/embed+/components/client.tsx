@@ -153,6 +153,7 @@ function ClientInner({ envelopeId, initialEnvelope }: ClientInnerProps) {
       email: string;
       role: RecipientRole;
       signingOrder?: number;
+      contactCategoryKey?: string;
       actionAuth?: TRecipientActionAuthTypes[];
     }>;
   }) => {
@@ -173,6 +174,7 @@ function ClientInner({ envelopeId, initialEnvelope }: ClientInnerProps) {
           role: recipient.role,
           signingOrder: recipient.signingOrder,
           actionAuth: recipient.actionAuth,
+          contactCategoryKey: recipient.contactCategoryKey ?? null,
         };
       });
 
@@ -183,6 +185,7 @@ function ClientInner({ envelopeId, initialEnvelope }: ClientInnerProps) {
       });
     } catch (error) {
       console.error('Error updating template settings:', error);
+      throw error;
     }
   };
 

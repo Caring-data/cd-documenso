@@ -864,6 +864,7 @@ export const EmbedAddTemplateFieldsFormPartial = ({
         <DocumentFlowFormContainerActions
           loading={false}
           disabled={false}
+          goNextLabel={msg`Save Template`}
           disableNextStep={hasErrors}
           canGoBack={stepIndex !== 0}
           onGoBackClick={previousStep}

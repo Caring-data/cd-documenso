@@ -8,6 +8,7 @@ export type CaringDataSigner = {
   email: string;
   role: CaringDataRecipientRole;
   signingOrder?: number | null;
+  contactCategoryKey?: string | null;
 };
 
 export type UpdateTemplateSettingsRequest = {
