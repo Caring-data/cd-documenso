@@ -81,6 +81,8 @@ import { EditorFieldSignatureForm } from '~/components/forms/editor/editor-field
 import { EditorFieldTextForm } from '~/components/forms/editor/editor-field-text-form';
 
 import { useCurrentEmbedTemplateEditor } from '../providers/embed-template-editor-provider';
+import { useGetContactCategories } from '@documenso/lib/client-only/hooks/use-get-contact-categories';
+import { useGetTemplateRecipients } from '@documenso/lib/client-only/hooks/use-get-template-recipients';
 
 const MIN_HEIGHT_PX = 12;
 const MIN_WIDTH_PX = 36;
@@ -131,6 +133,9 @@ export const EmbedAddTemplateFieldsFormPartial = ({
   const { envelope, editorFields, getRecipientColorKey } = useCurrentEmbedTemplateEditor();
   const { currentEnvelopeItem } = useCurrentEnvelopeRender();
 
+  const { data: categories } = useGetContactCategories();
+  const { data: recipientsFromApi } = useGetTemplateRecipients(envelope.formKey ?? undefined);
+
   const recipients = envelope.recipients;
   const { stepIndex, currentStep, totalSteps, previousStep } = useStep();
 
@@ -173,6 +178,14 @@ export const EmbedAddTemplateFieldsFormPartial = ({
         }
         return true;
       });
+
+  const getCategoryName = useCallback(
+    (key?: string | null) => {
+      if (!key) return null;
+      return categories?.find((c) => c.key === key)?.name ?? key;
+    },
+    [categories],
+  );
 
   const emptyCheckboxFields = useMemo(
     () => filterFieldsWithEmptyValues(editorFields.localFields, FieldType.CHECKBOX),
@@ -381,6 +394,40 @@ export const EmbedAddTemplateFieldsFormPartial = ({
     await onSubmit();
   };
 
+  const mergedRecipients = useMemo(() => {
+    if (!recipientsFromApi?.length) return recipients;
+
+    const apiByEmail = new Map(
+      recipientsFromApi.map((r) => [r.email?.toLowerCase(), r]),
+    );
+
+    return recipients.map((r) => {
+      const api = apiByEmail.get(r.email?.toLowerCase());
+      return {
+        ...r,
+        contactCategoryKey: api?.contactCategoryKey ?? (r as any).contactCategoryKey ?? null,
+      };
+    });
+  }, [recipients, recipientsFromApi]);
+
+  const recipientsForSelector = useMemo(() => {
+    return mergedRecipients.map((r, index) => {
+      const baseName = r.name?.trim() || `Recipient ${index + 1}`;
+      const categoryName = getCategoryName((r as any).contactCategoryKey);
+
+      return {
+        ...r,
+        name: baseName,
+        email: categoryName ?? r.email,
+      };
+    });
+  }, [mergedRecipients, getCategoryName]);
+
+  const selectedSignerForSelector = useMemo(() => {
+    if (!selectedSigner) return null;
+    return recipientsForSelector.find((r) => r.id === selectedSigner.id) ?? null;
+  }, [selectedSigner, recipientsForSelector]);
+
   return (
     <div className="flex h-full flex-col">
       <DocumentFlowFormContainerHeader title={flowStep.title} description={flowStep.description} />
@@ -411,9 +458,11 @@ export const EmbedAddTemplateFieldsFormPartial = ({
           )}
 
           <RecipientSelector
-            selectedRecipient={selectedSigner}
-            onSelectedRecipientChange={handleRecipientChange}
-            recipients={recipients}
+            selectedRecipient={selectedSignerForSelector}
+            onSelectedRecipientChange={(r) => {
+              handleRecipientChange(r);
+            }}
+            recipients={recipientsForSelector}
             className="mb-4"
           />
 

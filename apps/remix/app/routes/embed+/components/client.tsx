@@ -89,6 +89,7 @@ function ClientInner({ envelopeId, initialEnvelope }: ClientInnerProps) {
             readStatus: ReadStatus.NOT_OPENED,
             signingStatus: SigningStatus.NOT_SIGNED,
             sendStatus: SendStatus.NOT_SENT,
+            formKey: envelope.formKey,
             documentDeletedAt: null,
             expired: null,
             signedAt: null,

@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Trans, useLingui } from '@lingui/react/macro';
@@ -8,6 +8,7 @@ import { useFieldArray, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 import { useGetContactCategories } from '@documenso/lib/client-only/hooks/use-get-contact-categories';
+import { useGetTemplateRecipients } from '@documenso/lib/client-only/hooks/use-get-template-recipients';
 import type { TEnvelope } from '@documenso/lib/types/envelope';
 import { ZRecipientEmailSchema } from '@documenso/lib/types/recipient';
 import { generateRecipientPlaceholder } from '@documenso/lib/utils/templates';
@@ -76,6 +77,7 @@ export const AddTemplateSettingsFormPartial = ({
   const { t } = useLingui();
 
   const { data: categories } = useGetContactCategories();
+  const { data: recipientsFromApi } = useGetTemplateRecipients(envelope.formKey ?? undefined);
 
   const generateDefaultRecipients = () => {
     if (envelope.recipients.length === 0) {
@@ -129,6 +131,17 @@ export const AddTemplateSettingsFormPartial = ({
   });
 
   const { stepIndex, currentStep, totalSteps, previousStep, nextStep } = useStep();
+
+  useEffect(() => {
+    if (!recipientsFromApi) return;
+
+    recipientsFromApi.forEach((apiRecipient, index) => {
+      form.setValue(
+        `recipients.${index}.contactCategoryKey`,
+        apiRecipient.contactCategoryKey ?? undefined,
+      );
+    });
+  }, [recipientsFromApi]);
 
   const handleAddRecipient = () => {
     const nextIndex = fields.length + 1;
