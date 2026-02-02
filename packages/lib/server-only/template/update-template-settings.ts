@@ -1,10 +1,10 @@
-import { EnvelopeType, RecipientRole } from '@prisma/client';
+import type { RecipientRole } from '@prisma/client';
+import { EnvelopeType } from '@prisma/client';
 
 import { prisma } from '@documenso/prisma';
 
 import { AppError, AppErrorCode } from '../../errors/app-error';
 import type { TRecipientActionAuthTypes } from '../../types/document-auth';
-import type { EnvelopeIdOptions } from '../../utils/envelope';
 import {
   updateTemplateSettings as updateCaringDataTemplateSettings,
   updateTemplateSigners as updateCaringDataTemplateSigners,
@@ -25,6 +25,7 @@ export interface UpdateTemplateSettingsOptions {
     role: RecipientRole;
     signingOrder?: number | null;
     actionAuth?: TRecipientActionAuthTypes[];
+    contactCategoryKey?: string | null;
   }[];
 }
 
@@ -79,6 +80,7 @@ export const updateTemplateSettings = async ({
         email: recipient.email,
         role: mapRecipientRoleToCaringData(recipient.role),
         signingOrder: recipient.signingOrder ?? null,
+        contactCategoryKey: recipient.contactCategoryKey ?? null,
       }));
 
       // Update template signers in Caring Data

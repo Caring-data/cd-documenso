@@ -94,6 +94,7 @@ export async function loader({ params }: Route.LoaderArgs) {
     teamId: envelope.teamId,
     folderId: envelope.folderId,
     templateId: envelope.templateId,
+    formKey: envelope.formKey,
     documentMeta: {
       signingOrder: envelope.documentMeta.signingOrder,
       distributionMethod: envelope.documentMeta.distributionMethod,
@@ -153,11 +154,11 @@ export async function loader({ params }: Route.LoaderArgs) {
     })),
     directLink: envelope.directLink
       ? {
-          directTemplateRecipientId: envelope.directLink.directTemplateRecipientId,
-          enabled: envelope.directLink.enabled,
-          id: envelope.directLink.id,
-          token: envelope.directLink.token,
-        }
+        directTemplateRecipientId: envelope.directLink.directTemplateRecipientId,
+        enabled: envelope.directLink.enabled,
+        id: envelope.directLink.id,
+        token: envelope.directLink.token,
+      }
       : null,
     team: {
       id: envelope.team.id,
@@ -188,8 +189,8 @@ export default function EmbedTemplatePage({ loaderData }: Route.ComponentProps) 
 
   const trpcHeaders = teamId
     ? {
-        'x-team-id': teamId.toString(),
-      }
+      'x-team-id': teamId.toString(),
+    }
     : undefined;
 
   return (

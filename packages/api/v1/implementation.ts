@@ -1167,6 +1167,7 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
         data: {
           type: EnvelopeType.TEMPLATE,
           title: fileName,
+          formKey: key,
           envelopeItems: [
             {
               documentDataId: templateDocumentDataId,
