@@ -94,6 +94,7 @@ function ClientInner({ envelopeId, externalId, initialEnvelope }: ClientInnerPro
             readStatus: ReadStatus.NOT_OPENED,
             signingStatus: SigningStatus.NOT_SIGNED,
             sendStatus: SendStatus.NOT_SENT,
+            formKey: envelope.formKey,
             documentDeletedAt: null,
             expired: null,
             signedAt: null,
@@ -158,6 +159,7 @@ function ClientInner({ envelopeId, externalId, initialEnvelope }: ClientInnerPro
       email: string;
       role: RecipientRole;
       signingOrder?: number;
+      contactCategoryKey?: string;
       actionAuth?: TRecipientActionAuthTypes[];
     }>;
   }) => {
@@ -178,6 +180,7 @@ function ClientInner({ envelopeId, externalId, initialEnvelope }: ClientInnerPro
           role: recipient.role,
           signingOrder: recipient.signingOrder,
           actionAuth: recipient.actionAuth,
+          contactCategoryKey: recipient.contactCategoryKey ?? null,
         };
       });
 
@@ -188,6 +191,7 @@ function ClientInner({ envelopeId, externalId, initialEnvelope }: ClientInnerPro
       });
     } catch (error) {
       console.error('Error updating template settings:', error);
+      throw error;
     }
   };
 
