@@ -72,3 +72,12 @@ export const ZGetEnvelopeItemFileTokenDownloadRequestParamsSchema = z.object({
 export type TGetEnvelopeItemFileTokenDownloadRequestParams = z.infer<
   typeof ZGetEnvelopeItemFileTokenDownloadRequestParamsSchema
 >;
+
+export const ZGetEnvelopeItemFileExternalIdRequestParamsSchema = z.object({
+  externalId: z.string().min(1),
+  envelopeItemId: z.string().min(1),
+});
+
+export type TGetEnvelopeItemFileExternalIdRequestParams = z.infer<
+  typeof ZGetEnvelopeItemFileExternalIdRequestParamsSchema
+>;

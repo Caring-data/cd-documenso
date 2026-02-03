@@ -81,6 +81,13 @@ interface EnvelopeRenderProviderProps {
   token: string | undefined;
 
   /**
+   * The external ID to access the envelope (for public embed access).
+   *
+   * If provided, allows unauthenticated access to template PDFs.
+   */
+  externalId?: string | undefined;
+
+  /**
    * Custom override settings for generic page renderers.
    */
   overrideSettings?: EnvelopeRenderOverrideSettings;
@@ -106,6 +113,7 @@ export const EnvelopeRenderProvider = ({
   envelope,
   fields,
   token,
+  externalId,
   recipients = [],
   overrideSettings,
 }: EnvelopeRenderProviderProps) => {
@@ -137,6 +145,7 @@ export const EnvelopeRenderProvider = ({
         type: 'view',
         envelopeItem: envelopeItem,
         token,
+        externalId,
       });
 
       const blob = await fetch(downloadUrl).then(async (res) => res.blob());
