@@ -27,6 +27,7 @@ export const ZUpdateTemplateSettingsByExternalIdRequestSchema = z.object({
       role: z.nativeEnum(RecipientRole),
       signingOrder: z.number().optional().nullable(),
       actionAuth: z.array(ZRecipientActionAuthTypesSchema).optional(),
+      contactCategoryKey: z.string().optional().nullable(),
     }),
   ),
 });
@@ -41,6 +42,7 @@ export const ZUpdateTemplateSettingsByExternalIdResponseSchema = z.object({
       name: z.string(),
       role: z.nativeEnum(RecipientRole),
       signingOrder: z.number().nullable(),
+      contactCategoryKey: z.string().optional().nullable(),
     }),
   ),
 });
