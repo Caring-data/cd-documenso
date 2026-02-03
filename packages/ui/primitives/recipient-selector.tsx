@@ -22,6 +22,8 @@ export interface RecipientSelectorProps {
   onSelectedRecipientChange: (recipient: Recipient) => void;
   recipients: Recipient[];
   align?: 'center' | 'end' | 'start';
+  onOpenChange?: (open: boolean) => void;
+  onTriggerClick?: () => void;
 }
 
 export const RecipientSelector = ({
@@ -30,6 +32,8 @@ export const RecipientSelector = ({
   onSelectedRecipientChange,
   recipients,
   align = 'start',
+  onOpenChange,
+  onTriggerClick,
 }: RecipientSelectorProps) => {
   const { _ } = useLingui();
   const [showRecipientsSelector, setShowRecipientsSelector] = useState(false);
@@ -95,7 +99,12 @@ export const RecipientSelector = ({
   );
 
   return (
-    <Popover open={showRecipientsSelector} onOpenChange={setShowRecipientsSelector}>
+    <Popover
+      open={showRecipientsSelector}
+      onOpenChange={(open) => {
+        setShowRecipientsSelector(open);
+        onOpenChange?.(open);
+      }}>
       <PopoverTrigger asChild>
         <Button
           type="button"
@@ -111,6 +120,12 @@ export const RecipientSelector = ({
             ).comboxBoxTrigger,
             className,
           )}
+          onMouseDown={() => {
+            onTriggerClick?.();
+          }}
+          onClick={() => {
+            onTriggerClick?.();
+          }}
         >
           {selectedRecipient && (
             <span className="flex-1 truncate text-left">
