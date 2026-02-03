@@ -138,21 +138,15 @@ export const run = async ({
   const signDocumentLink = `${NEXT_PUBLIC_WEBAPP_URL()}/sign/${recipient.token}`;
 
   const template = createElement(DocumentInviteEmailTemplate, {
-    documentName: envelope.title,
-    inviterName: user.name || undefined,
     inviterEmail:
       organisationType === OrganisationType.ORGANISATION
         ? team?.teamEmail?.email || user.email
         : user.email,
-    assetBaseUrl,
+    documentName: envelope.title,
     signDocumentLink,
+    assetBaseUrl,
     customBody: renderCustomEmailTemplate(emailMessage, customEmailTemplate),
     role: recipient.role,
-    selfSigner,
-    organisationType,
-    teamName: team?.name,
-    teamEmail: team?.teamEmail?.email,
-    includeSenderDetails: settings.includeSenderDetails,
     recipientName: recipient.name,
     signingContext: envelope.signingContext || {},
     tokenExpiration: recipient.expired ? recipient.expired.toISOString() : undefined,
