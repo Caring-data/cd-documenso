@@ -83,6 +83,8 @@ import { EditorFieldTextForm } from '~/components/forms/editor/editor-field-text
 import { useCurrentEmbedTemplateEditor } from '../providers/embed-template-editor-provider';
 import { useGetContactCategories } from '@documenso/lib/client-only/hooks/use-get-contact-categories';
 import { useGetTemplateRecipients } from '@documenso/lib/client-only/hooks/use-get-template-recipients';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@documenso/ui/primitives/tooltip';
+import { TooltipArrow } from '@radix-ui/react-tooltip';
 
 const MIN_HEIGHT_PX = 12;
 const MIN_WIDTH_PX = 36;
@@ -141,6 +143,9 @@ export const EmbedAddTemplateFieldsFormPartial = ({
 
   const [selectedField, setSelectedField] = useState<FieldType | null>(null);
   const [selectedSigner, setSelectedSigner] = useState<(typeof recipients)[0] | null>(null);
+
+  const [showRecipientHint, setShowRecipientHint] = useState(false);
+  const hasShownRecipientHintRef = useRef(false);
 
   const selectedFieldFromEditor = useMemo(
     () => structuredClone(editorFields.selectedField),
@@ -279,6 +284,13 @@ export const EmbedAddTemplateFieldsFormPartial = ({
     },
     [editorFields, isWithinPageBounds, selectedField, selectedSigner, getPage, currentEnvelopeItem],
   );
+
+  useEffect(() => {
+    if (stepIndex === 1 && !hasShownRecipientHintRef.current) {
+      setShowRecipientHint(true);
+      hasShownRecipientHintRef.current = true;
+    }
+  }, [stepIndex]);
 
   useEffect(() => {
     if (selectedField) {
@@ -428,6 +440,10 @@ export const EmbedAddTemplateFieldsFormPartial = ({
     return recipientsForSelector.find((r) => r.id === selectedSigner.id) ?? null;
   }, [selectedSigner, recipientsForSelector]);
 
+  const dismissRecipientHint = useCallback(() => {
+    setShowRecipientHint(false);
+  }, []);
+
   return (
     <div className="flex h-full flex-col">
       <DocumentFlowFormContainerHeader title={flowStep.title} description={flowStep.description} />
@@ -457,14 +473,31 @@ export const EmbedAddTemplateFieldsFormPartial = ({
             </div>
           )}
 
-          <RecipientSelector
-            selectedRecipient={selectedSignerForSelector}
-            onSelectedRecipientChange={(r) => {
-              handleRecipientChange(r);
-            }}
-            recipients={recipientsForSelector}
-            className="mb-4"
-          />
+          <Tooltip open={showRecipientHint}>
+            <TooltipTrigger asChild>
+              <div
+                className="w-full"
+                onMouseDown={dismissRecipientHint}
+                onClick={dismissRecipientHint}
+              >
+                <RecipientSelector
+                  selectedRecipient={selectedSignerForSelector}
+                  onSelectedRecipientChange={(r) => handleRecipientChange(r)}
+                  recipients={recipientsForSelector}
+                  className="mb-4 w-full"
+                  onOpenChange={(open) => {
+                    if (open) dismissRecipientHint();
+                  }}
+                  onTriggerClick={dismissRecipientHint}
+                />
+              </div>
+            </TooltipTrigger>
+
+            <TooltipContent side="bottom" align="center" className="max-w-xs border-2 bg-orange-300 fill-orange-300 text-orange-900" sideOffset={2}>
+              <span className="text-sm">Switch between recipients and customize their required fields.</span>
+              <TooltipArrow />
+            </TooltipContent>
+          </Tooltip>
 
           <div className="flex h-full flex-col">
             <Tabs defaultValue="default" className="w-full">
