@@ -17,8 +17,6 @@ export async function loader({ params }: Route.LoaderArgs) {
   return {
     envelopeId: result.envelopeId,
     externalId: result.externalId,
-    // Cast needed because Zod schema types don't survive Remix loader serialization
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     initialEnvelope: result.initialEnvelope as unknown as TEnvelope,
     teamId: result.teamId,
   };
@@ -33,14 +31,11 @@ export default function EmbedTemplatePage({ loaderData }: Route.ComponentProps) 
       }
     : undefined;
 
-  console.log({ externalId, envelopeId, initialEnvelope, teamId, trpcHeaders });
-
   return (
     <TrpcProvider headers={trpcHeaders}>
       <Client
         envelopeId={envelopeId}
         externalId={externalId}
-        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
         initialEnvelope={initialEnvelope as unknown as TEnvelope}
       />
     </TrpcProvider>
