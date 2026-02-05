@@ -1,6 +1,8 @@
 import { FieldType } from '@prisma/client';
+import { DateTime } from 'luxon';
 
 import type { ResidentInfo } from '@documenso/lib/client-only/hooks/use-get-resident-info';
+import { DEFAULT_DOCUMENT_DATE_FORMAT } from '@documenso/lib/constants/date-formats';
 
 export const getResidentValue = (
   fieldType: FieldType,
@@ -20,7 +22,7 @@ export const getResidentValue = (
     case FieldType.RESIDENT_DOB: {
       const dob = resident.dob;
       if (dob) {
-        return new Date(dob).toISOString().split('T')[0];
+        return DateTime.fromJSDate(new Date(dob)).toFormat(DEFAULT_DOCUMENT_DATE_FORMAT);
       }
       return '';
     }

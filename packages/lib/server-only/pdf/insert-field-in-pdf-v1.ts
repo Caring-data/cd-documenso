@@ -10,8 +10,10 @@ import {
 } from '@cantoo/pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
 import { FieldType } from '@prisma/client';
+import { DateTime } from 'luxon';
 import { P, match } from 'ts-pattern';
 
+import { DEFAULT_DOCUMENT_DATE_FORMAT } from '@documenso/lib/constants/date-formats';
 import {
   DEFAULT_HANDWRITING_FONT_SIZE,
   DEFAULT_STANDARD_FONT_SIZE,
@@ -438,6 +440,13 @@ export const insertFieldInPDFV1 = async (pdf: PDFDocument, field: FieldWithSigna
       let adjustedFieldY = textFieldBoxY;
 
       let textToInsert = field.customText;
+
+      if (field.type === FieldType.CALENDAR || field.type === FieldType.RESIDENT_DOB) {
+        const dt = DateTime.fromISO(field.customText);
+        if (dt.isValid) {
+          textToInsert = dt.toFormat(DEFAULT_DOCUMENT_DATE_FORMAT);
+        }
+      }
 
       // The padding to use when fields go off the page.
       const pagePadding = 4;

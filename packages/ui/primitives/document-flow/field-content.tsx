@@ -3,6 +3,7 @@ import { Trans } from '@lingui/react/macro';
 import type { DocumentMeta, Signature } from '@prisma/client';
 import { FieldType } from '@prisma/client';
 import { ChevronDown } from 'lucide-react';
+import { DateTime } from 'luxon';
 
 import {
   DEFAULT_DOCUMENT_DATE_FORMAT,
@@ -62,7 +63,7 @@ export const FieldContent = ({ field, documentMeta }: FieldIconProps) => {
         >
           <div className="flex items-center">
             <Checkbox className="h-3 w-3" disabled />
-            <Label className="text-foreground ml-1.5 text-xs font-normal opacity-50">
+            <Label className="ml-1.5 text-xs font-normal text-foreground opacity-50">
               <Trans>Checkbox option</Trans>
             </Label>
           </div>
@@ -90,7 +91,7 @@ export const FieldContent = ({ field, documentMeta }: FieldIconProps) => {
             {item.value && (
               <Label
                 htmlFor={`checkbox-${index}`}
-                className="text-foreground ml-1.5 text-xs font-normal"
+                className="ml-1.5 text-xs font-normal text-foreground"
               >
                 {item.value}
               </Label>
@@ -122,7 +123,7 @@ export const FieldContent = ({ field, documentMeta }: FieldIconProps) => {
               {item.value && (
                 <Label
                   htmlFor={`option-${index}`}
-                  className="text-foreground ml-1.5 text-xs font-normal"
+                  className="ml-1.5 text-xs font-normal text-foreground"
                 >
                   {item.value}
                 </Label>
@@ -140,7 +141,7 @@ export const FieldContent = ({ field, documentMeta }: FieldIconProps) => {
     !field.inserted
   ) {
     return (
-      <div className="text-field-card-foreground flex flex-row items-center py-0.5 text-[clamp(0.07rem,25cqw,0.825rem)] text-sm">
+      <div className="flex flex-row items-center py-0.5 text-[clamp(0.07rem,25cqw,0.825rem)] text-sm text-field-card-foreground">
         <p>
           <Trans>Select</Trans>
         </p>
@@ -185,6 +186,13 @@ export const FieldContent = ({ field, documentMeta }: FieldIconProps) => {
       );
     }
 
+    if (field.type === FieldType.CALENDAR || field.type === FieldType.RESIDENT_DOB) {
+      const dt = DateTime.fromISO(field.customText ?? '');
+      if (dt.isValid) {
+        textToDisplay = dt.toFormat(documentMeta?.dateFormat ?? DEFAULT_DOCUMENT_DATE_FORMAT);
+      }
+    }
+
     if (isSignatureField && field.signature?.typedSignature) {
       textToDisplay = field.signature.typedSignature;
     }
@@ -196,7 +204,7 @@ export const FieldContent = ({ field, documentMeta }: FieldIconProps) => {
     <div className="flex h-full w-full items-center overflow-hidden">
       <p
         className={cn(
-          'text-foreground w-full whitespace-pre-wrap text-left text-[clamp(0.07rem,25cqw,0.825rem)] duration-200',
+          'w-full whitespace-pre-wrap text-left text-[clamp(0.07rem,25cqw,0.825rem)] text-foreground duration-200',
           {
             '!text-center': textAlign === 'center' || !textToDisplay,
             '!text-right': textAlign === 'right',
