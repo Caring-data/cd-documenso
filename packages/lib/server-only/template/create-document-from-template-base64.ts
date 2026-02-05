@@ -704,11 +704,56 @@ export const createDocumentFromTemplateBase64 = async ({
 
     const isStandardForm = signingContext?.formType === 'standard';
 
-    const base64Pdf = isStandardForm ? template.envelopeItems[0]?.documentData?.data : null;
+    let base64Pdf: string | null = null;
+
+    if (isStandardForm) {
+      if (customDocumentData && customDocumentData.length > 0) {
+        const customDocData = await prisma.documentData.findFirst({
+          where: {
+            id: customDocumentData[0].documentDataId,
+          },
+        });
+
+        if (!customDocData) {
+          throw new AppError(AppErrorCode.NOT_FOUND, {
+            message: 'Custom document data not found',
+          });
+        }
+
+        base64Pdf = customDocData.data;
+
+        await createLog({
+          level: LogLevel.INFO,
+          category: LogCategory.DOCUMENT,
+          action: 'using_custom_document_for_scanning',
+          message: 'Using custom document PDF for field scanning',
+          data: {
+            documentDataId: customDocData.id,
+            dataLength: customDocData.data?.length,
+          },
+          metadata: requestMetadata,
+          userId,
+        });
+      } else {
+        base64Pdf = template.envelopeItems[0]?.documentData?.data || null;
+
+        await createLog({
+          level: LogLevel.WARN,
+          category: LogCategory.DOCUMENT,
+          action: 'using_template_document_for_scanning',
+          message: 'Using template PDF for field scanning (no custom document provided)',
+          data: {
+            templateId: template.id,
+          },
+          metadata: requestMetadata,
+          userId,
+        });
+      }
+    }
 
     if (isStandardForm && !base64Pdf) {
       throw new AppError(AppErrorCode.INVALID_BODY, {
-        message: 'Standard document PDF data not found on template envelope item',
+        message: 'Standard document PDF data not found',
       });
     }
 
