@@ -26,8 +26,8 @@ export const downloadPDF = async ({
   if (envelopeItem) {
     // Download envelope item via API
     const url = token
-      ? `/api/files/envelope/item/${envelopeItem.id}/download/${version}?token=${token}`
-      : `/api/files/envelope/item/${envelopeItem.id}/download/${version}`;
+      ? `/api/files/token/${token}/envelopeItem/${envelopeItem.id}/download/${version}`
+      : `/api/files/envelope/${envelopeItem.envelopeId}/envelopeItem/${envelopeItem.id}/download/${version}`;
 
     const response = await fetch(url);
 
