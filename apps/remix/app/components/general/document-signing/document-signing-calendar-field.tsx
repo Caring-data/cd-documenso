@@ -5,6 +5,7 @@ import { Loader } from 'lucide-react';
 import { DateTime } from 'luxon';
 import { useRevalidator } from 'react-router';
 
+import { DEFAULT_DOCUMENT_DATE_FORMAT } from '@documenso/lib/constants/date-formats';
 import { DO_NOT_INVALIDATE_QUERY_ON_MUTATION } from '@documenso/lib/constants/trpc';
 import { AppError, AppErrorCode } from '@documenso/lib/errors/app-error';
 import type { TRecipientActionAuth } from '@documenso/lib/types/document-auth';
@@ -33,7 +34,7 @@ export type DocumentSigningCalendarFieldProps = {
 
 export const DocumentSigningCalendarField = ({
   field,
-  dateFormat = null,
+  dateFormat = DEFAULT_DOCUMENT_DATE_FORMAT,
   onSignField,
   onUnsignField,
 }: DocumentSigningCalendarFieldProps) => {
@@ -154,27 +155,22 @@ export const DocumentSigningCalendarField = ({
     }
   };
 
-  // Format the date for display (YYYY-MM-DD or ISO to readable format)
+  // Format the date for display (YYYY-MM-DD or ISO) as mm/dd/yyyy
+  const displayDateFormat = dateFormat ?? DEFAULT_DOCUMENT_DATE_FORMAT;
+
   const formatDateForDisplay = (dateString: string): string => {
     if (!dateString) {
       return '';
     }
 
     try {
-      if (dateFormat) {
-        const dt = DateTime.fromISO(dateString);
-        if (dt.isValid) {
-          return dt.toFormat(dateFormat);
-        }
-        const date = new Date(dateString);
-        if (!isNaN(date.getTime())) {
-          return DateTime.fromJSDate(date).toFormat(dateFormat);
-        }
-      } else {
-        const date = new Date(dateString);
-        if (!isNaN(date.getTime())) {
-          return date.toLocaleDateString();
-        }
+      const dt = DateTime.fromISO(dateString);
+      if (dt.isValid) {
+        return dt.toFormat(displayDateFormat);
+      }
+      const date = new Date(dateString);
+      if (!isNaN(date.getTime())) {
+        return DateTime.fromJSDate(date).toFormat(displayDateFormat);
       }
       return dateString;
     } catch {
