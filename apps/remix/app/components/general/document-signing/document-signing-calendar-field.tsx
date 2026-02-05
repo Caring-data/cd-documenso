@@ -1,9 +1,8 @@
-import { useState } from 'react';
-
 import { msg } from '@lingui/core/macro';
 import { useLingui } from '@lingui/react';
 import { Trans } from '@lingui/react/macro';
 import { Loader } from 'lucide-react';
+import { DateTime } from 'luxon';
 import { useRevalidator } from 'react-router';
 
 import { DO_NOT_INVALIDATE_QUERY_ON_MUTATION } from '@documenso/lib/constants/trpc';
@@ -20,18 +19,21 @@ import { cn } from '@documenso/ui/lib/utils';
 import { useToast } from '@documenso/ui/primitives/use-toast';
 
 import { SignFieldCalendarDialog } from '~/components/dialogs/sign-field-calendar-dialog';
+
 import { useRequiredDocumentSigningAuthContext } from './document-signing-auth-provider';
 import { DocumentSigningFieldContainer } from './document-signing-field-container';
 import { useDocumentSigningRecipientContext } from './document-signing-recipient-provider';
 
 export type DocumentSigningCalendarFieldProps = {
   field: FieldWithSignature;
+  dateFormat?: string | null;
   onSignField?: (value: TSignFieldWithTokenMutationSchema) => Promise<void> | void;
   onUnsignField?: (value: TRemovedSignedFieldWithTokenMutationSchema) => Promise<void> | void;
 };
 
 export const DocumentSigningCalendarField = ({
   field,
+  dateFormat = null,
   onSignField,
   onUnsignField,
 }: DocumentSigningCalendarFieldProps) => {
@@ -152,18 +154,29 @@ export const DocumentSigningCalendarField = ({
     }
   };
 
-  // Format the date for display (YYYY-MM-DD to readable format)
+  // Format the date for display (YYYY-MM-DD or ISO to readable format)
   const formatDateForDisplay = (dateString: string): string => {
     if (!dateString) {
       return '';
     }
 
     try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) {
-        return dateString;
+      if (dateFormat) {
+        const dt = DateTime.fromISO(dateString);
+        if (dt.isValid) {
+          return dt.toFormat(dateFormat);
+        }
+        const date = new Date(dateString);
+        if (!isNaN(date.getTime())) {
+          return DateTime.fromJSDate(date).toFormat(dateFormat);
+        }
+      } else {
+        const date = new Date(dateString);
+        if (!isNaN(date.getTime())) {
+          return date.toLocaleDateString();
+        }
       }
-      return date.toLocaleDateString();
+      return dateString;
     } catch {
       return dateString;
     }
@@ -178,13 +191,13 @@ export const DocumentSigningCalendarField = ({
       type="Calendar"
     >
       {isLoading && (
-        <div className="bg-background absolute inset-0 flex items-center justify-center rounded-md">
-          <Loader className="text-primary h-5 w-5 animate-spin md:h-8 md:w-8" />
+        <div className="absolute inset-0 flex items-center justify-center rounded-md bg-background">
+          <Loader className="h-5 w-5 animate-spin text-primary md:h-8 md:w-8" />
         </div>
       )}
 
       {!field.inserted && (
-        <p className="group-hover:text-primary text-foreground text-[clamp(0.425rem,25cqw,0.825rem)] duration-200">
+        <p className="text-[clamp(0.425rem,25cqw,0.825rem)] text-foreground duration-200 group-hover:text-primary">
           <Trans>Calendar</Trans>
         </p>
       )}
@@ -193,7 +206,7 @@ export const DocumentSigningCalendarField = ({
         <div className="flex h-full w-full items-center">
           <p
             className={cn(
-              'text-foreground w-full whitespace-nowrap text-left text-[clamp(0.425rem,25cqw,0.825rem)] duration-200',
+              'w-full whitespace-nowrap text-left text-[clamp(0.425rem,25cqw,0.825rem)] text-foreground duration-200',
               {
                 '!text-center': parsedFieldMeta?.textAlign === 'center',
                 '!text-right': parsedFieldMeta?.textAlign === 'right',
