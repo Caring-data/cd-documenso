@@ -429,6 +429,15 @@ export const ZGenerateDocumentFromTemplateBase64MutationSchema =
         module: z.enum(['resident', 'staff', 'facility']).optional(),
       })
       .optional(),
+    ccRecipients: z
+      .array(
+        z.object({
+          name: z.string().min(1),
+          email: z.string().email(),
+        }),
+      )
+      .nullable()
+      .optional(),
   });
 
 export type TGenerateDocumentFromTemplateBase64MutationSchema = z.infer<
