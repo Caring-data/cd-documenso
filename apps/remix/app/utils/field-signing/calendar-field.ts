@@ -17,7 +17,7 @@ export const handleCalendarFieldClick = async (
 ): Promise<TSignEnvelopeFieldValue | null> => {
   const { field, date } = options;
 
-  if (field.type !== FieldType.CALENDAR) {
+  if (field.type !== FieldType.CALENDAR && field.type !== FieldType.RESIDENT_DOB) {
     throw new AppError(AppErrorCode.INVALID_REQUEST, {
       message: 'Invalid field type',
     });
