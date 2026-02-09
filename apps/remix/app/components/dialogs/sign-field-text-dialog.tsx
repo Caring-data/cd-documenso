@@ -60,7 +60,7 @@ export const SignFieldTextDialog = createCallable<SignFieldTextDialogProps, stri
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              <Trans>Sign Text Field</Trans>
+              <Trans>Enter Text info</Trans>
             </DialogTitle>
 
             <DialogDescription className="mt-4">
@@ -114,7 +114,7 @@ export const SignFieldTextDialog = createCallable<SignFieldTextDialogProps, stri
                   </Button>
 
                   <Button type="submit" disabled={isDisabled}>
-                    <Trans>Sign</Trans>
+                    <Trans>Enter</Trans>
                   </Button>
                 </DialogFooter>
               </fieldset>
