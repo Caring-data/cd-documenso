@@ -1798,6 +1798,9 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
 
       const templateId = Number(params.templateId);
 
+      const ccRecipients = body.ccRecipients ?? null;
+      const normalizedCc = ccRecipients?.length ? ccRecipients : null;
+
       await createLog({
         level: LogLevel.INFO,
         category: LogCategory.DOCUMENT,
@@ -1813,6 +1816,7 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
           folderName: body.folderName,
           formKey: body.formKey,
           signingContext: body.signingContext,
+          ccRecipients: normalizedCc,
         },
         metadata,
         userId: user.id,
@@ -1880,6 +1884,7 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
           formKey: body.formKey,
           signingContext: body.signingContext,
           customDocumentData,
+          ccRecipients: normalizedCc,
         });
       } catch (err) {
         return AppError.toRestAPIError(err);

@@ -1,5 +1,8 @@
+import { FieldType } from '@prisma/client';
 import Konva from 'konva';
+import { DateTime } from 'luxon';
 
+import { DEFAULT_DOCUMENT_DATE_FORMAT } from '../../constants/date-formats';
 import { DEFAULT_STANDARD_FONT_SIZE } from '../../constants/pdf';
 import type { GenericTextFieldTypeMetas } from '../../types/field-meta';
 import {
@@ -85,6 +88,13 @@ const upsertFieldText = (field: FieldToRender, options: RenderFieldElementOption
   // Override everything with value if it's inserted.
   if (field.inserted) {
     textToRender = field.customText;
+
+    if (field.type === FieldType.CALENDAR || field.type === FieldType.RESIDENT_DOB) {
+      const dt = DateTime.fromISO(field.customText);
+      if (dt.isValid) {
+        textToRender = dt.toFormat(DEFAULT_DOCUMENT_DATE_FORMAT);
+      }
+    }
 
     textAlign = fieldMeta?.textAlign || FIELD_DEFAULT_GENERIC_ALIGN;
 

@@ -29,6 +29,7 @@ import { mapEnvelopeToTemplateLite } from '@documenso/lib/utils/templates';
 
 import { ZGenericSuccessResponse, ZSuccessResponseSchema } from '../schema';
 import { authenticatedProcedure, maybeAuthenticatedProcedure, router } from '../trpc';
+import { getTemplateByExternalIdRoute } from './get-template-by-external-id';
 import {
   ZBulkSendTemplateMutationSchema,
   ZCreateDocumentFromDirectTemplateRequestSchema,
@@ -372,6 +373,11 @@ export const templateRouter = router({
    * @public - embed: no auth, externalId in URL is sufficient
    */
   updateTemplateSettingsByExternalId: updateTemplateSettingsByExternalIdRoute,
+
+  /**
+   * @public - embed: no auth, externalId in URL is sufficient
+   */
+  getTemplateByExternalId: getTemplateByExternalIdRoute,
 
   /**
    * @public

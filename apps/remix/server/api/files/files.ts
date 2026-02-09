@@ -1,5 +1,5 @@
 import { sValidator } from '@hono/standard-validator';
-import type { Prisma } from '@prisma/client';
+import { EnvelopeType, type Prisma } from '@prisma/client';
 import { Hono } from 'hono';
 
 import { getOptionalSession } from '@documenso/auth/server/lib/utils/get-session';
@@ -15,6 +15,7 @@ import { handleEnvelopeItemFileRequest } from './files.helpers';
 import {
   type TGetPresignedPostUrlResponse,
   ZGetEnvelopeItemFileDownloadRequestParamsSchema,
+  ZGetEnvelopeItemFileExternalIdRequestParamsSchema,
   ZGetEnvelopeItemFileRequestParamsSchema,
   ZGetEnvelopeItemFileRequestQuerySchema,
   ZGetEnvelopeItemFileTokenDownloadRequestParamsSchema,
@@ -312,6 +313,49 @@ export const filesRoute = new Hono<HonoEnv>()
         documentData: envelopeItem.documentData,
         version,
         isDownload: true,
+        context: c,
+      });
+    },
+  )
+  /**
+   * Public route for embed - uses externalId as implicit access token.
+   * Only allows access to TEMPLATE envelopes.
+   */
+  .get(
+    '/external/:externalId/envelopeItem/:envelopeItemId',
+    sValidator('param', ZGetEnvelopeItemFileExternalIdRequestParamsSchema),
+    async (c) => {
+      const { externalId, envelopeItemId } = c.req.valid('param');
+
+      const envelopeItem = await prisma.envelopeItem.findFirst({
+        where: {
+          id: envelopeItemId,
+          envelope: {
+            externalId,
+            type: EnvelopeType.TEMPLATE,
+            deletedAt: null,
+          },
+        },
+        include: {
+          envelope: true,
+          documentData: true,
+        },
+      });
+
+      if (!envelopeItem) {
+        return c.json({ error: 'Envelope item not found' }, 404);
+      }
+
+      if (!envelopeItem.documentData) {
+        return c.json({ error: 'Document data not found' }, 404);
+      }
+
+      return await handleEnvelopeItemFileRequest({
+        title: envelopeItem.title,
+        status: envelopeItem.envelope.status,
+        documentData: envelopeItem.documentData,
+        version: 'signed',
+        isDownload: false,
         context: c,
       });
     },

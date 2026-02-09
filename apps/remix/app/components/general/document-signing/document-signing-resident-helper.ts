@@ -1,6 +1,10 @@
 import { FieldType } from '@prisma/client';
+import { DateTime } from 'luxon';
 
 import type { ResidentInfo } from '@documenso/lib/client-only/hooks/use-get-resident-info';
+import { DEFAULT_DOCUMENT_DATE_FORMAT } from '@documenso/lib/constants/date-formats';
+
+const toStr = (value: unknown): string => (typeof value === 'string' ? value : '');
 
 export const getResidentValue = (
   fieldType: FieldType,
@@ -14,40 +18,40 @@ export const getResidentValue = (
 
   switch (fieldType) {
     case FieldType.RESIDENT_FIRST_NAME:
-      return resident.first_name || '';
+      return toStr(resident.first_name);
     case FieldType.RESIDENT_LAST_NAME:
-      return resident.last_name || '';
+      return toStr(resident.last_name);
     case FieldType.RESIDENT_DOB: {
       const dob = resident.dob;
-      if (dob) {
-        return new Date(dob).toISOString().split('T')[0];
+      if (dob && typeof dob === 'string') {
+        return DateTime.fromJSDate(new Date(dob)).toFormat(DEFAULT_DOCUMENT_DATE_FORMAT);
       }
       return '';
     }
     case FieldType.RESIDENT_GENDER_IDENTITY:
-      return resident.gender_identity || '';
+      return toStr(resident.gender_identity);
     case FieldType.RESIDENT_LOCATION_NAME:
-      return location?.name || '';
+      return toStr(location?.name);
     case FieldType.RESIDENT_LOCATION_STATE:
-      return location?.state || '';
+      return toStr(location?.state);
     case FieldType.RESIDENT_LOCATION_ADDRESS:
-      return location?.address || '';
+      return toStr(location?.address);
     case FieldType.RESIDENT_LOCATION_CITY:
-      return location?.city || '';
+      return toStr(location?.city);
     case FieldType.RESIDENT_LOCATION_ZIP_CODE:
-      return location?.zip || '';
+      return toStr(location?.zip);
     case FieldType.RESIDENT_LOCATION_COUNTRY:
-      return location?.country || '';
+      return toStr(location?.country);
     case FieldType.RESIDENT_LOCATION_FAX:
-      return location?.location_fax || '';
+      return toStr(location?.location_fax);
     case FieldType.RESIDENT_LOCATION_LICENSING:
-      return location?.licensing || '';
+      return toStr(location?.licensing);
     case FieldType.RESIDENT_LOCATION_LICENSING_NAME:
-      return location?.licensing_name || '';
+      return toStr(location?.licensing_name);
     case FieldType.RESIDENT_LOCATION_ADMINISTRATOR_NAME:
-      return location?.admin || '';
+      return toStr(location?.admin);
     case FieldType.RESIDENT_LOCATION_ADMINISTRATOR_PHONE:
-      return location?.phone_lic || '';
+      return toStr(location?.phone_lic);
     default:
       return '';
   }

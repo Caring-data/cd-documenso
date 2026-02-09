@@ -1,10 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { msg } from '@lingui/core/macro';
 import { Trans } from '@lingui/react/macro';
+import { DateTime } from 'luxon';
 import { createCallable } from 'react-call';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
+import { DEFAULT_DOCUMENT_DATE_FORMAT } from '@documenso/lib/constants/date-formats';
 import type { TDateFieldMeta } from '@documenso/lib/types/field-meta';
 import { Button } from '@documenso/ui/primitives/button';
 import { Calendar } from '@documenso/ui/primitives/calendar';
@@ -38,7 +40,6 @@ export type SignFieldCalendarDialogProps = {
 
 export const SignFieldCalendarDialog = createCallable<SignFieldCalendarDialogProps, string | null>(
   ({ call, fieldMeta }) => {
-
     const form = useForm<TSignFieldCalendarFormSchema>({
       resolver: zodResolver(ZSignFieldCalendarFormSchema),
       defaultValues: {
@@ -64,7 +65,9 @@ export const SignFieldCalendarDialog = createCallable<SignFieldCalendarDialogPro
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit((data) => {
-                const formattedDate = data.date.toISOString().split('T')[0];
+                const formattedDate = DateTime.fromJSDate(data.date).toFormat(
+                  DEFAULT_DOCUMENT_DATE_FORMAT,
+                );
                 call.end(formattedDate);
               })}
             >

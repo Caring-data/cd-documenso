@@ -42,6 +42,7 @@ export function Client({ envelopeId, externalId, initialEnvelope }: ClientProps)
       <EnvelopeRenderProvider
         envelope={initialEnvelope}
         token={undefined}
+        externalId={externalId}
         fields={initialEnvelope.fields}
         recipients={initialEnvelope.recipients}
       >

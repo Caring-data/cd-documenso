@@ -124,7 +124,7 @@ const FieldSettingsTypeTranslations: Record<FieldType, MessageDescriptor> = {
 
 export type EmbedAddTemplateFieldsFormProps = {
   flowStep: DocumentFlowStep;
-  onSubmit: () => void;
+  onSubmit: () => Promise<void>;
 };
 
 export const EmbedAddTemplateFieldsFormPartial = ({
@@ -139,7 +139,7 @@ export const EmbedAddTemplateFieldsFormPartial = ({
   const { data: recipientsFromApi } = useGetTemplateRecipients(envelope.formKey ?? undefined);
 
   const recipients = envelope.recipients;
-  const { stepIndex, currentStep, totalSteps, previousStep } = useStep();
+  const { stepIndex, currentStep, totalSteps, previousStep, nextStep } = useStep();
 
   const [selectedField, setSelectedField] = useState<FieldType | null>(null);
   const [selectedSigner, setSelectedSigner] = useState<(typeof recipients)[0] | null>(null);
@@ -381,6 +381,11 @@ export const EmbedAddTemplateFieldsFormPartial = ({
     return false;
   };
 
+  const didChange = useMemo(
+    () => hasFieldsChanged(editorFields.localFields, initialFieldsRef.current),
+    [editorFields.localFields],
+  );
+
   const updateSelectedFieldMeta = (fieldMeta: TFieldMetaSchema) => {
     if (!selectedFieldFromEditor) {
       return;
@@ -396,14 +401,14 @@ export const EmbedAddTemplateFieldsFormPartial = ({
   };
 
   const handleGoNextClick = async () => {
-    // Check if fields have changed
-    if (!hasFieldsChanged(editorFields.localFields, initialFieldsRef.current)) {
-      // No changes, just proceed
+    if (!didChange) {
+      nextStep();
       return;
     }
 
-    // Fields have changed, save them
     await onSubmit();
+
+    nextStep();
   };
 
   const mergedRecipients = useMemo(() => {
@@ -947,7 +952,7 @@ export const EmbedAddTemplateFieldsFormPartial = ({
           loading={false}
           disabled={false}
           goNextLabel={msg`Save Template`}
-          disableNextStep={hasErrors}
+          disableNextStep={hasErrors && didChange}
           canGoBack={stepIndex !== 0}
           onGoBackClick={previousStep}
           onGoNextClick={handleGoNextClick}

@@ -2172,6 +2172,7 @@ msgid "Cannot upload items after the document has been sent"
 msgstr "No se pueden cargar elementos después de que el documento ha sido enviado"
 
 #: apps/remix/app/routes/_authenticated+/admin+/logs._index.tsx
+#: apps/remix/app/routes/embed+/components/template-flow/add-template-settings.tsx
 msgid "Category"
 msgstr "Categoría"
 
@@ -5764,8 +5765,16 @@ msgid "Name Settings"
 msgstr "Configuración de Nombre"
 
 #: packages/ui/components/recipient/recipient-role-select.tsx
+msgid "Needs to approve"
+msgstr ""
+
+#: packages/ui/components/recipient/recipient-role-select.tsx
 msgid "Needs to sign"
 msgstr "Necesita firmar"
+
+#: packages/ui/components/recipient/recipient-role-select.tsx
+msgid "Needs to view"
+msgstr ""
 
 #: apps/remix/app/components/forms/token.tsx
 msgid "Never expire"
@@ -7161,6 +7170,7 @@ msgstr "Guardar"
 msgid "Save failed"
 msgstr "Guardado fallido"
 
+#: apps/remix/app/routes/embed+/components/template-flow/add-template-fields.tsx
 #: packages/ui/primitives/template-flow/add-template-fields.tsx
 msgid "Save Template"
 msgstr "Guardar plantilla"
@@ -8663,8 +8673,16 @@ msgid "The recipient is not required to take any action and receives a copy of t
 msgstr "El destinatario no está obligado a tomar ninguna acción y recibe una copia del documento una vez completado."
 
 #: packages/ui/components/recipient/recipient-role-select.tsx
+msgid "The recipient is required to approve the document for it to be completed."
+msgstr ""
+
+#: packages/ui/components/recipient/recipient-role-select.tsx
 msgid "The recipient is required to sign the document for it to be completed."
 msgstr "El destinatario debe firmar el documento para que se complete."
+
+#: packages/ui/components/recipient/recipient-role-select.tsx
+msgid "The recipient is required to view the document for it to be completed."
+msgstr ""
 
 #: packages/ui/components/document/document-share-button.tsx
 msgid "The sharing link could not be created at this time. Please try again."
