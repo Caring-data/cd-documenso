@@ -36,7 +36,6 @@ import { Input } from '@documenso/ui/primitives/input';
 
 import { useEmbedSigningContext } from '~/components/embed/embed-signing-context';
 import { AccessAuth2FAForm } from '~/components/general/document-signing/access-auth-2fa-form';
-import { DocumentSigningDisclosure } from '~/components/general/document-signing/document-signing-disclosure';
 
 import { useRequiredDocumentSigningAuthContext } from './document-signing-auth-provider';
 
@@ -221,7 +220,7 @@ export const DocumentSigningCompleteDialog = ({
       <DialogContent position={position}>
         <DialogHeader>
           <DialogTitle>
-            <Trans>Are you sure?</Trans>
+            <Trans>Ready to submit your signature?</Trans>
           </DialogTitle>
           <DialogDescription>
             <div className="max-w-[50ch] text-muted-foreground">
@@ -233,7 +232,9 @@ export const DocumentSigningCompleteDialog = ({
                 ))
                 .with(RecipientRole.SIGNER, () => (
                   <span className="inline-flex flex-wrap">
-                    <Trans>You are about to complete signing the following document</Trans>
+                    <Trans>
+                      You’ve completed all required fields and signatures for the document below.
+                    </Trans>
                   </span>
                 ))
                 .with(RecipientRole.APPROVER, () => (
@@ -361,7 +362,13 @@ export const DocumentSigningCompleteDialog = ({
                     </div>
                   )}
 
-                  <DocumentSigningDisclosure />
+                  <p className="text-xs text-muted-foreground dark:text-zinc-300">
+                    <Trans>
+                      By clicking “Sign & Submit”, you acknowledge that your electronic signature
+                      has the same legal validity as a handwritten signature, ensuring the document
+                      is complete and legally binding.
+                    </Trans>
+                  </p>
 
                   <DialogFooter className="mt-4">
                     <Button
@@ -380,7 +387,7 @@ export const DocumentSigningCompleteDialog = ({
                     >
                       {match(recipient.role)
                         .with(RecipientRole.VIEWER, () => <Trans>Mark as Viewed</Trans>)
-                        .with(RecipientRole.SIGNER, () => <Trans>Sign</Trans>)
+                        .with(RecipientRole.SIGNER, () => <Trans>Sign & Submit</Trans>)
                         .with(RecipientRole.APPROVER, () => <Trans>Approve</Trans>)
                         .with(RecipientRole.CC, () => <Trans>Mark as Viewed</Trans>)
                         .with(RecipientRole.ASSISTANT, () => <Trans>Complete</Trans>)
