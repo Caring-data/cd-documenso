@@ -204,6 +204,16 @@ msgstr "{0} couldn't be uploaded:"
 msgid "{0} direct signing templates"
 msgstr "{0} direct signing templates"
 
+#. placeholder {0}: signingContext?.companyName || ''
+#: packages/email/templates/document-cancel.tsx
+msgid "{0} has cancelled the document {documentName}, you don't need to sign it anymore."
+msgstr "{0} has cancelled the document {documentName}, you don't need to sign it anymore."
+
+#. placeholder {0}: signingContext?.companyName || ''
+#: packages/email/templates/document-invite.tsx
+msgid "{0} has invited you to {action} {documentName}"
+msgstr "{0} has invited you to {action} {documentName}"
+
 #. placeholder {0}: user.name || user.email
 #. placeholder {1}: envelope.team.name
 #. placeholder {2}: envelope.title
@@ -228,17 +238,9 @@ msgstr "{charactersRemaining, plural, one {1 character remaining} other {{charac
 msgid "{expiresInMinutes, plural, one {This code will expire in # minute.} other {This code will expire in # minutes.}}"
 msgstr "{expiresInMinutes, plural, one {This code will expire in # minute.} other {This code will expire in # minutes.}}"
 
-#: packages/email/templates/document-cancel.tsx
-msgid "{inviterName} has cancelled the document {documentName}, you don't need to sign it anymore."
-msgstr "{inviterName} has cancelled the document {documentName}, you don't need to sign it anymore."
-
 #: packages/email/template-components/template-document-cancel.tsx
 msgid "{inviterName} has cancelled the document<0/>\"{documentName}\""
 msgstr "{inviterName} has cancelled the document<0/>\"{documentName}\""
-
-#: packages/email/templates/document-invite.tsx
-msgid "{inviterName} has invited you to {action} {documentName}"
-msgstr "{inviterName} has invited you to {action} {documentName}"
 
 #: packages/email/templates/recipient-removed-from-document.tsx
 msgid "{inviterName} has removed you from the document {documentName}."
@@ -247,10 +249,6 @@ msgstr "{inviterName} has removed you from the document {documentName}."
 #: packages/email/templates/recipient-removed-from-document.tsx
 msgid "{inviterName} has removed you from the document<0/>\"{documentName}\""
 msgstr "{inviterName} has removed you from the document<0/>\"{documentName}\""
-
-#: packages/email/templates/document-invite.tsx
-msgid "{inviterName} on behalf of \"{teamName}\" has invited you to {action} {documentName}"
-msgstr "{inviterName} on behalf of \"{teamName}\" has invited you to {action} {documentName}"
 
 #: packages/lib/utils/document-audit-logs.ts
 msgid "{prefix} added a field"
@@ -400,10 +398,6 @@ msgstr "{remaningLength, plural, one {# character remaining} other {# characters
 #: packages/email/template-components/template-document-rejected.tsx
 msgid "{signerName} has rejected the document \"{documentName}\"."
 msgstr "{signerName} has rejected the document \"{documentName}\"."
-
-#: packages/email/templates/document-invite.tsx
-msgid "{teamName} has invited you to {action} {documentName}"
-msgstr "{teamName} has invited you to {action} {documentName}"
 
 #: apps/remix/app/components/tables/internal-audit-log-table.tsx
 msgid "{userAgent}"
@@ -1784,7 +1778,6 @@ msgstr "Are you sure you wish to delete this team?"
 #: apps/remix/app/components/dialogs/team-inherit-member-enable-dialog.tsx
 #: apps/remix/app/components/dialogs/team-member-delete-dialog.tsx
 #: apps/remix/app/components/dialogs/template-direct-link-dialog.tsx
-#: apps/remix/app/components/general/document-signing/document-signing-complete-dialog.tsx
 #: apps/remix/app/components/general/teams/team-email-usage.tsx
 #: apps/remix/app/routes/_authenticated+/settings+/security.linked-accounts.tsx
 msgid "Are you sure?"
@@ -2027,6 +2020,10 @@ msgstr "By accepting this request, you grant {0} the following permissions:"
 #: packages/email/templates/confirm-team-email.tsx
 msgid "By accepting this request, you will be granting <0>{teamName}</0> access to:"
 msgstr "By accepting this request, you will be granting <0>{teamName}</0> access to:"
+
+#: apps/remix/app/components/general/document-signing/document-signing-complete-dialog.tsx
+msgid "By clicking “Sign & Submit”, you acknowledge that your electronic signature has the same legal validity as a handwritten signature, ensuring the document is complete and legally binding."
+msgstr "By clicking “Sign & Submit”, you acknowledge that your electronic signature has the same legal validity as a handwritten signature, ensuring the document is complete and legally binding."
 
 #: apps/remix/app/components/general/document-signing/document-signing-disclosure.tsx
 msgid "By clicking the <0>\"I ACCEPT\"</0> button, you agree to review the documents and provide your electronic signature. You acknowledge that your electronic signature will have the same legal validity and effect as a handwritten signature, ensuring the document is complete and legally binding. "
@@ -4139,6 +4136,10 @@ msgstr "Enabling the account results in the user being able to use the account a
 msgid "Enclosed Document"
 msgstr "Enclosed Document"
 
+#: apps/remix/app/components/dialogs/sign-field-text-dialog.tsx
+msgid "Enter"
+msgstr "Enter"
+
 #: apps/remix/app/components/dialogs/folder-create-dialog.tsx
 msgid "Enter a name for your new folder. Folders help you organise your items."
 msgstr "Enter a name for your new folder. Folders help you organise your items."
@@ -4146,6 +4147,10 @@ msgstr "Enter a name for your new folder. Folders help you organise your items."
 #: apps/remix/app/routes/embed+/components/template-flow/add-template-settings.tsx
 msgid "Enter template title"
 msgstr "Enter template title"
+
+#: apps/remix/app/components/dialogs/sign-field-text-dialog.tsx
+msgid "Enter Text info"
+msgstr "Enter Text info"
 
 #: apps/remix/app/components/dialogs/organisation-email-domain-create-dialog.tsx
 msgid "Enter the domain you want to use for sending emails (without http:// or www)"
@@ -4305,7 +4310,6 @@ msgstr "Envelope updated"
 #: apps/remix/app/routes/_authenticated+/admin+/users.$id.tsx
 #: apps/remix/app/routes/_authenticated+/settings+/security.linked-accounts.tsx
 #: apps/remix/app/routes/_authenticated+/settings+/security.sessions.tsx
-#: apps/remix/app/routes/_recipient+/sign.$token+/presign.tsx
 #: apps/remix/app/routes/embed+/components/client.tsx
 #: apps/remix/app/routes/embed+/components/client.tsx
 #: packages/ui/primitives/document-flow/field-item-advanced-settings.tsx
@@ -4388,10 +4392,6 @@ msgstr "Failed to create support ticket"
 #: apps/remix/app/components/dialogs/folder-delete-dialog.tsx
 msgid "Failed to delete folder"
 msgstr "Failed to delete folder"
-
-#: apps/remix/app/routes/_recipient+/sign.$token+/presign.tsx
-msgid "Failed to fetch document details"
-msgstr "Failed to fetch document details"
 
 #: apps/remix/app/components/embed/multisign/multi-sign-document-signing-view.tsx
 msgid "Failed to load document"
@@ -6338,10 +6338,6 @@ msgstr "Place and configure form fields in the document"
 msgid "Placeholder"
 msgstr "Placeholder"
 
-#: packages/email/templates/document-invite.tsx
-msgid "Please {action} your document {documentName}"
-msgstr "Please {action} your document {documentName}"
-
 #: packages/lib/jobs/definitions/emails/send-signing-email.handler.ts
 msgid "Please {recipientActionVerb} this document"
 msgstr "Please {recipientActionVerb} this document"
@@ -6666,6 +6662,10 @@ msgstr "Ready"
 #: packages/email/template-components/template-document-invite.tsx
 msgid "Ready to get started?<0/>Click the button below to review and sign the document."
 msgstr "Ready to get started?<0/>Click the button below to review and sign the document."
+
+#: apps/remix/app/components/general/document-signing/document-signing-complete-dialog.tsx
+msgid "Ready to submit your signature?"
+msgstr "Ready to submit your signature?"
 
 #: packages/email/template-components/template-document-cancel.tsx
 msgid "Reason for cancellation: {cancellationReason}"
@@ -7583,11 +7583,9 @@ msgstr "Show templates in your public profile for your audience to sign and get 
 #: apps/remix/app/components/dialogs/sign-field-name-dialog.tsx
 #: apps/remix/app/components/dialogs/sign-field-number-dialog.tsx
 #: apps/remix/app/components/dialogs/sign-field-signature-dialog.tsx
-#: apps/remix/app/components/dialogs/sign-field-text-dialog.tsx
 #: apps/remix/app/components/general/document-signing/document-signing-auth-2fa.tsx
 #: apps/remix/app/components/general/document-signing/document-signing-auth-password.tsx
 #: apps/remix/app/components/general/document-signing/document-signing-auto-sign.tsx
-#: apps/remix/app/components/general/document-signing/document-signing-complete-dialog.tsx
 #: apps/remix/app/components/general/document-signing/document-signing-name-field.tsx
 #: apps/remix/app/components/general/document-signing/document-signing-signature-field.tsx
 #: apps/remix/app/components/general/document/document-page-view-button.tsx
@@ -7604,6 +7602,10 @@ msgstr "Sign"
 msgctxt "Recipient role action verb"
 msgid "Sign"
 msgstr "Sign"
+
+#: apps/remix/app/components/general/document-signing/document-signing-complete-dialog.tsx
+msgid "Sign & Submit"
+msgstr "Sign & Submit"
 
 #. placeholder {0}: recipient.name
 #. placeholder {1}: recipient.email
@@ -7684,10 +7686,6 @@ msgstr "Sign Number Field"
 #: apps/remix/app/components/general/org-menu-switcher.tsx
 msgid "Sign Out"
 msgstr "Sign Out"
-
-#: apps/remix/app/components/dialogs/sign-field-text-dialog.tsx
-msgid "Sign Text Field"
-msgstr "Sign Text Field"
 
 #: apps/remix/app/components/embed/embed-direct-template-client-page.tsx
 #: apps/remix/app/components/embed/embed-document-signing-page-v1.tsx
@@ -10426,10 +10424,6 @@ msgid "You are about to complete assisting the following document"
 msgstr "You are about to complete assisting the following document"
 
 #: apps/remix/app/components/general/document-signing/document-signing-complete-dialog.tsx
-msgid "You are about to complete signing the following document"
-msgstr "You are about to complete signing the following document"
-
-#: apps/remix/app/components/general/document-signing/document-signing-complete-dialog.tsx
 msgid "You are about to complete viewing the following document"
 msgstr "You are about to complete viewing the following document"
 
@@ -10692,11 +10686,9 @@ msgstr "You have been invited to join the following organisation"
 msgid "You have been removed from a document"
 msgstr "You have been removed from a document"
 
-#. placeholder {0}: documentDetails?.facilityAdministrator
-#. placeholder {1}: documentDetails?.locationName
 #: apps/remix/app/routes/_recipient+/sign.$token+/presign.tsx
-msgid "You have been requested by: <0>{0}</0> from <1>{1}</1> to sign documents electronically"
-msgstr "You have been requested by: <0>{0}</0> from <1>{1}</1> to sign documents electronically"
+msgid "You have been requested by: <0>{facilityAdministrator}</0> from <1>{locationName}</1> to sign documents electronically"
+msgstr "You have been requested by: <0>{facilityAdministrator}</0> from <1>{locationName}</1> to sign documents electronically"
 
 #: apps/remix/app/components/embed/multisign/multi-sign-document-list.tsx
 msgid "You have been requested to sign the following documents. Review each document carefully and complete the signing process."
@@ -10874,6 +10866,10 @@ msgstr "You will receive an Email copy of the signed document once everyone has 
 #: apps/remix/app/components/dialogs/ai-features-enable-dialog.tsx
 msgid "You're an admin. You can enable AI features for this team right away. Everyone on the team will see AI detection once enabled."
 msgstr "You're an admin. You can enable AI features for this team right away. Everyone on the team will see AI detection once enabled."
+
+#: apps/remix/app/components/general/document-signing/document-signing-complete-dialog.tsx
+msgid "You’ve completed all required fields and signatures for the document below."
+msgstr "You’ve completed all required fields and signatures for the document below."
 
 #: apps/remix/app/components/dialogs/ai-field-detection-dialog.tsx
 #: apps/remix/app/components/dialogs/ai-recipient-detection-dialog.tsx
