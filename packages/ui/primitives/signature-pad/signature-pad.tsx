@@ -1,5 +1,5 @@
 import type { HTMLAttributes } from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Trans } from '@lingui/react/macro';
 import { KeyboardIcon, UploadCloudIcon } from 'lucide-react';
@@ -18,11 +18,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './signature-tabs';
 export type SignaturePadValue = {
   type: DocumentSignatureType;
   value: string;
+  font?: string;
+  color?: string;
 };
 
 export type SignaturePadProps = Omit<HTMLAttributes<HTMLCanvasElement>, 'onChange'> & {
   fullName?: string;
-  value?: string;
+  value?: SignaturePadValue;
   onChange?: (_value: SignaturePadValue) => void;
 
   disabled?: boolean;
@@ -36,54 +38,71 @@ export type SignaturePadProps = Omit<HTMLAttributes<HTMLCanvasElement>, 'onChang
 
 export const SignaturePad = ({
   fullName,
-  value = '',
+  value,
   onChange,
   disabled = false,
   typedSignatureEnabled = true,
   uploadSignatureEnabled = true,
   drawSignatureEnabled = true,
 }: SignaturePadProps) => {
-  const [imageSignature, setImageSignature] = useState(isBase64Image(value) ? value : '');
-  const [drawSignature, setDrawSignature] = useState(isBase64Image(value) ? value : '');
-  const [typedSignature, setTypedSignature] = useState(isBase64Image(value) ? '' : value);
+  const [imageSignature, setImageSignature] = useState(
+    value?.type === DocumentSignatureType.UPLOAD && isBase64Image(value?.value) ? value.value : '',
+  );
+
+  const [drawSignature, setDrawSignature] = useState(
+    value?.type === DocumentSignatureType.DRAW && isBase64Image(value?.value) ? value.value : '',
+  );
+
+  const [typedSignature, setTypedSignature] = useState<SignaturePadValue>({
+    type: DocumentSignatureType.TYPE,
+    value:
+      value?.type === DocumentSignatureType.TYPE && !isBase64Image(value.value) ? value.value : '',
+    font: value?.font || 'Dancing Script',
+    color: value?.color || 'black',
+  });
+
+  useEffect(() => {
+    if (!value) return;
+
+    switch (value.type) {
+      case DocumentSignatureType.DRAW:
+        setDrawSignature(value.value);
+        break;
+      case DocumentSignatureType.UPLOAD:
+        setImageSignature(value.value);
+        break;
+      case DocumentSignatureType.TYPE:
+        setTypedSignature({
+          type: DocumentSignatureType.TYPE,
+          value: value.value,
+          font: value.font || 'Dancing Script',
+          color: value.color || 'black',
+        });
+        break;
+    }
+  }, [value]);
 
   /**
-   * This is cooked.
-   *
    * Get the first enabled tab that has a signature if possible, otherwise just get
    * the first enabled tab.
    */
-  const [tab, setTab] = useState(
-    ((): 'draw' | 'text' | 'image' => {
-      // First passthrough to check to see if there's a signature for a given tab.
-      if (drawSignatureEnabled && drawSignature) {
-        return 'draw';
-      }
+  const [tab, setTab] = useState<'draw' | 'text' | 'image'>(() => {
+    if (value?.type === DocumentSignatureType.DRAW && drawSignatureEnabled) return 'draw';
+    if (value?.type === DocumentSignatureType.UPLOAD && uploadSignatureEnabled) return 'image';
+    if (value?.type === DocumentSignatureType.TYPE && typedSignatureEnabled) return 'text';
 
-      if (typedSignatureEnabled && typedSignature) {
-        return 'text';
-      }
+    // Second passthrough to check if there's a signature for a given tab
+    if (drawSignatureEnabled && drawSignature) return 'draw';
+    if (typedSignatureEnabled && typedSignature.value) return 'text';
+    if (uploadSignatureEnabled && imageSignature) return 'image';
 
-      if (uploadSignatureEnabled && imageSignature) {
-        return 'image';
-      }
+    // Third passthrough to just select the first available tab
+    if (drawSignatureEnabled) return 'draw';
+    if (typedSignatureEnabled) return 'text';
+    if (uploadSignatureEnabled) return 'image';
 
-      // Second passthrough to just select the first avaliable tab.
-      if (drawSignatureEnabled) {
-        return 'draw';
-      }
-
-      if (typedSignatureEnabled) {
-        return 'text';
-      }
-
-      if (uploadSignatureEnabled) {
-        return 'image';
-      }
-
-      throw new Error('No signature enabled');
-    })(),
-  );
+    throw new Error('No signature enabled');
+  });
 
   const onImageSignatureChange = (value: string) => {
     setImageSignature(value);
@@ -103,30 +122,40 @@ export const SignaturePad = ({
     });
   };
 
-  const onTypedSignatureChange = (value: string) => {
-    setTypedSignature(value);
-
-    onChange?.({
-      type: DocumentSignatureType.TYPE,
-      value,
-    });
+  const onTypedSignatureChange = (signature: SignaturePadValue) => {
+    setTypedSignature(signature);
+    onChange?.(signature);
   };
 
-  const onTabChange = (value: 'draw' | 'text' | 'image') => {
-    if (disabled) {
-      return;
-    }
+  const onTabChange = (selectedTab: 'draw' | 'text' | 'image') => {
+    if (disabled) return;
 
-    setTab(value);
+    setTab(selectedTab);
 
-    match(value)
+    match(selectedTab)
       .with('draw', () => {
+        setTypedSignature({
+          type: DocumentSignatureType.TYPE,
+          value: '',
+          font: 'Dancing Script',
+          color: 'black',
+        });
+        setImageSignature('');
         onDrawSignatureChange(drawSignature);
       })
       .with('text', () => {
+        setDrawSignature('');
+        setImageSignature('');
         onTypedSignatureChange(typedSignature);
       })
       .with('image', () => {
+        setTypedSignature({
+          type: DocumentSignatureType.TYPE,
+          value: '',
+          font: 'Dancing Script',
+          color: 'black',
+        });
+        setDrawSignature('');
         onImageSignatureChange(imageSignature);
       })
       .exhaustive();

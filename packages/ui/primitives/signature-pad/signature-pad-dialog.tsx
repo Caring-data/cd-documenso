@@ -6,6 +6,7 @@ import { Trans, useLingui } from '@lingui/react/macro';
 import { motion } from 'framer-motion';
 
 import { parseMessageDescriptor } from '@documenso/lib/utils/i18n';
+import { DocumentSignatureType } from '@documenso/lib/utils/teams';
 import {
   Dialog,
   DialogClose,
@@ -17,6 +18,7 @@ import {
 
 import { cn } from '../../lib/utils';
 import { Button } from '../button';
+import type { SignaturePadValue } from './signature-pad';
 import { SignaturePad } from './signature-pad';
 import { SignatureRender } from './signature-render';
 
@@ -24,8 +26,8 @@ export type SignaturePadDialogProps = Omit<HTMLAttributes<HTMLCanvasElement>, 'o
   disabled?: boolean;
   fullName?: string;
   recipientEmail?: string;
-  value?: string;
-  onChange: (_value: string) => void;
+  value?: SignaturePadValue;
+  onChange: (_value: SignaturePadValue) => void;
   dialogConfirmText?: MessageDescriptor | string;
   disableAnimation?: boolean;
   typedSignatureEnabled?: boolean;
@@ -49,7 +51,12 @@ export const SignaturePadDialog = ({
   const { i18n } = useLingui();
 
   const [showSignatureModal, setShowSignatureModal] = useState(false);
-  const [signature, setSignature] = useState<string>(value ?? '');
+  const [signature, setSignature] = useState<SignaturePadValue>({
+    type: value?.type ?? DocumentSignatureType.DRAW,
+    value: value?.value ?? '',
+    font: value?.font ?? 'Dancing Script',
+    color: value?.color ?? 'black',
+  });
 
   return (
     <div
@@ -63,7 +70,7 @@ export const SignaturePadDialog = ({
     >
       {value && (
         <div className="inset-0 h-full w-full">
-          <SignatureRender value={value} />
+          <SignatureRender value={value.value} font={value.font} color={value.color} />
         </div>
       )}
 
@@ -135,10 +142,10 @@ export const SignaturePadDialog = ({
           <SignaturePad
             id="signature"
             fullName={fullName}
-            value={value}
+            value={signature}
             className={className}
             disabled={disabled}
-            onChange={({ value }) => setSignature(value)}
+            onChange={setSignature}
             typedSignatureEnabled={typedSignatureEnabled}
             uploadSignatureEnabled={uploadSignatureEnabled}
             drawSignatureEnabled={drawSignatureEnabled}

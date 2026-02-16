@@ -7,12 +7,19 @@ import { cn } from '../../lib/utils';
 export type SignatureRenderProps = {
   className?: string;
   value: string;
+  font?: string;
+  color?: string;
 };
 
 /**
  * Renders a typed, uploaded or drawn signature.
  */
-export const SignatureRender = ({ className, value }: SignatureRenderProps) => {
+export const SignatureRender = ({
+  className,
+  value,
+  font = 'Dancing Script',
+  color = 'black',
+}: SignatureRenderProps) => {
   const $el = useRef<HTMLCanvasElement>(null);
   const $imageData = useRef<ImageData | null>(null);
 
@@ -27,19 +34,18 @@ export const SignatureRender = ({ className, value }: SignatureRenderProps) => {
       return;
     }
 
-    ctx.clearRect(0, 0, $el.current.width, $el.current.height);
-
     const canvasWidth = $el.current.width;
     const canvasHeight = $el.current.height;
-    const fontFamily = 'Caveat';
+    const fontFamily = font ?? 'Caveat';
+    const fillColor = color ?? '#000000';
 
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    // ctx.fillStyle = selectedColor; // Todo: Color not implemented...
+    ctx.fillStyle = fillColor;
 
-    // Calculate the desired width (25ch)
-    const desiredWidth = canvasWidth * 0.85; // 85% of canvas width
+    // Calculate the desired width (70% of canvas)
+    const desiredWidth = canvasWidth * 0.7;
 
     // Start with a base font size
     let fontSize = 18;
@@ -108,6 +114,12 @@ export const SignatureRender = ({ className, value }: SignatureRenderProps) => {
       $el.current.width = $el.current.clientWidth * SIGNATURE_CANVAS_DPI;
       $el.current.height = $el.current.clientHeight * SIGNATURE_CANVAS_DPI;
     }
+
+    if (isBase64Image(value)) {
+      renderImageSignature();
+    } else {
+      renderTypedSignature();
+    }
   }, []);
 
   useEffect(() => {
@@ -116,7 +128,7 @@ export const SignatureRender = ({ className, value }: SignatureRenderProps) => {
     } else {
       renderTypedSignature();
     }
-  }, [value]);
+  }, [value, font, color]);
 
   return (
     <canvas
