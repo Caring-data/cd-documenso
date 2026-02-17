@@ -426,7 +426,7 @@ export const ZGenerateDocumentFromTemplateBase64MutationSchema =
         ownerName: z.string().optional(),
         locationName: z.string().optional(),
         formType: z.enum(['custom', 'standard', 'custom_default']).optional(),
-        module: z.string().trim().min(1).optional(),
+        module: z.enum(['resident', 'staff', 'facility', 'reports']).optional(),
       })
       .optional(),
     ccRecipients: z

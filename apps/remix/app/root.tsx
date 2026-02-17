@@ -26,9 +26,13 @@ import stylesheet from './app.css?url';
 import { GenericErrorLayout } from './components/general/generic-error-layout';
 import { langCookie } from './storage/lang-cookie.server';
 import { themeSessionResolver } from './storage/theme-session.server';
+import fontsStylesheet from './styles/fonts.css?url';
 import { appMetaTags } from './utils/meta';
 
-export const links: Route.LinksFunction = () => [{ rel: 'stylesheet', href: stylesheet }];
+export const links: Route.LinksFunction = () => [
+  { rel: 'stylesheet', href: stylesheet },
+  { rel: 'stylesheet', href: fontsStylesheet },
+];
 
 export function meta() {
   return appMetaTags();

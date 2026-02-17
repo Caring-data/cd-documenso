@@ -36,6 +36,7 @@ export type SignFieldWithTokenOptions = {
   userId?: number;
   authOptions?: TRecipientActionAuth;
   requestMetadata?: RequestMetadata;
+  typedSignatureSettings?: { font?: string; color?: string } | null;
 };
 
 /**
@@ -56,6 +57,7 @@ export const signFieldWithToken = async ({
   userId,
   authOptions,
   requestMetadata,
+  typedSignatureSettings,
 }: SignFieldWithTokenOptions) => {
   const recipient = await prisma.recipient.findFirstOrThrow({
     where: {
@@ -258,10 +260,12 @@ export const signFieldWithToken = async ({
           recipientId: field.recipientId,
           signatureImageAsBase64: signatureImageAsBase64,
           typedSignature: typedSignature,
+          typedSignatureSettings: typedSignature ? typedSignatureSettings : null,
         },
         update: {
           signatureImageAsBase64: signatureImageAsBase64,
           typedSignature: typedSignature,
+          typedSignatureSettings: typedSignature ? typedSignatureSettings : null,
         },
       });
 

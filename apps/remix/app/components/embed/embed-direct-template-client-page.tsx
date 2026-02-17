@@ -18,6 +18,7 @@ import {
   isRequiredField,
 } from '@documenso/lib/utils/advanced-fields-helpers';
 import { validateFieldsInserted } from '@documenso/lib/utils/fields';
+import { DocumentSignatureType } from '@documenso/lib/utils/teams';
 import { trpc } from '@documenso/trpc/react';
 import type {
   TRemovedSignedFieldWithTokenMutationSchema,
@@ -98,7 +99,7 @@ export const EmbedDirectTemplateClientPage = ({
 
   const hasSignatureField = localFields.some((field) => field.type === FieldType.SIGNATURE);
 
-  const signatureValid = !hasSignatureField || (signature && signature.trim() !== '');
+  const signatureValid = !hasSignatureField || Boolean(signature?.value?.trim());
 
   const { mutateAsync: createDocumentFromDirectTemplate, isPending: isSubmitting } =
     trpc.template.createDocumentFromDirectTemplate.useMutation();
@@ -118,6 +119,8 @@ export const EmbedDirectTemplateClientPage = ({
         });
 
         if (field.type === FieldType.SIGNATURE) {
+          const isBase64 = payload.value?.startsWith('data:');
+
           newField.signature = {
             id: 1,
             created: new Date(),
@@ -127,7 +130,8 @@ export const EmbedDirectTemplateClientPage = ({
               payload.value && payload.value.startsWith('data:') ? payload.value : null,
             typedSignature:
               payload.value && !payload.value.startsWith('data:') ? payload.value : null,
-            typedSignatureSettings: null,
+            typedSignatureSettings:
+              !isBase64 && payload.typedSignatureSettings ? payload.typedSignatureSettings : null,
           } satisfies Signature;
         }
 
@@ -309,6 +313,9 @@ export const EmbedDirectTemplateClientPage = ({
   }, [hasFinishedInit, hasDocumentLoaded]);
 
   if (hasCompletedDocument) {
+    const sigValue = signature?.value ?? '';
+    const isBase64 = sigValue.startsWith('data:');
+
     return (
       <EmbedDocumentCompleted
         name={fullName}
@@ -317,9 +324,15 @@ export const EmbedDirectTemplateClientPage = ({
           fieldId: 1,
           recipientId: 1,
           created: new Date(),
-          signatureImageAsBase64: signature?.startsWith('data:') ? signature : null,
-          typedSignature: signature?.startsWith('data:') ? null : signature,
-          typedSignatureSettings: null,
+          signatureImageAsBase64: isBase64 ? sigValue : null,
+          typedSignature: isBase64 ? null : sigValue,
+          typedSignatureSettings:
+            !isBase64 && signature?.type === DocumentSignatureType.TYPE
+              ? {
+                  font: signature.font ?? 'Dancing Script',
+                  color: signature.color ?? 'black',
+                }
+              : null,
         }}
       />
     );
@@ -442,8 +455,8 @@ export const EmbedDirectTemplateClientPage = ({
                       disableAnimation
                       fullName={fullName}
                       recipientEmail={recipient?.email}
-                      value={signature ?? ''}
-                      onChange={(v) => setSignature(v ?? '')}
+                      value={signature ?? undefined}
+                      onChange={setSignature}
                       typedSignatureEnabled={metadata?.typedSignatureEnabled}
                       uploadSignatureEnabled={metadata?.uploadSignatureEnabled}
                       drawSignatureEnabled={metadata?.drawSignatureEnabled}

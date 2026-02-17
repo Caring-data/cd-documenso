@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+
 import { zodResolver } from '@hookform/resolvers/zod';
 import { msg } from '@lingui/core/macro';
 import { useLingui } from '@lingui/react';
@@ -6,6 +8,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 import { useSession } from '@documenso/lib/client-only/providers/session';
+import { DocumentSignatureType } from '@documenso/lib/utils/teams';
 import { trpc } from '@documenso/trpc/react';
 import { cn } from '@documenso/ui/lib/utils';
 import { Button } from '@documenso/ui/primitives/button';
@@ -27,14 +30,19 @@ export const ZProfileFormSchema = z.object({
     .string()
     .trim()
     .min(1, { message: msg`Please enter a valid name.`.id }),
-  signature: z.string().min(1, { message: msg`Signature Pad cannot be empty.`.id }),
+  signature: z.object({
+    type: z.nativeEnum(DocumentSignatureType),
+    value: z.string().min(1, { message: msg`Signature cannot be empty.`.id }),
+    font: z.string().optional(),
+    color: z.string().optional(),
+  }),
 });
 
-export const ZTwoFactorAuthTokenSchema = z.object({
-  token: z.string(),
-});
+type SignatureTypedSettings = {
+  font?: string;
+  color?: string;
+} | null;
 
-export type TTwoFactorAuthTokenSchema = z.infer<typeof ZTwoFactorAuthTokenSchema>;
 export type TProfileFormSchema = z.infer<typeof ZProfileFormSchema>;
 
 export type ProfileFormProps = {
@@ -47,12 +55,61 @@ export const ProfileForm = ({ className }: ProfileFormProps) => {
   const { user, refreshSession } = useSession();
 
   const form = useForm<TProfileFormSchema>({
-    values: {
-      name: user.name ?? '',
-      signature: user.signature || '',
+    defaultValues: {
+      name: '',
+      signature: {
+        type: DocumentSignatureType.TYPE,
+        value: '',
+        font: 'Dancing Script',
+        color: 'black',
+      },
     },
     resolver: zodResolver(ZProfileFormSchema),
   });
+
+  const buildSignatureFromUser = (signature: string | null, settings: SignatureTypedSettings) => {
+    if (!signature) return null;
+
+    const isBase64 = signature.startsWith('data:');
+
+    if (isBase64) {
+      return {
+        type: DocumentSignatureType.DRAW,
+        value: signature,
+      };
+    }
+
+    return {
+      type: DocumentSignatureType.TYPE,
+      value: signature,
+      font: settings?.font ?? 'Dancing Script',
+      color: settings?.color ?? 'black',
+    };
+  };
+
+  useEffect(() => {
+    const parsed = z
+      .object({
+        font: z.string().optional(),
+        color: z.string().optional(),
+      })
+      .nullable()
+      .safeParse(user.signatureTypedSettings);
+
+    const settings = parsed.success ? parsed.data : null;
+
+    const signatureValue = buildSignatureFromUser(user.signature, settings);
+
+    form.reset({
+      name: user.name ?? '',
+      signature: signatureValue ?? {
+        type: DocumentSignatureType.TYPE,
+        value: '',
+        font: 'Dancing Script',
+        color: 'black',
+      },
+    });
+  }, [user.name, user.signature, user.signatureTypedSettings]);
 
   const isSubmitting = form.formState.isSubmitting;
 
@@ -60,9 +117,15 @@ export const ProfileForm = ({ className }: ProfileFormProps) => {
 
   const onFormSubmit = async ({ name, signature }: TProfileFormSchema) => {
     try {
+      const typedSettings =
+        signature.type === DocumentSignatureType.TYPE
+          ? { font: signature.font ?? 'Dancing Script', color: signature.color ?? 'black' }
+          : null;
+
       await updateProfile({
         name,
-        signature,
+        signature: signature.value,
+        signatureTypedSettings: typedSettings,
       });
 
       await refreshSession();
@@ -126,7 +189,7 @@ export const ProfileForm = ({ className }: ProfileFormProps) => {
                     disabled={isSubmitting}
                     fullName={user.name ?? ''}
                     value={value}
-                    onChange={(v) => onChange(v ?? '')}
+                    onChange={(v) => onChange(v ?? undefined)}
                   />
                 </FormControl>
                 <FormMessage />
