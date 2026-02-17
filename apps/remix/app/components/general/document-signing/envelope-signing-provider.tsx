@@ -9,6 +9,7 @@ import {
   SigningStatus,
 } from '@prisma/client';
 import { prop, sortBy } from 'remeda';
+import z from 'zod';
 
 import { isBase64Image } from '@documenso/lib/constants/signatures';
 import { DO_NOT_INVALIDATE_QUERY_ON_MUTATION } from '@documenso/lib/constants/trpc';
@@ -19,8 +20,17 @@ import {
   isRequiredField,
 } from '@documenso/lib/utils/advanced-fields-helpers';
 import { extractFieldInsertionValues } from '@documenso/lib/utils/envelope-signing';
+import { DocumentSignatureType } from '@documenso/lib/utils/teams';
 import { trpc } from '@documenso/trpc/react';
 import type { TSignEnvelopeFieldValue } from '@documenso/trpc/server/envelope-router/sign-envelope-field.types';
+import type { SignaturePadValue } from '@documenso/ui/primitives/signature-pad';
+
+const ZTypedSignatureSettings = z
+  .object({
+    font: z.string().optional(),
+    color: z.string().optional(),
+  })
+  .nullable();
 
 export type EnvelopeSigningContextValue = {
   isDirectTemplate: boolean;
@@ -29,8 +39,9 @@ export type EnvelopeSigningContextValue = {
   setFullName: (_value: string) => void;
   email: string;
   setEmail: (_value: string) => void;
-  signature: string | null;
-  setSignature: (_value: string | null) => void;
+
+  signature: SignaturePadValue | null;
+  setSignature: (_value: SignaturePadValue | null) => void;
 
   showPendingFieldTooltip: boolean;
   setShowPendingFieldTooltip: (_value: boolean) => void;
@@ -129,43 +140,69 @@ export const EnvelopeSigningProvider = ({
     },
   });
 
-  // Ensure the user signature doesn't show up if it's not allowed.
-  const [signature, setSignature] = useState(
-    (() => {
-      const sig = initialSignature || '';
-      const isBase64 = isBase64Image(sig);
+  const [signature, setSignature] = useState<SignaturePadValue | null>(() => {
+    const sig = initialSignature || '';
 
+    if (!sig) {
       if (
-        !sig &&
         (envelope.documentMeta.uploadSignatureEnabled ||
           envelope.documentMeta.drawSignatureEnabled) &&
         envelopeData.recipientSignature?.signatureImageAsBase64
       ) {
-        return envelopeData.recipientSignature.signatureImageAsBase64;
+        return {
+          type: envelope.documentMeta.drawSignatureEnabled
+            ? DocumentSignatureType.DRAW
+            : DocumentSignatureType.UPLOAD,
+          value: envelopeData.recipientSignature.signatureImageAsBase64,
+        };
       }
 
       if (
-        !sig &&
         envelope.documentMeta.typedSignatureEnabled &&
         envelopeData.recipientSignature?.typedSignature
       ) {
-        return envelopeData.recipientSignature.typedSignature;
-      }
+        const parsed = ZTypedSignatureSettings.safeParse(
+          envelopeData.recipientSignature?.typedSignatureSettings,
+        );
 
-      if (
-        isBase64 &&
-        (envelope.documentMeta.uploadSignatureEnabled || envelope.documentMeta.drawSignatureEnabled)
-      ) {
-        return sig;
-      }
+        const settings = parsed.success ? parsed.data : null;
 
-      if (!isBase64 && envelope.documentMeta.typedSignatureEnabled) {
-        return sig;
+        return {
+          type: DocumentSignatureType.TYPE,
+          value: envelopeData.recipientSignature.typedSignature,
+          font: settings?.font || 'Dancing Script',
+          color: settings?.color || 'black',
+        };
       }
 
       return null;
-    })(),
-  );
+    }
+
+    const isBase64 = isBase64Image(sig);
+
+    if (
+      isBase64 &&
+      (envelope.documentMeta.uploadSignatureEnabled || envelope.documentMeta.drawSignatureEnabled)
+    ) {
+      return {
+        type: envelope.documentMeta.drawSignatureEnabled
+          ? DocumentSignatureType.DRAW
+          : DocumentSignatureType.UPLOAD,
+        value: sig,
+      };
+    }
+
+    if (!isBase64 && envelope.documentMeta.typedSignatureEnabled) {
+      return {
+        type: DocumentSignatureType.TYPE,
+        value: sig,
+        font: 'Dancing Script',
+        color: 'black',
+      };
+    }
+
+    return null;
+  });
 
   /**
    * The fields that are still required to be signed by the actual recipient.
@@ -245,7 +282,7 @@ export const EnvelopeSigningProvider = ({
 
   const selectedAssistantRecipientFields = useMemo(() => {
     return assistantFields.filter((field) => field.recipientId === selectedAssistantRecipient?.id);
-  }, [recipientFields, selectedAssistantRecipient]);
+  }, [assistantFields, selectedAssistantRecipient]);
 
   /**
    * Fields that have been completed by other recipients.
@@ -344,7 +381,13 @@ export const EnvelopeSigningProvider = ({
             // Dummy IDs.
             id: 0,
             fieldId: 0,
-            typedSignatureSettings: null,
+            typedSignatureSettings:
+              !isBase64 && signature?.type === DocumentSignatureType.TYPE
+                ? {
+                    font: signature.font || 'Dancing Script',
+                    color: signature.color || 'black',
+                  }
+                : null,
           }
         : null;
     }

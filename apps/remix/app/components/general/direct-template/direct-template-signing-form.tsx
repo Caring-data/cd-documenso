@@ -105,14 +105,23 @@ export const DirectTemplateSigningForm = ({
         };
 
         if (field.type === FieldType.SIGNATURE) {
+          const raw = typeof value.value === 'string' ? value.value : null;
+          const isBase64 = !!raw && raw.startsWith('data:');
+
           tempField.signature = {
             id: 1,
             created: new Date(),
             recipientId: 1,
             fieldId: 1,
-            signatureImageAsBase64: value.value?.startsWith('data:') ? value.value : null,
-            typedSignature: value.value && !value.value.startsWith('data:') ? value.value : null,
-            typedSignatureSettings: null,
+            signatureImageAsBase64: isBase64 ? raw : null,
+            typedSignature: !isBase64 ? raw : null,
+            typedSignatureSettings:
+              !isBase64 && signature
+                ? {
+                    font: signature.font || 'Dancing Script',
+                    color: signature.color || 'black',
+                  }
+                : null,
           } satisfies Signature;
         }
 
@@ -420,8 +429,8 @@ export const DirectTemplateSigningForm = ({
                 disabled={isSubmitting}
                 fullName={fullName}
                 recipientEmail={nextRecipient?.email}
-                value={signature ?? ''}
-                onChange={(value) => setSignature(value)}
+                value={signature ?? undefined}
+                onChange={setSignature}
                 typedSignatureEnabled={template.templateMeta?.typedSignatureEnabled}
                 uploadSignatureEnabled={template.templateMeta?.uploadSignatureEnabled}
                 drawSignatureEnabled={template.templateMeta?.drawSignatureEnabled}

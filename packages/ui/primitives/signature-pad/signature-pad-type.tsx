@@ -24,7 +24,6 @@ export const SignaturePadType = ({
   onChange,
 }: SignaturePadTypeProps) => {
   const { t } = useLingui();
-
   const $isDirty = useRef(false);
 
   const [selectedFont, setSelectedFont] = useState(value?.font || 'Dancing Script');
@@ -41,15 +40,6 @@ export const SignaturePadType = ({
       });
     }
   }, [defaultValue, value?.value, selectedFont, selectedColor, onChange]);
-
-  useEffect(() => {
-    if (value?.font && value.font !== selectedFont) {
-      setSelectedFont(value.font);
-    }
-    if (value?.color && value.color !== selectedColor) {
-      setSelectedColor(value.color);
-    }
-  }, [value?.font, value?.color]);
 
   const handleChange = (newValue: string) => {
     onChange({

@@ -1,5 +1,5 @@
 import type { HTMLAttributes } from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import type { MessageDescriptor } from '@lingui/core';
 import { Trans, useLingui } from '@lingui/react/macro';
@@ -58,6 +58,19 @@ export const SignaturePadDialog = ({
     color: value?.color ?? 'black',
   });
 
+  const hasSignature = Boolean(value?.value?.trim());
+
+  useEffect(() => {
+    if (showSignatureModal) return;
+
+    setSignature({
+      type: value?.type ?? DocumentSignatureType.DRAW,
+      value: value?.value ?? '',
+      font: value?.font ?? 'Dancing Script',
+      color: value?.color ?? 'black',
+    });
+  }, [value?.type, value?.value, value?.font, value?.color, showSignatureModal]);
+
   return (
     <div
       className={cn(
@@ -68,9 +81,9 @@ export const SignaturePadDialog = ({
         },
       )}
     >
-      {value && (
+      {hasSignature && (
         <div className="inset-0 h-full w-full">
-          <SignatureRender value={value.value} font={value.font} color={value.color} />
+          <SignatureRender value={value!.value} font={value!.font} color={value!.color} />
         </div>
       )}
 
@@ -82,7 +95,7 @@ export const SignaturePadDialog = ({
         onClick={() => setShowSignatureModal(true)}
         whileHover="onHover"
       >
-        {!value && !disableAnimation && (
+        {!hasSignature && !disableAnimation && (
           <motion.svg
             width="120"
             height="120"

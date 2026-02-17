@@ -1,5 +1,5 @@
 import type { HTMLAttributes } from 'react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { Trans } from '@lingui/react/macro';
 import { KeyboardIcon, UploadCloudIcon } from 'lucide-react';
@@ -46,116 +46,98 @@ export const SignaturePad = ({
   drawSignatureEnabled = true,
 }: SignaturePadProps) => {
   const [imageSignature, setImageSignature] = useState(
-    value?.type === DocumentSignatureType.UPLOAD && isBase64Image(value?.value) ? value.value : '',
+    value?.value && isBase64Image(value.value) ? value.value : '',
   );
 
   const [drawSignature, setDrawSignature] = useState(
-    value?.type === DocumentSignatureType.DRAW && isBase64Image(value?.value) ? value.value : '',
+    value?.value && isBase64Image(value.value) ? value.value : '',
   );
 
-  const [typedSignature, setTypedSignature] = useState<SignaturePadValue>({
-    type: DocumentSignatureType.TYPE,
-    value:
-      value?.type === DocumentSignatureType.TYPE && !isBase64Image(value.value) ? value.value : '',
-    font: value?.font || 'Dancing Script',
-    color: value?.color || 'black',
-  });
+  const [typedSignature, setTypedSignature] = useState(
+    value?.value && !isBase64Image(value.value) ? value.value : '',
+  );
 
-  useEffect(() => {
-    if (!value) return;
+  const [typedFont, setTypedFont] = useState(value?.font || 'Dancing Script');
+  const [typedColor, setTypedColor] = useState(value?.color || 'black');
 
-    switch (value.type) {
-      case DocumentSignatureType.DRAW:
-        setDrawSignature(value.value);
-        break;
-      case DocumentSignatureType.UPLOAD:
-        setImageSignature(value.value);
-        break;
-      case DocumentSignatureType.TYPE:
-        setTypedSignature({
-          type: DocumentSignatureType.TYPE,
-          value: value.value,
-          font: value.font || 'Dancing Script',
-          color: value.color || 'black',
-        });
-        break;
-    }
-  }, [value]);
+  const [tab, setTab] = useState(
+    ((): 'draw' | 'text' | 'image' => {
+      // First passthrough to check to see if there's a signature for a given tab.
+      if (drawSignatureEnabled && drawSignature) {
+        return 'draw';
+      }
 
-  /**
-   * Get the first enabled tab that has a signature if possible, otherwise just get
-   * the first enabled tab.
-   */
-  const [tab, setTab] = useState<'draw' | 'text' | 'image'>(() => {
-    if (value?.type === DocumentSignatureType.DRAW && drawSignatureEnabled) return 'draw';
-    if (value?.type === DocumentSignatureType.UPLOAD && uploadSignatureEnabled) return 'image';
-    if (value?.type === DocumentSignatureType.TYPE && typedSignatureEnabled) return 'text';
+      if (typedSignatureEnabled && typedSignature) {
+        return 'text';
+      }
 
-    // Second passthrough to check if there's a signature for a given tab
-    if (drawSignatureEnabled && drawSignature) return 'draw';
-    if (typedSignatureEnabled && typedSignature.value) return 'text';
-    if (uploadSignatureEnabled && imageSignature) return 'image';
+      if (uploadSignatureEnabled && imageSignature) {
+        return 'image';
+      }
 
-    // Third passthrough to just select the first available tab
-    if (drawSignatureEnabled) return 'draw';
-    if (typedSignatureEnabled) return 'text';
-    if (uploadSignatureEnabled) return 'image';
+      // Second passthrough to just select the first available tab.
+      if (drawSignatureEnabled) {
+        return 'draw';
+      }
 
-    throw new Error('No signature enabled');
-  });
+      if (typedSignatureEnabled) {
+        return 'text';
+      }
 
-  const onImageSignatureChange = (value: string) => {
-    setImageSignature(value);
+      if (uploadSignatureEnabled) {
+        return 'image';
+      }
+
+      throw new Error('No signature enabled');
+    })(),
+  );
+
+  const onImageSignatureChange = (newValue: string) => {
+    setImageSignature(newValue);
 
     onChange?.({
       type: DocumentSignatureType.UPLOAD,
-      value,
+      value: newValue,
     });
   };
 
-  const onDrawSignatureChange = (value: string) => {
-    setDrawSignature(value);
+  const onDrawSignatureChange = (newValue: string) => {
+    setDrawSignature(newValue);
 
     onChange?.({
       type: DocumentSignatureType.DRAW,
-      value,
+      value: newValue,
     });
   };
 
   const onTypedSignatureChange = (signature: SignaturePadValue) => {
-    setTypedSignature(signature);
+    setTypedSignature(signature.value);
+    setTypedFont(signature.font || 'Dancing Script');
+    setTypedColor(signature.color || 'black');
+
     onChange?.(signature);
   };
 
   const onTabChange = (selectedTab: 'draw' | 'text' | 'image') => {
-    if (disabled) return;
+    if (disabled) {
+      return;
+    }
 
     setTab(selectedTab);
 
     match(selectedTab)
       .with('draw', () => {
-        setTypedSignature({
-          type: DocumentSignatureType.TYPE,
-          value: '',
-          font: 'Dancing Script',
-          color: 'black',
-        });
-        setImageSignature('');
         onDrawSignatureChange(drawSignature);
       })
       .with('text', () => {
-        setDrawSignature('');
-        setImageSignature('');
-        onTypedSignatureChange(typedSignature);
+        onTypedSignatureChange({
+          type: DocumentSignatureType.TYPE,
+          value: typedSignature,
+          font: typedFont,
+          color: typedColor,
+        });
       })
       .with('image', () => {
-        setTypedSignature({
-          type: DocumentSignatureType.TYPE,
-          value: '',
-          font: 'Dancing Script',
-          color: 'black',
-        });
-        setDrawSignature('');
         onImageSignatureChange(imageSignature);
       })
       .exhaustive();
@@ -213,7 +195,12 @@ export const SignaturePad = ({
         className="relative flex aspect-signature-pad items-center justify-center rounded-md border border-border bg-neutral-50 text-center dark:bg-background"
       >
         <SignaturePadType
-          value={typedSignature}
+          value={{
+            type: DocumentSignatureType.TYPE,
+            value: typedSignature,
+            font: typedFont,
+            color: typedColor,
+          }}
           defaultValue={fullName}
           onChange={onTypedSignatureChange}
         />
