@@ -115,13 +115,7 @@ export const DirectTemplateSigningForm = ({
             fieldId: 1,
             signatureImageAsBase64: isBase64 ? raw : null,
             typedSignature: !isBase64 ? raw : null,
-            typedSignatureSettings:
-              !isBase64 && signature
-                ? {
-                    font: signature.font || 'Dancing Script',
-                    color: signature.color || 'black',
-                  }
-                : null,
+            typedSignatureSettings: value.typedSignatureSettings ?? null,
           } satisfies Signature;
         }
 

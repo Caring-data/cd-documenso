@@ -1,15 +1,17 @@
 import { FieldType } from '@prisma/client';
+import console from 'console';
 
 import { AppError, AppErrorCode } from '@documenso/lib/errors/app-error';
 import type { TFieldSignature } from '@documenso/lib/types/field';
 import type { TSignEnvelopeFieldValue } from '@documenso/trpc/server/envelope-router/sign-envelope-field.types';
+import type { SignaturePadValue } from '@documenso/ui/primitives/signature-pad';
 
 import { SignFieldSignatureDialog } from '~/components/dialogs/sign-field-signature-dialog';
 
 type HandleSignatureFieldClickOptions = {
   field: TFieldSignature;
   fullName?: string;
-  signature: string | null;
+  signature: SignaturePadValue | null;
   typedSignatureEnabled?: boolean;
   uploadSignatureEnabled?: boolean;
   drawSignatureEnabled?: boolean;
@@ -40,7 +42,7 @@ export const handleSignatureFieldClick = async (
     };
   }
 
-  let signatureToInsert = signature;
+  let signatureToInsert: SignaturePadValue | null = signature;
 
   if (!signatureToInsert) {
     signatureToInsert = await SignFieldSignatureDialog.call({
@@ -51,12 +53,21 @@ export const handleSignatureFieldClick = async (
     });
   }
 
-  if (!signatureToInsert) {
+  if (!signatureToInsert?.value) {
     return null;
   }
 
+  const isTypedSignature = !signatureToInsert.value.startsWith('data:image');
+  console.log('isTypedSignature', isTypedSignature);
+  console.log('signatureToInsert', signatureToInsert);
   return {
     type: FieldType.SIGNATURE,
-    value: signatureToInsert,
+    value: signatureToInsert.value,
+    typedSignatureSettings: isTypedSignature
+      ? {
+          font: signatureToInsert.font,
+          color: signatureToInsert.color,
+        }
+      : null,
   };
 };

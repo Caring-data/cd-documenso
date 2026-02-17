@@ -382,11 +382,8 @@ export const EnvelopeSigningProvider = ({
             id: 0,
             fieldId: 0,
             typedSignatureSettings:
-              !isBase64 && signature?.type === DocumentSignatureType.TYPE
-                ? {
-                    font: signature.font || 'Dancing Script',
-                    color: signature.color || 'black',
-                  }
+              !isBase64 && fieldValue.typedSignatureSettings
+                ? fieldValue.typedSignatureSettings
                 : null,
           }
         : null;

@@ -5,6 +5,7 @@ import { useLingui } from '@lingui/react';
 import { Trans } from '@lingui/react/macro';
 import { Loader } from 'lucide-react';
 import { useRevalidator } from 'react-router';
+import z from 'zod';
 
 import { DO_NOT_INVALIDATE_QUERY_ON_MUTATION } from '@documenso/lib/constants/trpc';
 import { AppError, AppErrorCode } from '@documenso/lib/errors/app-error';
@@ -17,7 +18,7 @@ import type {
 } from '@documenso/trpc/server/field-router/schema';
 import { Button } from '@documenso/ui/primitives/button';
 import { Dialog, DialogContent, DialogFooter, DialogTitle } from '@documenso/ui/primitives/dialog';
-import { SignaturePad } from '@documenso/ui/primitives/signature-pad';
+import { SignaturePad, type SignaturePadValue } from '@documenso/ui/primitives/signature-pad';
 import { useToast } from '@documenso/ui/primitives/use-toast';
 
 import { DocumentSigningDisclosure } from '~/components/general/document-signing/document-signing-disclosure';
@@ -37,6 +38,13 @@ export type DocumentSigningSignatureFieldProps = {
   uploadSignatureEnabled?: boolean;
   drawSignatureEnabled?: boolean;
 };
+
+const ZTypedSignatureSettings = z
+  .object({
+    font: z.string().optional(),
+    color: z.string().optional(),
+  })
+  .nullable();
 
 export const DocumentSigningSignatureField = ({
   field,
@@ -77,7 +85,8 @@ export const DocumentSigningSignatureField = ({
   const isLoading = isSignFieldWithTokenLoading || isRemoveSignedFieldWithTokenLoading;
 
   const [showSignatureModal, setShowSignatureModal] = useState(false);
-  const [localSignature, setLocalSignature] = useState<string | null>(null);
+
+  const [localSignature, setLocalSignature] = useState<SignaturePadValue | null>(null);
 
   const state = useMemo<SignatureFieldState>(() => {
     if (!field.inserted) {
@@ -106,7 +115,7 @@ export const DocumentSigningSignatureField = ({
     setShowSignatureModal(false);
     setProvidedSignature(localSignature);
 
-    if (!localSignature) {
+    if (!localSignature?.value) {
       return;
     }
 
@@ -116,16 +125,16 @@ export const DocumentSigningSignatureField = ({
     });
   };
 
-  const onSign = async (authOptions?: TRecipientActionAuth, signature?: string) => {
+  const onSign = async (authOptions?: TRecipientActionAuth, signature?: SignaturePadValue) => {
     try {
-      const value = signature || providedSignature;
+      const signatureData = signature || providedSignature;
 
-      if (!value) {
+      if (!signatureData?.value) {
         setShowSignatureModal(true);
         return;
       }
 
-      const isTypedSignature = !value.startsWith('data:image');
+      const isTypedSignature = !signatureData.value.startsWith('data:image');
 
       if (isTypedSignature && typedSignatureEnabled === false) {
         toast({
@@ -140,9 +149,15 @@ export const DocumentSigningSignatureField = ({
       const payload: TSignFieldWithTokenMutationSchema = {
         token: recipient.token,
         fieldId: field.id,
-        value,
+        value: signatureData.value,
         isBase64: !isTypedSignature,
         authOptions,
+        typedSignatureSettings: isTypedSignature
+          ? {
+              font: signatureData.font,
+              color: signatureData.color,
+            }
+          : null,
       };
 
       if (onSignField) {
@@ -230,6 +245,12 @@ export const DocumentSigningSignatureField = ({
     return () => resizeObserver.disconnect();
   }, [signature?.typedSignature]);
 
+  const typedSettings = ZTypedSignatureSettings.safeParse(signature?.typedSignatureSettings);
+  const font = typedSettings.success
+    ? (typedSettings.data?.font ?? 'Dancing Script')
+    : 'Dancing Script';
+  const color = typedSettings.success ? (typedSettings.data?.color ?? 'black') : 'black';
+
   return (
     <DocumentSigningFieldContainer
       field={field}
@@ -263,7 +284,11 @@ export const DocumentSigningSignatureField = ({
           <p
             ref={signatureRef}
             className="w-full overflow-hidden break-all text-center font-signature leading-tight text-muted-foreground duration-200"
-            style={{ fontSize: `${fontSize}rem` }}
+            style={{
+              fontSize: `${fontSize}rem`,
+              fontFamily: font,
+              color: color,
+            }}
           >
             {signature?.typedSignature}
           </p>
@@ -282,8 +307,8 @@ export const DocumentSigningSignatureField = ({
           <SignaturePad
             className="mt-2"
             fullName={fullName}
-            value={localSignature ?? ''}
-            onChange={({ value }) => setLocalSignature(value)}
+            value={localSignature ?? undefined}
+            onChange={setLocalSignature}
             typedSignatureEnabled={typedSignatureEnabled}
             uploadSignatureEnabled={uploadSignatureEnabled}
             drawSignatureEnabled={drawSignatureEnabled}
@@ -307,7 +332,7 @@ export const DocumentSigningSignatureField = ({
               <Button
                 type="button"
                 className="flex-1"
-                disabled={!localSignature}
+                disabled={!localSignature?.value}
                 onClick={() => onDialogSignClick()}
               >
                 <Trans>Sign</Trans>

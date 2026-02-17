@@ -16,6 +16,7 @@ const pdfjsDistPath = path.dirname(require.resolve('pdfjs-dist/package.json'));
 const cMapsDir = normalizePath(path.join(pdfjsDistPath, 'cmaps'));
 
 const fontsPath = path.resolve(__dirname, '../../packages/assets/fonts');
+const fontsGlob = normalizePath(path.join(fontsPath, '*.ttf'));
 
 /**
  * Note: We load the env variables externally so we can have runtime enviroment variables
@@ -41,7 +42,7 @@ export default defineConfig({
           dest: 'static',
         },
         {
-          src: `${fontsPath}/*.ttf`,
+          src: fontsGlob,
           dest: 'fonts',
         },
       ],

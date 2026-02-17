@@ -10,7 +10,10 @@ import { Card, CardContent } from '../primitives/card';
 export type SigningCardProps = {
   className?: string;
   name: string;
-  signature?: Pick<Signature, 'signatureImageAsBase64' | 'typedSignature'>;
+  signature?: Pick<
+    Signature,
+    'signatureImageAsBase64' | 'typedSignature' | 'typedSignatureSettings'
+  >;
   signingCelebrationImage?: string;
 };
 
@@ -154,7 +157,10 @@ export const SigningCard3D = ({
 
 type SigningCardContentProps = {
   name: string;
-  signature?: Pick<Signature, 'signatureImageAsBase64' | 'typedSignature'>;
+  signature?: Pick<
+    Signature,
+    'signatureImageAsBase64' | 'typedSignature' | 'typedSignatureSettings'
+  >;
   className?: string;
 };
 

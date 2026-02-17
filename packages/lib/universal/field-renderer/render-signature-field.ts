@@ -1,4 +1,5 @@
 import Konva from 'konva';
+import z from 'zod';
 
 import { DEFAULT_SIGNATURE_TEXT_FONT_SIZE } from '../../constants/pdf';
 import { AppError } from '../../errors/app-error';
@@ -9,6 +10,13 @@ import {
 } from './field-generic-items';
 import { calculateFieldPosition } from './field-renderer';
 import type { FieldToRender, RenderFieldElementOptions } from './field-renderer';
+
+const ZTypedSignatureSettings = z
+  .object({
+    font: z.string().optional(),
+    color: z.string().optional(),
+  })
+  .nullable();
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let SkiaImage: any = undefined;
@@ -64,7 +72,12 @@ const createFieldSignature = (
 
   const signature = field.signature;
 
-  // Handle edit mode.
+  const parsedSettings = ZTypedSignatureSettings.safeParse(signature?.typedSignatureSettings);
+  const signatureFont =
+    parsedSettings.success && parsedSettings.data?.font ? parsedSettings.data.font : 'Caveat';
+  const signatureColor =
+    parsedSettings.success && parsedSettings.data?.color ? parsedSettings.data.color : 'black';
+
   if (mode === 'edit') {
     textToRender = fieldTypeName;
   }
@@ -130,7 +143,9 @@ const createFieldSignature = (
     wrap: 'char',
     text: textToRender,
     fontSize,
-    fontFamily: 'Caveat, sans-serif',
+    fontFamily:
+      mode === 'sign' || mode === 'export' ? `${signatureFont}, sans-serif` : 'Caveat, sans-serif',
+    fill: mode === 'sign' || mode === 'export' ? signatureColor : 'black',
     align: 'center',
     width: fieldWidth,
     height: fieldHeight,
