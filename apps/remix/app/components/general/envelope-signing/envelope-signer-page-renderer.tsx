@@ -53,8 +53,14 @@ import {
 } from '../document-signing/document-signing-resident-helper';
 import { useRequiredEnvelopeSigningContext } from '../document-signing/envelope-signing-provider';
 
+type SignatureForRender = Pick<
+  Signature,
+  'signatureImageAsBase64' | 'typedSignature' | 'typedSignatureSettings'
+>;
+
 type GenericLocalField = TEnvelope['fields'][number] & {
   recipient: Pick<Recipient, 'id' | 'name' | 'email' | 'signingStatus'>;
+  signature?: SignatureForRender | null;
 };
 
 export default function EnvelopeSignerPageRenderer() {
@@ -153,6 +159,13 @@ export default function EnvelopeSignerPageRenderer() {
         )
         .map((field) => ({
           ...field,
+          signature: field.signature
+            ? {
+                signatureImageAsBase64: field.signature.signatureImageAsBase64,
+                typedSignature: field.signature.typedSignature,
+                typedSignatureSettings: field.signature.typedSignatureSettings,
+              }
+            : null,
           recipient: {
             id: recipient.id,
             name: recipient.name,
@@ -578,6 +591,7 @@ export default function EnvelopeSignerPageRenderer() {
             positionX: Number(field.positionX),
             positionY: Number(field.positionY),
             fieldMeta: field.fieldMeta,
+            signature: field.signature ?? null,
           },
           translations: getClientSideFieldTranslations(i18n),
           pageWidth: unscaledViewport.width,

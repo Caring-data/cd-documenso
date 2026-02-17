@@ -1,5 +1,4 @@
 import { FieldType } from '@prisma/client';
-import console from 'console';
 
 import { AppError, AppErrorCode } from '@documenso/lib/errors/app-error';
 import type { TFieldSignature } from '@documenso/lib/types/field';
@@ -58,8 +57,7 @@ export const handleSignatureFieldClick = async (
   }
 
   const isTypedSignature = !signatureToInsert.value.startsWith('data:image');
-  console.log('isTypedSignature', isTypedSignature);
-  console.log('signatureToInsert', signatureToInsert);
+
   return {
     type: FieldType.SIGNATURE,
     value: signatureToInsert.value,

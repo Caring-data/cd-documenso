@@ -3,9 +3,18 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Signature } from '@prisma/client';
 import { animate, motion, useMotionTemplate, useMotionValue, useTransform } from 'framer-motion';
 import { P, match } from 'ts-pattern';
+import z from 'zod';
 
 import { cn } from '../lib/utils';
 import { Card, CardContent } from '../primitives/card';
+
+const ZTypedSignatureSettings = z
+  .object({
+    font: z.string().optional(),
+    color: z.string().optional(),
+  })
+  .nullable()
+  .optional();
 
 export type SigningCardProps = {
   className?: string;
@@ -188,18 +197,25 @@ const SigningCardContent = ({ className, name, signature }: SigningCardContentPr
               className="h-full max-w-[100%] dark:invert"
             />
           ))
-          .with({ typedSignature: P.string }, (signature) => (
-            <span
-              className="break-normal font-semibold text-muted-foreground/60 duration-300 group-hover:text-primary/80"
-              style={{
-                fontSize: `max(min(4rem, ${(100 / signature.typedSignature.length / 2).toFixed(
-                  4,
-                )}cqw), 1.875rem)`,
-              }}
-            >
-              {signature.typedSignature}
-            </span>
-          ))
+          .with({ typedSignature: P.string }, (signature) => {
+            const parsed = ZTypedSignatureSettings.safeParse(signature.typedSignatureSettings);
+            const settings = parsed.success ? parsed.data : undefined;
+
+            return (
+              <span
+                className="break-normal font-semibold text-muted-foreground/60 duration-300 group-hover:text-primary/80"
+                style={{
+                  fontFamily: settings?.font || 'Dancing Script',
+                  color: settings?.color || 'black',
+                  fontSize: `max(min(4rem, ${(100 / signature.typedSignature.length / 2).toFixed(
+                    4,
+                  )}cqw), 1.875rem)`,
+                }}
+              >
+                {signature.typedSignature}
+              </span>
+            );
+          })
           .otherwise(() => (
             <span
               className="break-normal font-semibold text-muted-foreground/60 duration-300 group-hover:text-primary/80"
