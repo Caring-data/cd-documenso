@@ -136,6 +136,8 @@ const createFieldSignature = (
     }
   }
 
+  const exportFontFamily = signatureFont || 'Caveat';
+
   fieldText.setAttrs({
     x: textX,
     y: textY,
@@ -143,8 +145,7 @@ const createFieldSignature = (
     wrap: 'char',
     text: textToRender,
     fontSize,
-    fontFamily:
-      mode === 'sign' || mode === 'export' ? `${signatureFont}, sans-serif` : 'Caveat, sans-serif',
+    fontFamily: mode === 'export' ? exportFontFamily : `${exportFontFamily}, sans-serif`,
     fill: mode === 'sign' || mode === 'export' ? signatureColor : 'black',
     align: 'center',
     width: fieldWidth,
