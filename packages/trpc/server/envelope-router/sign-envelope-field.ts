@@ -228,10 +228,18 @@ export const signEnvelopeFieldRoute = procedure
             recipientId: field.recipientId,
             signatureImageAsBase64: signatureImageAsBase64,
             typedSignature: typedSignature,
+            typedSignatureSettings:
+              typedSignature && fieldValue.type === FieldType.SIGNATURE
+                ? fieldValue.typedSignatureSettings
+                : null,
           },
           update: {
             signatureImageAsBase64: signatureImageAsBase64,
             typedSignature: typedSignature,
+            typedSignatureSettings:
+              typedSignature && fieldValue.type === FieldType.SIGNATURE
+                ? fieldValue.typedSignatureSettings
+                : null,
           },
         });
 

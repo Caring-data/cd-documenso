@@ -67,6 +67,7 @@ export const ZEnvelopeForSigningResponse = z.object({
           signature: SignatureSchema.pick({
             signatureImageAsBase64: true,
             typedSignature: true,
+            typedSignatureSettings: true,
           }).nullish(),
         }).array(),
       })
@@ -122,6 +123,7 @@ export const ZEnvelopeForSigningResponse = z.object({
   recipientSignature: SignatureSchema.pick({
     signatureImageAsBase64: true,
     typedSignature: true,
+    typedSignatureSettings: true,
   }).nullable(),
 
   isCompleted: z.boolean(),

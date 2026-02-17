@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Trans, useLingui } from '@lingui/react/macro';
 import { SigningStatus } from '@prisma/client';
 import type { Field, Recipient } from '@prisma/client';
-import { ClockIcon, EyeOffIcon, LockIcon } from 'lucide-react';
+import { ClockIcon, LockIcon } from 'lucide-react';
 
 import { getBoundingClientRect } from '@documenso/lib/client-only/get-bounding-client-rect';
 import { PDF_VIEWER_PAGE_SELECTOR } from '@documenso/lib/constants/pdf-viewer';
@@ -189,17 +189,9 @@ export function EnvelopeRecipientFieldTooltip({
           <span>{t(FRIENDLY_FIELD_TYPE[field.type])} field</span>
         </p>
 
-        <p className="text-muted-foreground mt-1 text-center text-xs">
+        <p className="mt-1 text-center text-xs text-muted-foreground">
           {getRecipientDisplayText(field.recipient)}
         </p>
-
-        <button
-          className="absolute right-0 top-0 my-1 p-2 focus:outline-none focus-visible:ring-0"
-          onClick={() => setHideField(true)}
-          title="Hide field"
-        >
-          <EyeOffIcon className="h-3 w-3" />
-        </button>
       </PopoverHover>
     </div>
   );

@@ -3,13 +3,19 @@ import { useEffect, useMemo } from 'react';
 import { useLingui } from '@lingui/react/macro';
 import { DocumentStatus, type Recipient, SigningStatus } from '@prisma/client';
 import type Konva from 'konva';
+import z from 'zod';
 
 import { usePageRenderer } from '@documenso/lib/client-only/hooks/use-page-renderer';
 import { useCurrentEnvelopeRender } from '@documenso/lib/client-only/providers/envelope-render-provider';
+import { DEFAULT_SIGNATURE_TEXT_FONT_SIZE } from '@documenso/lib/constants/pdf';
 import type { TEnvelope } from '@documenso/lib/types/envelope';
 import { renderField } from '@documenso/lib/universal/field-renderer/render-field';
 import { getClientSideFieldTranslations } from '@documenso/lib/utils/fields';
 import { EnvelopeRecipientFieldTooltip } from '@documenso/ui/components/document/envelope-recipient-field-tooltip';
+
+const ZSignatureMetaFontSize = z.object({
+  fontSize: z.number().optional(),
+});
 
 type GenericLocalField = TEnvelope['fields'][number] & {
   recipient: Pick<Recipient, 'id' | 'name' | 'email' | 'signingStatus'>;
@@ -82,6 +88,8 @@ export default function EnvelopeGenericPageRenderer() {
     }
 
     const fieldTranslations = getClientSideFieldTranslations(i18n);
+    const parsedMeta = ZSignatureMetaFontSize.safeParse(field.fieldMeta);
+    const fontSizeFromMeta = parsedMeta.success ? parsedMeta.data.fontSize : undefined;
 
     renderField({
       scale,
@@ -97,6 +105,11 @@ export default function EnvelopeGenericPageRenderer() {
         signature: {
           signatureImageAsBase64: '',
           typedSignature: fieldTranslations.SIGNATURE,
+          typedSignatureSettings: {
+            fontSize: fontSizeFromMeta ?? DEFAULT_SIGNATURE_TEXT_FONT_SIZE,
+            font: 'Dancing Script',
+            color: 'black',
+          },
         },
       },
       translations: fieldTranslations,

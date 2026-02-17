@@ -121,8 +121,8 @@ export default function EnvelopeSignerForm() {
               disabled={isSubmitting}
               fullName={fullName}
               recipientEmail={recipient?.email}
-              value={signature ?? ''}
-              onChange={(v) => setSignature(v ?? '')}
+              value={signature ?? undefined}
+              onChange={setSignature}
               typedSignatureEnabled={envelope.documentMeta.typedSignatureEnabled}
               uploadSignatureEnabled={envelope.documentMeta.uploadSignatureEnabled}
               drawSignatureEnabled={envelope.documentMeta.drawSignatureEnabled}

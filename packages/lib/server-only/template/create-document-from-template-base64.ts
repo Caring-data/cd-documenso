@@ -104,7 +104,7 @@ export type createDocumentFromTemplateBase64Options = {
     ownerName?: string;
     locationName?: string;
     formType?: 'custom' | 'standard' | 'custom_default';
-    module?: 'resident' | 'staff' | 'facility';
+    module?: 'resident' | 'staff' | 'facility' | 'reports';
   };
 
   customDocumentData?: {

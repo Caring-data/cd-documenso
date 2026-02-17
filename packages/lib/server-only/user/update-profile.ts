@@ -1,4 +1,4 @@
-import { UserSecurityAuditLogType } from '@prisma/client';
+import { Prisma, UserSecurityAuditLogType } from '@prisma/client';
 
 import { prisma } from '@documenso/prisma';
 
@@ -8,6 +8,7 @@ export type UpdateProfileOptions = {
   userId: number;
   name: string;
   signature: string;
+  signatureTypedSettings?: { font?: string; color?: string } | null;
   requestMetadata?: RequestMetadata;
 };
 
@@ -15,6 +16,7 @@ export const updateProfile = async ({
   userId,
   name,
   signature,
+  signatureTypedSettings,
   requestMetadata,
 }: UpdateProfileOptions) => {
   // Existence check
@@ -41,6 +43,7 @@ export const updateProfile = async ({
       data: {
         name,
         signature,
+        signatureTypedSettings: signatureTypedSettings ?? Prisma.JsonNull,
       },
     });
   });

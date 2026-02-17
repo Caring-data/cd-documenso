@@ -273,6 +273,8 @@ export const createDocumentFromDirectTemplate = async ({
 
       const signatureImageAsBase64 = isSignatureField && isBase64 ? value : undefined;
       const typedSignature = isSignatureField && !isBase64 ? value : undefined;
+      const typedSignatureSettings =
+        isSignatureField && !isBase64 ? (signedFieldValue.typedSignatureSettings ?? null) : null;
 
       if (templateField.type === FieldType.DATE) {
         customText = DateTime.now()
@@ -292,6 +294,7 @@ export const createDocumentFromDirectTemplate = async ({
           ? {
               signatureImageAsBase64,
               typedSignature,
+              typedSignatureSettings,
             }
           : null,
       };
@@ -533,6 +536,7 @@ export const createDocumentFromDirectTemplate = async ({
                   recipientId: createdDirectRecipient.id,
                   signatureImageAsBase64: signature.signatureImageAsBase64,
                   typedSignature: signature.typedSignature,
+                  typedSignatureSettings: signature.typedSignatureSettings ?? Prisma.JsonNull,
                 },
               },
             },

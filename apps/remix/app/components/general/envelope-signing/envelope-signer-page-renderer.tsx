@@ -27,6 +27,7 @@ import { renderField } from '@documenso/lib/universal/field-renderer/render-fiel
 import { isFieldUnsignedAndRequired } from '@documenso/lib/utils/advanced-fields-helpers';
 import { getClientSideFieldTranslations } from '@documenso/lib/utils/fields';
 import { extractInitials } from '@documenso/lib/utils/recipient-formatter';
+import { DocumentSignatureType } from '@documenso/lib/utils/teams';
 import { trpc } from '@documenso/trpc/react';
 import type { TSignEnvelopeFieldValue } from '@documenso/trpc/server/envelope-router/sign-envelope-field.types';
 import { EnvelopeRecipientFieldTooltip } from '@documenso/ui/components/document/envelope-recipient-field-tooltip';
@@ -52,8 +53,14 @@ import {
 } from '../document-signing/document-signing-resident-helper';
 import { useRequiredEnvelopeSigningContext } from '../document-signing/envelope-signing-provider';
 
+type SignatureForRender = Pick<
+  Signature,
+  'signatureImageAsBase64' | 'typedSignature' | 'typedSignatureSettings'
+>;
+
 type GenericLocalField = TEnvelope['fields'][number] & {
   recipient: Pick<Recipient, 'id' | 'name' | 'email' | 'signingStatus'>;
+  signature?: SignatureForRender | null;
 };
 
 export default function EnvelopeSignerPageRenderer() {
@@ -152,6 +159,13 @@ export default function EnvelopeSignerPageRenderer() {
         )
         .map((field) => ({
           ...field,
+          signature: field.signature
+            ? {
+                signatureImageAsBase64: field.signature.signatureImageAsBase64,
+                typedSignature: field.signature.typedSignature,
+                typedSignatureSettings: field.signature.typedSignatureSettings,
+              }
+            : null,
           recipient: {
             id: recipient.id,
             name: recipient.name,
@@ -519,7 +533,14 @@ export default function EnvelopeSignerPageRenderer() {
                     actionTarget: field.type,
                   });
 
-                  setSignature(payload.value);
+                  const isTyped = !payload.value.startsWith('data:image');
+
+                  setSignature({
+                    type: isTyped ? DocumentSignatureType.TYPE : DocumentSignatureType.DRAW,
+                    value: payload.value,
+                    font: payload.typedSignatureSettings?.font,
+                    color: payload.typedSignatureSettings?.color,
+                  });
                 } else {
                   await signField(field.id, payload);
                 }
@@ -570,6 +591,7 @@ export default function EnvelopeSignerPageRenderer() {
             positionX: Number(field.positionX),
             positionY: Number(field.positionY),
             fieldMeta: field.fieldMeta,
+            signature: field.signature ?? null,
           },
           translations: getClientSideFieldTranslations(i18n),
           pageWidth: unscaledViewport.width,
@@ -595,10 +617,22 @@ export default function EnvelopeSignerPageRenderer() {
 
       // ?: The two callbacks below are used within the embedding context
       if (inserted && onFieldSigned) {
-        const value = payload.value ? JSON.stringify(payload.value) : undefined;
-        const isBase64 = value ? isBase64Image(value) : undefined;
+        if (payload.type === FieldType.SIGNATURE) {
+          const value = payload.value ?? undefined;
+          const isBase64 = value ? isBase64Image(value) : undefined;
 
-        onFieldSigned({ fieldId, value, isBase64 });
+          onFieldSigned({
+            fieldId,
+            value,
+            isBase64,
+            typedSignatureSettings: payload.typedSignatureSettings ?? undefined,
+          });
+        } else {
+          const value = payload.value ? JSON.stringify(payload.value) : undefined;
+          const isBase64 = value ? isBase64Image(value) : undefined;
+
+          onFieldSigned({ fieldId, value, isBase64 });
+        }
       }
 
       if (!inserted && onFieldUnsigned) {
