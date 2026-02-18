@@ -75,31 +75,31 @@ const getDefaultState = (fieldType: FieldType): FieldMeta => {
     case FieldType.INITIALS:
       return {
         type: 'initials',
-        fontSize: 14,
-        textAlign: 'left',
+        fontSize: 12,
+        textAlign: 'center',
       };
     case FieldType.NAME:
       return {
         type: 'name',
-        fontSize: 14,
+        fontSize: 12,
         textAlign: 'left',
       };
     case FieldType.EMAIL:
       return {
         type: 'email',
-        fontSize: 14,
+        fontSize: 12,
         textAlign: 'left',
       };
     case FieldType.DATE:
       return {
         type: 'date',
-        fontSize: 14,
+        fontSize: 12,
         textAlign: 'left',
       };
     case FieldType.CALENDAR:
       return {
         type: 'date',
-        fontSize: 14,
+        fontSize: 12,
         textAlign: 'left',
       };
     case FieldType.TEXT:
@@ -109,7 +109,7 @@ const getDefaultState = (fieldType: FieldType): FieldMeta => {
         placeholder: '',
         text: '',
         characterLimit: 0,
-        fontSize: 14,
+        fontSize: 12,
         required: false,
         readOnly: false,
         textAlign: 'left',
@@ -120,12 +120,12 @@ const getDefaultState = (fieldType: FieldType): FieldMeta => {
         label: '',
         placeholder: '',
         numberFormat: '',
-        value: '0',
+        value: '',
         minValue: 0,
         maxValue: 0,
         required: false,
         readOnly: false,
-        fontSize: 14,
+        fontSize: 12,
         textAlign: 'left',
       };
     case FieldType.RADIO:

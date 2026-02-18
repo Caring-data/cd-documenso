@@ -21,7 +21,7 @@ export const InitialsFieldAdvancedSettings = ({
   const { t } = useLingui();
 
   const handleInput = (field: keyof InitialsFieldMeta, value: string | boolean) => {
-    const fontSize = field === 'fontSize' ? Number(value) : Number(fieldState.fontSize ?? 14);
+    const fontSize = field === 'fontSize' ? Number(value) : Number(fieldState.fontSize ?? 12);
 
     const errors = validateInitialsFields({
       fontSize,

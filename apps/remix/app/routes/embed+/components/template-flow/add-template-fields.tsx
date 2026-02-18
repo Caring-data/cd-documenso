@@ -75,10 +75,11 @@ import { EditorFieldDropdownForm } from '~/components/forms/editor/editor-field-
 import { EditorFieldEmailForm } from '~/components/forms/editor/editor-field-email-form';
 import { EditorFieldInitialsForm } from '~/components/forms/editor/editor-field-initials-form';
 import { EditorFieldNameForm } from '~/components/forms/editor/editor-field-name-form';
-import { EditorFieldNumberForm } from '~/components/forms/editor/editor-field-number-form';
 import { EditorFieldRadioForm } from '~/components/forms/editor/editor-field-radio-form';
 import { EditorFieldSignatureForm } from '~/components/forms/editor/editor-field-signature-form';
-import { EditorFieldTextForm } from '~/components/forms/editor/editor-field-text-form';
+
+import { EmbedEditorFieldTextForm } from '~/components/forms/embed/embed-editor-field-text-form';
+import { EmbedEditorFieldNumberForm } from '~/components/forms/embed/embed-editor-field-number-form';
 
 import { useCurrentEmbedTemplateEditor } from '../providers/embed-template-editor-provider';
 import { useGetContactCategories } from '@documenso/lib/client-only/hooks/use-get-contact-categories';
@@ -820,7 +821,7 @@ export const EmbedAddTemplateFieldsFormPartial = ({
                       />
                     ))
                     .with(FieldType.NUMBER, () => (
-                      <EditorFieldNumberForm
+                      <EmbedEditorFieldNumberForm
                         value={selectedFieldFromEditor?.fieldMeta as TNumberFieldMeta | undefined}
                         onValueChange={(value) => updateSelectedFieldMeta(value)}
                       />
@@ -832,19 +833,19 @@ export const EmbedAddTemplateFieldsFormPartial = ({
                       />
                     ))
                     .with(FieldType.TEXT, () => (
-                      <EditorFieldTextForm
+                      <EmbedEditorFieldTextForm
                         value={selectedFieldFromEditor?.fieldMeta as TTextFieldMeta | undefined}
                         onValueChange={(value) => updateSelectedFieldMeta(value)}
                       />
                     ))
                     .with(FieldType.RESIDENT_FIRST_NAME, () => (
-                      <EditorFieldTextForm
+                      <EmbedEditorFieldTextForm
                         value={selectedFieldFromEditor?.fieldMeta as TTextFieldMeta | undefined}
                         onValueChange={(value) => updateSelectedFieldMeta(value)}
                       />
                     ))
                     .with(FieldType.RESIDENT_LAST_NAME, () => (
-                      <EditorFieldTextForm
+                      <EmbedEditorFieldTextForm
                         value={selectedFieldFromEditor?.fieldMeta as TTextFieldMeta | undefined}
                         onValueChange={(value) => updateSelectedFieldMeta(value)}
                       />
@@ -856,73 +857,73 @@ export const EmbedAddTemplateFieldsFormPartial = ({
                       />
                     ))
                     .with(FieldType.RESIDENT_GENDER_IDENTITY, () => (
-                      <EditorFieldTextForm
+                      <EmbedEditorFieldTextForm
                         value={selectedFieldFromEditor?.fieldMeta as TTextFieldMeta | undefined}
                         onValueChange={(value) => updateSelectedFieldMeta(value)}
                       />
                     ))
                     .with(FieldType.RESIDENT_LOCATION_NAME, () => (
-                      <EditorFieldTextForm
+                      <EmbedEditorFieldTextForm
                         value={selectedFieldFromEditor?.fieldMeta as TTextFieldMeta | undefined}
                         onValueChange={(value) => updateSelectedFieldMeta(value)}
                       />
                     ))
                     .with(FieldType.RESIDENT_LOCATION_STATE, () => (
-                      <EditorFieldTextForm
+                      <EmbedEditorFieldTextForm
                         value={selectedFieldFromEditor?.fieldMeta as TTextFieldMeta | undefined}
                         onValueChange={(value) => updateSelectedFieldMeta(value)}
                       />
                     ))
                     .with(FieldType.RESIDENT_LOCATION_ADDRESS, () => (
-                      <EditorFieldTextForm
+                      <EmbedEditorFieldTextForm
                         value={selectedFieldFromEditor?.fieldMeta as TTextFieldMeta | undefined}
                         onValueChange={(value) => updateSelectedFieldMeta(value)}
                       />
                     ))
                     .with(FieldType.RESIDENT_LOCATION_CITY, () => (
-                      <EditorFieldTextForm
+                      <EmbedEditorFieldTextForm
                         value={selectedFieldFromEditor?.fieldMeta as TTextFieldMeta | undefined}
                         onValueChange={(value) => updateSelectedFieldMeta(value)}
                       />
                     ))
                     .with(FieldType.RESIDENT_LOCATION_ZIP_CODE, () => (
-                      <EditorFieldTextForm
+                      <EmbedEditorFieldTextForm
                         value={selectedFieldFromEditor?.fieldMeta as TTextFieldMeta | undefined}
                         onValueChange={(value) => updateSelectedFieldMeta(value)}
                       />
                     ))
                     .with(FieldType.RESIDENT_LOCATION_COUNTRY, () => (
-                      <EditorFieldTextForm
+                      <EmbedEditorFieldTextForm
                         value={selectedFieldFromEditor?.fieldMeta as TTextFieldMeta | undefined}
                         onValueChange={(value) => updateSelectedFieldMeta(value)}
                       />
                     ))
                     .with(FieldType.RESIDENT_LOCATION_FAX, () => (
-                      <EditorFieldTextForm
+                      <EmbedEditorFieldTextForm
                         value={selectedFieldFromEditor?.fieldMeta as TTextFieldMeta | undefined}
                         onValueChange={(value) => updateSelectedFieldMeta(value)}
                       />
                     ))
                     .with(FieldType.RESIDENT_LOCATION_LICENSING, () => (
-                      <EditorFieldTextForm
+                      <EmbedEditorFieldTextForm
                         value={selectedFieldFromEditor?.fieldMeta as TTextFieldMeta | undefined}
                         onValueChange={(value) => updateSelectedFieldMeta(value)}
                       />
                     ))
                     .with(FieldType.RESIDENT_LOCATION_LICENSING_NAME, () => (
-                      <EditorFieldTextForm
+                      <EmbedEditorFieldTextForm
                         value={selectedFieldFromEditor?.fieldMeta as TTextFieldMeta | undefined}
                         onValueChange={(value) => updateSelectedFieldMeta(value)}
                       />
                     ))
                     .with(FieldType.RESIDENT_LOCATION_ADMINISTRATOR_NAME, () => (
-                      <EditorFieldTextForm
+                      <EmbedEditorFieldTextForm
                         value={selectedFieldFromEditor?.fieldMeta as TTextFieldMeta | undefined}
                         onValueChange={(value) => updateSelectedFieldMeta(value)}
                       />
                     ))
                     .with(FieldType.RESIDENT_LOCATION_ADMINISTRATOR_PHONE, () => (
-                      <EditorFieldTextForm
+                      <EmbedEditorFieldTextForm
                         value={selectedFieldFromEditor?.fieldMeta as TTextFieldMeta | undefined}
                         onValueChange={(value) => updateSelectedFieldMeta(value)}
                       />
