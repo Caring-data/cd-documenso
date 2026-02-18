@@ -41,7 +41,7 @@ export const NumberFieldAdvancedSettings = ({
     const readOnly = field === 'readOnly' ? Boolean(value) : Boolean(fieldState.readOnly);
     const required = field === 'required' ? Boolean(value) : Boolean(fieldState.required);
     const numberFormat = field === 'numberFormat' ? String(value) : (fieldState.numberFormat ?? '');
-    const fontSize = field === 'fontSize' ? Number(value) : Number(fieldState.fontSize ?? 14);
+    const fontSize = field === 'fontSize' ? Number(value) : Number(fieldState.fontSize ?? 12);
 
     const valueErrors = validateNumberField(String(userValue), {
       minValue: userMinValue,
