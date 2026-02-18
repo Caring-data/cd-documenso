@@ -115,6 +115,8 @@ export const TemplateDocumentInvite = ({
         <Trans>
           This link is valid until{' '}
           {tokenExpiration ? new Date(tokenExpiration).toLocaleDateString('en-US') : 'N/A'}
+          <br />
+          If the process is disabled, please contact Administrator to send the document again.
         </Trans>
       </Text>
     </>
