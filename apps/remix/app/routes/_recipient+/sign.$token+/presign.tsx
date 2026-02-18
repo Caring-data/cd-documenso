@@ -5,6 +5,8 @@ import { redirect } from 'react-router';
 
 import { NEXT_PUBLIC_WEBAPP_URL } from '@documenso/lib/constants/app';
 import { getDocumentAndSenderByToken } from '@documenso/lib/server-only/document/get-document-by-token';
+import { isTokenExpired } from '@documenso/lib/utils/token-verification';
+import { prisma } from '@documenso/prisma';
 import { Button } from '@documenso/ui/primitives/button';
 
 import { superLoaderJson, useSuperLoaderData } from '~/utils/super-json-loader';
@@ -32,6 +34,15 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
   if (url.searchParams.get('accessed') === 'true') {
     throw redirect(`/sign/${token}?accessed=true`);
+  }
+
+  const recipient = await prisma.recipient.findFirst({
+    where: { token },
+    select: { expired: true },
+  });
+
+  if (!recipient || (recipient.expired && isTokenExpired(recipient.expired))) {
+    throw redirect(`/sign/${token}/expired`);
   }
 
   const document = await getDocumentAndSenderByToken({

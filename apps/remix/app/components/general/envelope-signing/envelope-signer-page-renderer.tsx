@@ -13,7 +13,7 @@ import type Konva from 'konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import { match } from 'ts-pattern';
 
-import { useGetResidentInfo } from '@documenso/lib/client-only/hooks/use-get-resident-info';
+import { useGetDocumentContext } from '@documenso/lib/client-only/hooks/use-get-document-context';
 import { usePageRenderer } from '@documenso/lib/client-only/hooks/use-page-renderer';
 import { useCurrentEnvelopeRender } from '@documenso/lib/client-only/providers/envelope-render-provider';
 import { useOptionalSession } from '@documenso/lib/client-only/providers/session';
@@ -114,8 +114,7 @@ export default function EnvelopeSignerPageRenderer() {
     return fieldsToCheck.some((field) => isResidentFieldType(field.type));
   }, [recipientFields, selectedAssistantRecipientFields, recipient.role]);
 
-  // Automatically fetch resident info when there are resident fields
-  const { data: residentIdData } = trpc.envelope.getResidentInfo.useQuery(
+  const { data: ownerData } = trpc.envelope.getSigningContext.useQuery(
     { token: recipient.token },
     {
       enabled: hasResidentFields && recipient.role !== RecipientRole.ASSISTANT,
@@ -123,8 +122,12 @@ export default function EnvelopeSignerPageRenderer() {
     },
   );
 
-  const { data: residentInfo } = useGetResidentInfo({
-    residentId: residentIdData?.residentId || '',
+  const contextModule = ownerData?.signingContext?.module ?? 'resident';
+  const ownerId = ownerData?.ownerId ?? '';
+
+  const { data: systemInfo } = useGetDocumentContext({
+    ownerId,
+    module: contextModule,
   });
 
   const localPageFields = useMemo(() => {
@@ -161,10 +164,10 @@ export default function EnvelopeSignerPageRenderer() {
           ...field,
           signature: field.signature
             ? {
-                signatureImageAsBase64: field.signature.signatureImageAsBase64,
-                typedSignature: field.signature.typedSignature,
-                typedSignatureSettings: field.signature.typedSignatureSettings,
-              }
+              signatureImageAsBase64: field.signature.signatureImageAsBase64,
+              typedSignature: field.signature.typedSignature,
+              typedSignatureSettings: field.signature.typedSignatureSettings,
+            }
             : null,
           recipient: {
             id: recipient.id,
@@ -253,12 +256,12 @@ export default function EnvelopeSignerPageRenderer() {
       // Helper function to handle resident field click
       const handleResidentFieldClick = async (field: typeof parsedFoundField) => {
         try {
-          // Get resident value from already fetched residentInfo
+          // Get resident value from already fetched systemInfo
           const residentValue =
-            residentInfo &&
-            isResidentFieldType(field.type) &&
-            recipient.role !== RecipientRole.ASSISTANT
-              ? getResidentValue(field.type, residentInfo) || null
+            systemInfo &&
+              isResidentFieldType(field.type) &&
+              recipient.role !== RecipientRole.ASSISTANT
+              ? getResidentValue(field.type, systemInfo) || null
               : null;
 
           let payload;
