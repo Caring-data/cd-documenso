@@ -75,10 +75,11 @@ import { EditorFieldDropdownForm } from '~/components/forms/editor/editor-field-
 import { EditorFieldEmailForm } from '~/components/forms/editor/editor-field-email-form';
 import { EditorFieldInitialsForm } from '~/components/forms/editor/editor-field-initials-form';
 import { EditorFieldNameForm } from '~/components/forms/editor/editor-field-name-form';
-import { EditorFieldNumberForm } from '~/components/forms/editor/editor-field-number-form';
 import { EditorFieldRadioForm } from '~/components/forms/editor/editor-field-radio-form';
 import { EditorFieldSignatureForm } from '~/components/forms/editor/editor-field-signature-form';
-import { EditorFieldTextForm } from '~/components/forms/editor/editor-field-text-form';
+
+import { EmbedEditorFieldTextForm } from '~/components/forms/embed/embed-editor-field-text-form';
+import { EmbedEditorFieldNumberForm } from '~/components/forms/embed/embed-editor-field-number-form';
 
 import { useCurrentEmbedTemplateEditor } from '../providers/embed-template-editor-provider';
 import { useGetContactCategories } from '@documenso/lib/client-only/hooks/use-get-contact-categories';
@@ -657,95 +658,103 @@ export const EmbedAddTemplateFieldsFormPartial = ({
               </TabsContent>
 
               <TabsContent value="resident-location">
-                <fieldset disabled={isFieldsDisabled} className="grid gap-4 sm:grid-cols-2">
-                  <FieldButton
-                    type={FieldType.RESIDENT_LOCATION_NAME}
-                    selectedField={selectedField}
-                    onSelect={setSelectedField}
-                    icon={Building}
-                    label={<Trans>Location Name</Trans>}
-                  />
+                <>
+                  <fieldset disabled={isFieldsDisabled} className="grid gap-4 sm:grid-cols-2">
+                    <FieldButton
+                      type={FieldType.RESIDENT_LOCATION_NAME}
+                      selectedField={selectedField}
+                      onSelect={setSelectedField}
+                      icon={Building}
+                      label={<Trans>Location Name</Trans>}
+                    />
 
-                  <FieldButton
-                    type={FieldType.RESIDENT_LOCATION_STATE}
-                    selectedField={selectedField}
-                    onSelect={setSelectedField}
-                    icon={Flag}
-                    label={<Trans>State</Trans>}
-                  />
+                    <FieldButton
+                      type={FieldType.RESIDENT_LOCATION_STATE}
+                      selectedField={selectedField}
+                      onSelect={setSelectedField}
+                      icon={Flag}
+                      label={<Trans>State</Trans>}
+                    />
 
-                  <FieldButton
-                    type={FieldType.RESIDENT_LOCATION_ADDRESS}
-                    selectedField={selectedField}
-                    onSelect={setSelectedField}
-                    icon={Home}
-                    label={<Trans>Address</Trans>}
-                  />
+                    <FieldButton
+                      type={FieldType.RESIDENT_LOCATION_ADDRESS}
+                      selectedField={selectedField}
+                      onSelect={setSelectedField}
+                      icon={Home}
+                      label={<Trans>Address</Trans>}
+                    />
 
-                  <FieldButton
-                    type={FieldType.RESIDENT_LOCATION_CITY}
-                    selectedField={selectedField}
-                    onSelect={setSelectedField}
-                    icon={Building}
-                    label={<Trans>City</Trans>}
-                  />
+                    <FieldButton
+                      type={FieldType.RESIDENT_LOCATION_CITY}
+                      selectedField={selectedField}
+                      onSelect={setSelectedField}
+                      icon={Building}
+                      label={<Trans>City</Trans>}
+                    />
 
-                  <FieldButton
-                    type={FieldType.RESIDENT_LOCATION_ZIP_CODE}
-                    selectedField={selectedField}
-                    onSelect={setSelectedField}
-                    icon={Hash}
-                    label={<Trans>ZIP Code</Trans>}
-                  />
+                    <FieldButton
+                      type={FieldType.RESIDENT_LOCATION_ZIP_CODE}
+                      selectedField={selectedField}
+                      onSelect={setSelectedField}
+                      icon={Hash}
+                      label={<Trans>ZIP Code</Trans>}
+                    />
 
-                  <FieldButton
-                    type={FieldType.RESIDENT_LOCATION_COUNTRY}
-                    selectedField={selectedField}
-                    onSelect={setSelectedField}
-                    icon={MapPin}
-                    label={<Trans>Country</Trans>}
-                  />
+                    <FieldButton
+                      type={FieldType.RESIDENT_LOCATION_COUNTRY}
+                      selectedField={selectedField}
+                      onSelect={setSelectedField}
+                      icon={MapPin}
+                      label={<Trans>Country</Trans>}
+                    />
 
-                  <FieldButton
-                    type={FieldType.RESIDENT_LOCATION_FAX}
-                    selectedField={selectedField}
-                    onSelect={setSelectedField}
-                    icon={Printer}
-                    label={<Trans>Fax</Trans>}
-                  />
+                    <FieldButton
+                      type={FieldType.RESIDENT_LOCATION_FAX}
+                      selectedField={selectedField}
+                      onSelect={setSelectedField}
+                      icon={Printer}
+                      label={<Trans>Fax</Trans>}
+                    />
 
-                  <FieldButton
-                    type={FieldType.RESIDENT_LOCATION_LICENSING}
-                    selectedField={selectedField}
-                    onSelect={setSelectedField}
-                    icon={Clipboard}
-                    label={<Trans>Licensing</Trans>}
-                  />
+                    <FieldButton
+                      type={FieldType.RESIDENT_LOCATION_LICENSING}
+                      selectedField={selectedField}
+                      onSelect={setSelectedField}
+                      icon={Clipboard}
+                      label={<Trans>Licensing</Trans>}
+                    />
 
-                  <FieldButton
-                    type={FieldType.RESIDENT_LOCATION_LICENSING_NAME}
-                    selectedField={selectedField}
-                    onSelect={setSelectedField}
-                    icon={UserCircle2}
-                    label={<Trans>Licensing Name</Trans>}
-                  />
+                    <FieldButton
+                      type={FieldType.RESIDENT_LOCATION_LICENSING_NAME}
+                      selectedField={selectedField}
+                      onSelect={setSelectedField}
+                      icon={UserCircle2}
+                      label={<Trans>Licensing Name</Trans>}
+                    />
 
-                  <FieldButton
-                    type={FieldType.RESIDENT_LOCATION_ADMINISTRATOR_NAME}
-                    selectedField={selectedField}
-                    onSelect={setSelectedField}
-                    icon={UserCheck}
-                    label={<Trans>Admin Name</Trans>}
-                  />
+                    <FieldButton
+                      type={FieldType.RESIDENT_LOCATION_ADMINISTRATOR_NAME}
+                      selectedField={selectedField}
+                      onSelect={setSelectedField}
+                      icon={UserCheck}
+                      label={<Trans>Admin Name</Trans>}
+                    />
 
-                  <FieldButton
-                    type={FieldType.RESIDENT_LOCATION_ADMINISTRATOR_PHONE}
-                    selectedField={selectedField}
-                    onSelect={setSelectedField}
-                    icon={Phone}
-                    label={<Trans>Admin Phone</Trans>}
-                  />
-                </fieldset>
+                    <FieldButton
+                      type={FieldType.RESIDENT_LOCATION_ADMINISTRATOR_PHONE}
+                      selectedField={selectedField}
+                      onSelect={setSelectedField}
+                      icon={Phone}
+                      label={<Trans>Admin Phone</Trans>}
+                    />
+                  </fieldset>
+                  <div className="mb-1 mt-2 flex items-start gap-1">
+                    <Info className="mt-0.5 h-4 w-4 shrink-0 items-center text-zinc-400" />
+                    <span className="inline-flex max-w-full py-0.5 text-sm leading-snug text-zinc-700">
+                      These fields will auto-fill when the document is sent.
+                    </span>
+                  </div>
+                </>
               </TabsContent>
             </Tabs>
           </div>
@@ -812,7 +821,7 @@ export const EmbedAddTemplateFieldsFormPartial = ({
                       />
                     ))
                     .with(FieldType.NUMBER, () => (
-                      <EditorFieldNumberForm
+                      <EmbedEditorFieldNumberForm
                         value={selectedFieldFromEditor?.fieldMeta as TNumberFieldMeta | undefined}
                         onValueChange={(value) => updateSelectedFieldMeta(value)}
                       />
@@ -824,19 +833,19 @@ export const EmbedAddTemplateFieldsFormPartial = ({
                       />
                     ))
                     .with(FieldType.TEXT, () => (
-                      <EditorFieldTextForm
+                      <EmbedEditorFieldTextForm
                         value={selectedFieldFromEditor?.fieldMeta as TTextFieldMeta | undefined}
                         onValueChange={(value) => updateSelectedFieldMeta(value)}
                       />
                     ))
                     .with(FieldType.RESIDENT_FIRST_NAME, () => (
-                      <EditorFieldTextForm
+                      <EmbedEditorFieldTextForm
                         value={selectedFieldFromEditor?.fieldMeta as TTextFieldMeta | undefined}
                         onValueChange={(value) => updateSelectedFieldMeta(value)}
                       />
                     ))
                     .with(FieldType.RESIDENT_LAST_NAME, () => (
-                      <EditorFieldTextForm
+                      <EmbedEditorFieldTextForm
                         value={selectedFieldFromEditor?.fieldMeta as TTextFieldMeta | undefined}
                         onValueChange={(value) => updateSelectedFieldMeta(value)}
                       />
@@ -848,73 +857,73 @@ export const EmbedAddTemplateFieldsFormPartial = ({
                       />
                     ))
                     .with(FieldType.RESIDENT_GENDER_IDENTITY, () => (
-                      <EditorFieldTextForm
+                      <EmbedEditorFieldTextForm
                         value={selectedFieldFromEditor?.fieldMeta as TTextFieldMeta | undefined}
                         onValueChange={(value) => updateSelectedFieldMeta(value)}
                       />
                     ))
                     .with(FieldType.RESIDENT_LOCATION_NAME, () => (
-                      <EditorFieldTextForm
+                      <EmbedEditorFieldTextForm
                         value={selectedFieldFromEditor?.fieldMeta as TTextFieldMeta | undefined}
                         onValueChange={(value) => updateSelectedFieldMeta(value)}
                       />
                     ))
                     .with(FieldType.RESIDENT_LOCATION_STATE, () => (
-                      <EditorFieldTextForm
+                      <EmbedEditorFieldTextForm
                         value={selectedFieldFromEditor?.fieldMeta as TTextFieldMeta | undefined}
                         onValueChange={(value) => updateSelectedFieldMeta(value)}
                       />
                     ))
                     .with(FieldType.RESIDENT_LOCATION_ADDRESS, () => (
-                      <EditorFieldTextForm
+                      <EmbedEditorFieldTextForm
                         value={selectedFieldFromEditor?.fieldMeta as TTextFieldMeta | undefined}
                         onValueChange={(value) => updateSelectedFieldMeta(value)}
                       />
                     ))
                     .with(FieldType.RESIDENT_LOCATION_CITY, () => (
-                      <EditorFieldTextForm
+                      <EmbedEditorFieldTextForm
                         value={selectedFieldFromEditor?.fieldMeta as TTextFieldMeta | undefined}
                         onValueChange={(value) => updateSelectedFieldMeta(value)}
                       />
                     ))
                     .with(FieldType.RESIDENT_LOCATION_ZIP_CODE, () => (
-                      <EditorFieldTextForm
+                      <EmbedEditorFieldTextForm
                         value={selectedFieldFromEditor?.fieldMeta as TTextFieldMeta | undefined}
                         onValueChange={(value) => updateSelectedFieldMeta(value)}
                       />
                     ))
                     .with(FieldType.RESIDENT_LOCATION_COUNTRY, () => (
-                      <EditorFieldTextForm
+                      <EmbedEditorFieldTextForm
                         value={selectedFieldFromEditor?.fieldMeta as TTextFieldMeta | undefined}
                         onValueChange={(value) => updateSelectedFieldMeta(value)}
                       />
                     ))
                     .with(FieldType.RESIDENT_LOCATION_FAX, () => (
-                      <EditorFieldTextForm
+                      <EmbedEditorFieldTextForm
                         value={selectedFieldFromEditor?.fieldMeta as TTextFieldMeta | undefined}
                         onValueChange={(value) => updateSelectedFieldMeta(value)}
                       />
                     ))
                     .with(FieldType.RESIDENT_LOCATION_LICENSING, () => (
-                      <EditorFieldTextForm
+                      <EmbedEditorFieldTextForm
                         value={selectedFieldFromEditor?.fieldMeta as TTextFieldMeta | undefined}
                         onValueChange={(value) => updateSelectedFieldMeta(value)}
                       />
                     ))
                     .with(FieldType.RESIDENT_LOCATION_LICENSING_NAME, () => (
-                      <EditorFieldTextForm
+                      <EmbedEditorFieldTextForm
                         value={selectedFieldFromEditor?.fieldMeta as TTextFieldMeta | undefined}
                         onValueChange={(value) => updateSelectedFieldMeta(value)}
                       />
                     ))
                     .with(FieldType.RESIDENT_LOCATION_ADMINISTRATOR_NAME, () => (
-                      <EditorFieldTextForm
+                      <EmbedEditorFieldTextForm
                         value={selectedFieldFromEditor?.fieldMeta as TTextFieldMeta | undefined}
                         onValueChange={(value) => updateSelectedFieldMeta(value)}
                       />
                     ))
                     .with(FieldType.RESIDENT_LOCATION_ADMINISTRATOR_PHONE, () => (
-                      <EditorFieldTextForm
+                      <EmbedEditorFieldTextForm
                         value={selectedFieldFromEditor?.fieldMeta as TTextFieldMeta | undefined}
                         onValueChange={(value) => updateSelectedFieldMeta(value)}
                       />

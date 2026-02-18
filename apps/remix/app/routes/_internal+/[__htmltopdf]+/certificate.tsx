@@ -6,6 +6,7 @@ import { redirect } from 'react-router';
 import { prop, sortBy } from 'remeda';
 import { match } from 'ts-pattern';
 import { UAParser } from 'ua-parser-js';
+import z from 'zod';
 
 import { NEXT_PUBLIC_WEBAPP_URL } from '@documenso/lib/constants/app';
 import { ZSupportedLanguageCodeSchema } from '@documenso/lib/constants/i18n';
@@ -26,6 +27,14 @@ import {
 } from '@documenso/ui/primitives/table';
 
 import type { Route } from './+types/certificate';
+
+const ZTypedSignatureSettings = z
+  .object({
+    font: z.string().optional(),
+    color: z.string().optional(),
+  })
+  .nullable()
+  .optional();
 
 export async function loader({ request }: Route.LoaderArgs) {
   const d = new URL(request.url).searchParams.get('d');
@@ -267,10 +276,10 @@ export default function SigningCertificate({ loaderData }: Route.ComponentProps)
       style={{ backgroundImage: `url('${backgroundUrl}')` }}
     >
       <div className="print-provider pointer-events-none w-full print:mx-0 print:w-full print:max-w-none print:p-0">
-        <div className="border-brand m-3 flex min-h-[calc(100vh-24px)] flex-col justify-between border p-5 print:m-3 print:min-h-[calc(100vh-24px)] print:p-5">
+        <div className="m-3 flex min-h-[calc(100vh-24px)] flex-col justify-between border border-brand p-5 print:m-3 print:min-h-[calc(100vh-24px)] print:p-5">
           <div className="flex-1">
-            <div className="mt-12 mb-12 flex items-center justify-center">
-              <h1 className="text-brand flex h-6 w-full flex-col justify-center text-2xl leading-4 font-bold">
+            <div className="mb-12 mt-12 flex items-center justify-center">
+              <h1 className="flex h-6 w-full flex-col justify-center text-2xl font-bold leading-4 text-brand">
                 {_(msg`Signature Certificate`)}
               </h1>
             </div>
@@ -278,13 +287,13 @@ export default function SigningCertificate({ loaderData }: Route.ComponentProps)
             <Table className="w-full border-collapse border-0" overflowHidden>
               <TableHeader>
                 <TableRow className="border-b border-zinc-200">
-                  <TableHead className="text-brand w-1/3 text-sm leading-4 font-semibold print:text-xs">
+                  <TableHead className="w-1/3 text-sm font-semibold leading-4 text-brand print:text-xs">
                     {_(msg`Signer Events`)}
                   </TableHead>
-                  <TableHead className="text-brand w-1/3 text-sm leading-4 font-semibold print:text-xs">
+                  <TableHead className="w-1/3 text-sm font-semibold leading-4 text-brand print:text-xs">
                     {_(msg`Timestamp`)}
                   </TableHead>
-                  <TableHead className="text-brand w-1/3 text-sm leading-4 font-semibold print:text-xs">
+                  <TableHead className="w-1/3 text-sm font-semibold leading-4 text-brand print:text-xs">
                     {_(msg`Signature`)}
                   </TableHead>
                 </TableRow>
@@ -304,10 +313,10 @@ export default function SigningCertificate({ loaderData }: Route.ComponentProps)
                         truncate={false}
                         className="w-[min-content] max-w-[220px] align-top"
                       >
-                        <div className="text-sm leading-4 font-semibold break-words hyphens-auto text-zinc-700 print:text-xs">
+                        <div className="hyphens-auto break-words text-sm font-semibold leading-4 text-zinc-700 print:text-xs">
                           {recipient.name}
                         </div>
-                        <div className="text-sm leading-4 font-medium break-all text-zinc-600 print:text-xs">
+                        <div className="break-all text-sm font-medium leading-4 text-zinc-600 print:text-xs">
                           Email: {recipient.email}
                         </div>
                         <div className="mt-2 space-y-1 text-sm text-zinc-700 print:text-xs">
@@ -321,9 +330,9 @@ export default function SigningCertificate({ loaderData }: Route.ComponentProps)
                             <span className="font-medium">{_(msg`Signed`)}:</span>
                           </p>
                         </div>
-                        <p className="text-muted-foreground mt-2 text-sm print:text-xs">
+                        <p className="mt-2 text-sm text-muted-foreground print:text-xs">
                           <span className="font-medium">{_(msg`Recipient Verification`)}:</span>{' '}
-                          <span className="flex items-center gap-1 text-[10px] leading-[18px] font-medium text-[#16A34A]">
+                          <span className="flex items-center gap-1 text-[10px] font-medium leading-[18px] text-[#16A34A]">
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
                               width="16"
@@ -348,7 +357,7 @@ export default function SigningCertificate({ loaderData }: Route.ComponentProps)
                         <p className="invisible text-sm leading-4 print:text-xs">Placeholder</p>
                         <p className="invisible text-sm leading-4 print:text-xs">Placeholder</p>
                         <div className="mt-2 space-y-1">
-                          <p className="text-muted-foreground text-sm print:text-xs">
+                          <p className="text-sm text-muted-foreground print:text-xs">
                             <span className="inline-block">
                               {formatDateWithTimezone(
                                 logs.EMAIL_SENT[0]?.createdAt || logs.DOCUMENT_SENT[0]?.createdAt,
@@ -358,7 +367,7 @@ export default function SigningCertificate({ loaderData }: Route.ComponentProps)
                             </span>
                           </p>
 
-                          <p className="text-muted-foreground text-sm print:text-xs">
+                          <p className="text-sm text-muted-foreground print:text-xs">
                             <span className="inline-block">
                               {formatDateWithTimezone(
                                 logs.DOCUMENT_OPENED[0]?.createdAt,
@@ -368,7 +377,7 @@ export default function SigningCertificate({ loaderData }: Route.ComponentProps)
                             </span>
                           </p>
 
-                          <p className="text-muted-foreground text-sm print:text-xs">
+                          <p className="text-sm text-muted-foreground print:text-xs">
                             <span className="inline-block">
                               {formatDateWithTimezone(
                                 logs.DOCUMENT_RECIPIENT_COMPLETED[0]?.createdAt,
@@ -394,21 +403,17 @@ export default function SigningCertificate({ loaderData }: Route.ComponentProps)
 
                               {signature.signature?.typedSignature &&
                                 (() => {
-                                  const settings = (
-                                    signature.fieldMeta as {
-                                      typedSignatureSettings?: { font?: string; color?: string };
-                                    }
-                                  )?.typedSignatureSettings;
-                                  const hasSettings = isTypedSignatureSettings(settings);
+                                  const parsed = ZTypedSignatureSettings.safeParse(
+                                    signature.signature?.typedSignatureSettings,
+                                  );
+                                  const settings = parsed.success ? parsed.data : undefined;
 
                                   return (
                                     <p
                                       className="text-center text-sm print:text-xs"
                                       style={{
-                                        fontFamily: hasSettings
-                                          ? settings.font || 'Dancing Script'
-                                          : 'Dancing Script',
-                                        color: hasSettings ? settings.color || 'black' : 'black',
+                                        fontFamily: settings?.font || 'Dancing Script',
+                                        color: settings?.color || 'black',
                                       }}
                                     >
                                       {signature.signature.typedSignature}
@@ -418,10 +423,10 @@ export default function SigningCertificate({ loaderData }: Route.ComponentProps)
                             </div>
 
                             <p className="mt-2 flex h-4 flex-col justify-center self-stretch">
-                              <span className="text-sm leading-4 font-medium text-zinc-600 print:text-xs">
+                              <span className="text-sm font-medium leading-4 text-zinc-600 print:text-xs">
                                 {_(msg`IP address`)}:
                               </span>{' '}
-                              <span className="text-sm leading-4 font-normal text-zinc-600 print:text-xs">
+                              <span className="text-sm font-normal leading-4 text-zinc-600 print:text-xs">
                                 {logs.DOCUMENT_RECIPIENT_COMPLETED[0]?.ipAddress ?? _(msg`Unknown`)}
                               </span>
                             </p>
@@ -445,7 +450,7 @@ export default function SigningCertificate({ loaderData }: Route.ComponentProps)
               />
             </div>
 
-            <div className="text-sm leading-[18px] font-medium text-zinc-700 print:text-xs">
+            <div className="text-sm font-medium leading-[18px] text-zinc-700 print:text-xs">
               <p>{_(msg`Document Completed by all parties on`)}:</p>
               <p>
                 {(() => {

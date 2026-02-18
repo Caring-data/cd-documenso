@@ -11,12 +11,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@documenso/ui/primitives/dialog';
-import { SignaturePad } from '@documenso/ui/primitives/signature-pad';
+import { SignaturePad, type SignaturePadValue } from '@documenso/ui/primitives/signature-pad';
 
 import { DocumentSigningDisclosure } from '../general/document-signing/document-signing-disclosure';
 
 export type SignFieldSignatureDialogProps = {
-  initialSignature?: string;
+  initialSignature?: SignaturePadValue;
   fullName?: string;
   typedSignatureEnabled?: boolean;
   uploadSignatureEnabled?: boolean;
@@ -25,7 +25,7 @@ export type SignFieldSignatureDialogProps = {
 
 export const SignFieldSignatureDialog = createCallable<
   SignFieldSignatureDialogProps,
-  string | null
+  SignaturePadValue | null
 >(
   ({
     call,
@@ -35,7 +35,9 @@ export const SignFieldSignatureDialog = createCallable<
     drawSignatureEnabled,
     initialSignature,
   }) => {
-    const [localSignature, setLocalSignature] = useState(initialSignature);
+    const [localSignature, setLocalSignature] = useState<SignaturePadValue | null>(
+      initialSignature ?? null,
+    );
 
     return (
       <Dialog open={true} onOpenChange={(value) => (!value ? call.end(null) : null)}>
@@ -49,8 +51,8 @@ export const SignFieldSignatureDialog = createCallable<
 
             <SignaturePad
               fullName={fullName}
-              value={localSignature ?? ''}
-              onChange={({ value }) => setLocalSignature(value)}
+              value={localSignature ?? undefined}
+              onChange={setLocalSignature}
               typedSignatureEnabled={typedSignatureEnabled}
               uploadSignatureEnabled={uploadSignatureEnabled}
               drawSignatureEnabled={drawSignatureEnabled}
@@ -66,8 +68,8 @@ export const SignFieldSignatureDialog = createCallable<
 
             <Button
               type="button"
-              disabled={!localSignature}
-              onClick={() => call.end(localSignature || null)}
+              disabled={!localSignature?.value}
+              onClick={() => call.end(localSignature)}
             >
               <Trans>Sign</Trans>
             </Button>

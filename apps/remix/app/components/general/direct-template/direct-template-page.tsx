@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { msg } from '@lingui/core/macro';
 import { useLingui } from '@lingui/react';
 import type { Field } from '@prisma/client';
-import { type Recipient } from '@prisma/client';
+import { FieldType, type Recipient } from '@prisma/client';
 import { useNavigate, useSearchParams } from 'react-router';
 
 import { RECIPIENT_ROLES_DESCRIPTION } from '@documenso/lib/constants/recipient-roles';
@@ -112,13 +112,22 @@ export const DirectTemplatePageView = ({
             throw new Error('Invalid configuration');
           }
 
-          return {
+          const base = {
             token: field.signedValue?.token ?? '',
             fieldId: field.signedValue?.fieldId ?? 0,
             value: field.signedValue?.value,
             isBase64: field.signedValue?.isBase64,
             authOptions: field.signedValue?.authOptions,
           };
+
+          if (field.type === FieldType.SIGNATURE || field.type === FieldType.FREE_SIGNATURE) {
+            return {
+              ...base,
+              typedSignatureSettings: field.signature?.typedSignatureSettings ?? null,
+            };
+          }
+
+          return base;
         }),
       });
 

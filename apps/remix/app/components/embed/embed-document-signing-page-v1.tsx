@@ -11,6 +11,7 @@ import { useThrottleFn } from '@documenso/lib/client-only/hooks/use-throttle-fn'
 import { PDF_VIEWER_PAGE_SELECTOR } from '@documenso/lib/constants/pdf-viewer';
 import { isFieldUnsignedAndRequired } from '@documenso/lib/utils/advanced-fields-helpers';
 import { validateFieldsInserted } from '@documenso/lib/utils/fields';
+import { DocumentSignatureType } from '@documenso/lib/utils/teams';
 import type { RecipientWithFields } from '@documenso/prisma/types/recipient-with-fields';
 import { trpc } from '@documenso/trpc/react';
 import {
@@ -117,7 +118,7 @@ export const EmbedSignDocumentV1ClientPage = ({
 
   const hasSignatureField = fields.some((field) => field.type === FieldType.SIGNATURE);
 
-  const signatureValid = !hasSignatureField || (signature && signature.trim() !== '');
+  const signatureValid = !hasSignatureField || Boolean(signature?.value?.trim());
 
   const assistantSignersId = useId();
 
@@ -250,21 +251,26 @@ export const EmbedSignDocumentV1ClientPage = ({
     return <EmbedDocumentRejected />;
   }
 
+  const sigValue = signature?.value ?? '';
+  const isBase64 = sigValue.startsWith('data:');
+
+  const completedSignature = signature?.value?.trim()
+    ? {
+        id: 1,
+        fieldId: 1,
+        recipientId: 1,
+        created: new Date(),
+        signatureImageAsBase64: isBase64 ? sigValue : null,
+        typedSignature: isBase64 ? null : sigValue,
+        typedSignatureSettings:
+          !isBase64 && signature?.type === DocumentSignatureType.TYPE
+            ? { font: signature.font ?? 'Dancing Script', color: signature.color ?? 'black' }
+            : null,
+      }
+    : null;
+
   if (hasCompletedDocument) {
-    return (
-      <EmbedDocumentCompleted
-        name={fullName}
-        signature={{
-          id: 1,
-          fieldId: 1,
-          recipientId: 1,
-          created: new Date(),
-          signatureImageAsBase64: signature?.startsWith('data:') ? signature : null,
-          typedSignature: signature?.startsWith('data:') ? null : signature,
-          typedSignatureSettings: null,
-        }}
-      />
-    );
+    return <EmbedDocumentCompleted name={fullName} signature={completedSignature ?? undefined} />;
   }
 
   return (
@@ -458,8 +464,8 @@ export const EmbedSignDocumentV1ClientPage = ({
                             disableAnimation
                             fullName={fullName}
                             recipientEmail={recipient?.email}
-                            value={signature ?? ''}
-                            onChange={(v) => setSignature(v ?? '')}
+                            value={signature ?? undefined}
+                            onChange={setSignature}
                             typedSignatureEnabled={metadata?.typedSignatureEnabled}
                             uploadSignatureEnabled={metadata?.uploadSignatureEnabled}
                             drawSignatureEnabled={metadata?.drawSignatureEnabled}

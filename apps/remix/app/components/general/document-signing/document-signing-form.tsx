@@ -282,8 +282,8 @@ export const DocumentSigningForm = ({
                         disabled={isSubmitting}
                         fullName={fullName}
                         recipientEmail={recipient?.email}
-                        value={signature ?? ''}
-                        onChange={(v) => setSignature(v ?? '')}
+                        value={signature ?? undefined}
+                        onChange={setSignature}
                         typedSignatureEnabled={document.documentMeta?.typedSignatureEnabled}
                         uploadSignatureEnabled={document.documentMeta?.uploadSignatureEnabled}
                         drawSignatureEnabled={document.documentMeta?.drawSignatureEnabled}

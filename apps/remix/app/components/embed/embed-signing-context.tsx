@@ -21,7 +21,12 @@ export type EmbedSigningContextValue = {
     reason?: string;
   }) => void;
   onDocumentReady: () => void;
-  onFieldSigned: (data: { fieldId?: number; value?: string; isBase64?: boolean }) => void;
+  onFieldSigned: (data: {
+    fieldId?: number;
+    value?: string;
+    isBase64?: boolean;
+    typedSignatureSettings?: { font?: string; color?: string };
+  }) => void;
   onFieldUnsigned: (data: { fieldId?: number }) => void;
 };
 
@@ -61,7 +66,12 @@ export type EmbedSigningProviderProps = {
     reason?: string;
   }) => void;
   onDocumentReady: () => void;
-  onFieldSigned: (data: { fieldId?: number; value?: string; isBase64?: boolean }) => void;
+  onFieldSigned: (data: {
+    fieldId?: number;
+    value?: string;
+    isBase64?: boolean;
+    typedSignatureSettings?: { font?: string; color?: string };
+  }) => void;
   onFieldUnsigned: (data: { fieldId?: number }) => void;
   children: React.ReactNode;
 };

@@ -31,7 +31,7 @@ export const TextFieldAdvancedSettings = ({
     const text = field === 'text' ? String(value) : (fieldState.text ?? '');
     const limit =
       field === 'characterLimit' ? Number(value) : Number(fieldState.characterLimit ?? 0);
-    const fontSize = field === 'fontSize' ? Number(value) : Number(fieldState.fontSize ?? 14);
+    const fontSize = field === 'fontSize' ? Number(value) : Number(fieldState.fontSize ?? 12);
     const readOnly = field === 'readOnly' ? Boolean(value) : Boolean(fieldState.readOnly);
     const required = field === 'required' ? Boolean(value) : Boolean(fieldState.required);
 
