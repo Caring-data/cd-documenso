@@ -1,39 +1,38 @@
 import { FieldType } from '@prisma/client';
 import { DateTime } from 'luxon';
 
-import type { ResidentInfo } from '@documenso/lib/client-only/hooks/use-get-resident-info';
+import type { DocumentContext } from '@documenso/lib/client-only/hooks/use-get-document-context';
 import { DEFAULT_DOCUMENT_DATE_FORMAT } from '@documenso/lib/constants/date-formats';
 
 const toStr = (value: unknown): string => (typeof value === 'string' ? value : '');
 
 export const getResidentValue = (
   fieldType: FieldType,
-  residentInfo?: ResidentInfo | null,
+  residentInfo?: DocumentContext | null,
 ): string => {
-  if (!residentInfo || !residentInfo.resident) {
-    return '';
-  }
+  if (!residentInfo) return '';
 
-  const { resident, location } = residentInfo;
+  const resident = residentInfo.resident ?? null;
+  const location = residentInfo.location ?? null;
 
   switch (fieldType) {
     case FieldType.RESIDENT_FIRST_NAME:
-      return toStr(resident.first_name);
+      return toStr(resident?.first_name);
     case FieldType.RESIDENT_LAST_NAME:
-      return toStr(resident.last_name);
+      return toStr(resident?.last_name);
     case FieldType.RESIDENT_DOB: {
-      const dob = resident.dob;
+      const dob = resident?.dob;
       if (dob && typeof dob === 'string') {
         return DateTime.fromJSDate(new Date(dob)).toFormat(DEFAULT_DOCUMENT_DATE_FORMAT);
       }
       return '';
     }
     case FieldType.RESIDENT_GENDER_IDENTITY:
-      return toStr(resident.gender_identity);
+      return toStr(resident?.gender_identity);
     case FieldType.RESIDENT_LOCATION_NAME:
       return toStr(location?.name);
     case FieldType.RESIDENT_LOCATION_STATE:
-      return toStr(location?.state);
+      return toStr(location?.state?.name);
     case FieldType.RESIDENT_LOCATION_ADDRESS:
       return toStr(location?.address);
     case FieldType.RESIDENT_LOCATION_CITY:

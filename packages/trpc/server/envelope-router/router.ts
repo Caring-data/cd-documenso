@@ -22,7 +22,7 @@ import { findEnvelopeAuditLogsRoute } from './find-envelope-audit-logs';
 import { getEnvelopeRoute } from './get-envelope';
 import { getEnvelopeItemsRoute } from './get-envelope-items';
 import { getEnvelopeItemsByTokenRoute } from './get-envelope-items-by-token';
-import { getResidentInfoRoute } from './get-resident-info';
+import { getSigningContextRoute } from './get-signing-context';
 import { redistributeEnvelopeRoute } from './redistribute-envelope';
 import { setEnvelopeFieldsRoute } from './set-envelope-fields';
 import { setEnvelopeFieldsByExternalIdRoute } from './set-envelope-fields-by-external-id';
@@ -73,7 +73,7 @@ export const envelopeRouter = router({
     find: findEnvelopeAuditLogsRoute,
   },
   get: getEnvelopeRoute,
-  getResidentInfo: getResidentInfoRoute,
+  getSigningContext: getSigningContextRoute,
   create: createEnvelopeRoute,
   use: useEnvelopeRoute,
   update: updateEnvelopeRoute,
