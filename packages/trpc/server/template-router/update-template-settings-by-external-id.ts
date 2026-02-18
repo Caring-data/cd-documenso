@@ -16,7 +16,7 @@ export const updateTemplateSettingsByExternalIdRoute = procedure
   .input(ZUpdateTemplateSettingsByExternalIdRequestSchema)
   .output(ZUpdateTemplateSettingsByExternalIdResponseSchema)
   .mutation(async ({ input, ctx }) => {
-    const { externalId, title, recipients } = input;
+    const { externalId, title, isSystem, recipients } = input;
 
     ctx.logger.info({
       input: {
@@ -48,6 +48,7 @@ export const updateTemplateSettingsByExternalIdRoute = procedure
       teamId: envelope.teamId,
       envelopeId: envelope.id,
       title,
+      isSystem,
       recipients,
     });
   });

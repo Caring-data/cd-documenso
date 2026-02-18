@@ -17,6 +17,7 @@ import type { DocumentFlowStep } from '@documenso/ui/primitives/document-flow/ty
 import { Stepper } from '@documenso/ui/primitives/stepper';
 import { useToast } from '@documenso/ui/primitives/use-toast';
 
+import { getEmbedOptions } from '../utils/get-embed-options';
 import {
   EmbedTemplateEditorProvider,
   useCurrentEmbedTemplateEditor,
@@ -228,6 +229,12 @@ function ClientInner({ envelopeId, externalId, initialEnvelope }: ClientInnerPro
   const handleStepChange = (step: number) => {
     setCurrentStep(step);
   };
+
+  useEffect(() => {
+    const options = getEmbedOptions();
+    const isSystem = options.isSystem === true;
+    console.log('embed isSystem', isSystem);
+  }, []);
 
   useEffect(() => {
     const firstSelectableRecipient = envelope.recipients.find(

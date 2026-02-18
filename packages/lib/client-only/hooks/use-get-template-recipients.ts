@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+
 import { env } from '../../utils/env';
 
 export type TemplateRecipient = {
@@ -10,11 +11,15 @@ export type TemplateRecipient = {
   contactCategoryKey?: string | null;
 };
 
-export const useGetTemplateRecipients = (templateKey?: string) => {
+const getFormsSegment = (isSystem?: boolean) => (isSystem === true ? 'system-forms' : 'forms');
+
+export const useGetTemplateRecipients = (templateKey?: string, isSystem?: boolean) => {
+  const segment = getFormsSegment(isSystem);
+
   return useQuery<TemplateRecipient[]>({
     enabled: !!templateKey,
 
-    queryKey: ['template-recipients', templateKey],
+    queryKey: ['template-recipients', templateKey, isSystem],
 
     queryFn: async () => {
       const baseUrl = env('NEXT_PUBLIC_CD_SERVICE_URL');
@@ -29,7 +34,7 @@ export const useGetTemplateRecipients = (templateKey?: string) => {
       }
 
       const response = await fetch(
-        `${baseUrl}/v1/forms/templates/${templateKey}/signers/basic`,
+        `${baseUrl}/v1/${segment}/templates/${templateKey}/signers/basic`,
         {
           headers: {
             'x-api-key': apiKey,
@@ -42,9 +47,7 @@ export const useGetTemplateRecipients = (templateKey?: string) => {
           .json()
           .catch(() => ({ message: 'Failed to fetch template recipients' }));
 
-        throw new Error(
-          error.message || `Failed to fetch template recipients: ${response.status}`,
-        );
+        throw new Error(error.message || `Failed to fetch template recipients: ${response.status}`);
       }
 
       const data = await response.json();

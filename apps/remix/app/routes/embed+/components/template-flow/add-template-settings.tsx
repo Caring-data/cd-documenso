@@ -63,6 +63,7 @@ type TAddTemplateSettingsFormSchema = z.infer<typeof ZAddTemplateSettingsFormSch
 export type AddTemplateSettingsFormProps = {
   flowStep: DocumentFlowStep;
   envelope: TEnvelope;
+  isSystem?: boolean;
   onSubmit: (data: {
     title: string;
     recipients: TAddTemplateSettingsFormSchema['recipients'];
@@ -72,12 +73,16 @@ export type AddTemplateSettingsFormProps = {
 export const AddTemplateSettingsFormPartial = ({
   flowStep,
   envelope,
+  isSystem = false,
   onSubmit,
 }: AddTemplateSettingsFormProps) => {
   const { t } = useLingui();
 
-  const { data: categories } = useGetContactCategories();
-  const { data: recipientsFromApi } = useGetTemplateRecipients(envelope.formKey ?? undefined);
+  const { data: categories } = useGetContactCategories(isSystem);
+  const { data: recipientsFromApi } = useGetTemplateRecipients(
+    envelope.formKey ?? undefined,
+    isSystem,
+  );
 
   const generateDefaultRecipients = () => {
     if (envelope.recipients.length === 0) {

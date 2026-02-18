@@ -6,6 +6,7 @@ module.exports = {
     '@next/next/no-img-element': 'off',
     'no-unreachable': 'error',
     'react-hooks/exhaustive-deps': 'off',
+    '@typescript-eslint/no-explicit-any': 'off',
   },
   settings: {
     next: {

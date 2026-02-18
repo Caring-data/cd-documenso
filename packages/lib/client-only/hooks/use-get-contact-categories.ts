@@ -14,9 +14,13 @@ export type ContactCategory = {
   name: string;
 };
 
-export const useGetContactCategories = () => {
+const getFormsSegment = (isSystem?: boolean) => (isSystem === true ? 'system-forms' : 'forms');
+
+export const useGetContactCategories = (isSystem?: boolean) => {
+  const segment = getFormsSegment(isSystem);
+
   return useQuery<ContactCategory[]>({
-    queryKey: ['get-contact-categories'],
+    queryKey: ['get-contact-categories', isSystem],
     queryFn: async () => {
       const baseUrl = env('NEXT_PUBLIC_CD_SERVICE_URL');
       const apiKey = env('NEXT_PUBLIC_CD_SERVICE_API_KEY');
@@ -29,7 +33,7 @@ export const useGetContactCategories = () => {
         throw new Error('NEXT_PUBLIC_CD_SERVICE_API_KEY is not configured');
       }
 
-      const response = await fetch(`${baseUrl}/v1/forms/contact-categories`, {
+      const response = await fetch(`${baseUrl}/v1/${segment}/contact-categories`, {
         headers: {
           'x-api-key': apiKey,
         },

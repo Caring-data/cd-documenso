@@ -18,6 +18,7 @@ export interface UpdateTemplateSettingsOptions {
   teamId: number;
   envelopeId: string;
   title: string;
+  isSystem?: boolean;
   recipients: {
     id?: number;
     email: string;
@@ -34,6 +35,7 @@ export const updateTemplateSettings = async ({
   teamId,
   envelopeId,
   title,
+  isSystem,
   recipients,
 }: UpdateTemplateSettingsOptions) => {
   const { envelopeWhereInput } = await getEnvelopeWhereInput({
@@ -65,13 +67,17 @@ export const updateTemplateSettings = async ({
       const documentMeta = envelope.documentMeta;
 
       // Update template settings in Caring Data
-      await updateCaringDataTemplateSettings(envelope.externalId, {
-        title,
-        defaultLanguage: documentMeta?.language || 'en',
-        defaultTimezone: documentMeta?.timezone || 'Etc/UTC',
-        defaultEmailSubject: documentMeta?.subject || '',
-        defaultEmailMessage: documentMeta?.message || '',
-      });
+      await updateCaringDataTemplateSettings(
+        envelope.externalId,
+        {
+          title,
+          defaultLanguage: documentMeta?.language || 'en',
+          defaultTimezone: documentMeta?.timezone || 'Etc/UTC',
+          defaultEmailSubject: documentMeta?.subject || '',
+          defaultEmailMessage: documentMeta?.message || '',
+        },
+        { isSystem },
+      );
 
       // Map recipients to Caring Data format
       const caringDataSigners = recipients.map((recipient) => ({
@@ -84,7 +90,7 @@ export const updateTemplateSettings = async ({
       }));
 
       // Update template signers in Caring Data
-      await updateCaringDataTemplateSigners(envelope.externalId, caringDataSigners);
+      await updateCaringDataTemplateSigners(envelope.externalId, caringDataSigners, { isSystem });
     } catch (error) {
       // Log the error for debugging with context
       console.error('Failed to sync template settings with Caring Data API:', {

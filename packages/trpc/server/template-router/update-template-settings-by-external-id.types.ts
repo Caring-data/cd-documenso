@@ -19,6 +19,7 @@ export const updateTemplateSettingsByExternalIdMeta: TrpcRouteMeta = {
 export const ZUpdateTemplateSettingsByExternalIdRequestSchema = z.object({
   externalId: z.string().min(1),
   title: ZDocumentTitleSchema,
+  isSystem: z.boolean().optional(),
   recipients: z.array(
     z.object({
       id: z.number().optional(),
