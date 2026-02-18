@@ -103,7 +103,7 @@ export type createDocumentFromTemplateBase64Options = {
     documentName?: string;
     ownerName?: string;
     locationName?: string;
-    formType?: 'custom' | 'standard' | 'custom_default';
+    formType?: 'custom' | 'standard' | 'system';
     module?: 'resident' | 'staff' | 'facility' | 'reports';
   };
 
@@ -421,11 +421,30 @@ export const createDocumentFromTemplateBase64 = async ({
   });
 
   if (folderName && !folderId) {
+    const moduleName = signingContext?.module;
+
+    let parentFolderId: string | undefined;
+
+    if (moduleName) {
+      const moduleFolder = await prisma.folder.findFirst({
+        where: {
+          name: moduleName,
+          type: FolderType.DOCUMENT,
+          team: buildTeamWhereQuery({ teamId, userId }),
+          parentId: null,
+        },
+        select: { id: true },
+      });
+
+      parentFolderId = moduleFolder?.id;
+    }
+
     const folder = await prisma.folder.findFirst({
       where: {
         name: folderName,
-        team: buildTeamWhereQuery({ teamId, userId }),
         type: FolderType.DOCUMENT,
+        team: buildTeamWhereQuery({ teamId, userId }),
+        ...(parentFolderId ? { parentId: parentFolderId } : {}),
       },
     });
 
@@ -791,7 +810,7 @@ export const createDocumentFromTemplateBase64 = async ({
     }
 
     const shouldSkipCoordinateSearch =
-      signingContext?.formType === 'custom' || signingContext?.formType === 'custom_default';
+      signingContext?.formType === 'custom' || signingContext?.formType === 'system';
 
     const variableCounters: Record<string, number> = {};
 

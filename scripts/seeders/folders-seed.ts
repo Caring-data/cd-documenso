@@ -16,27 +16,15 @@ export const FOLDERS_TO_CREATE: FolderSeedConfig[] = [
   { name: 'staff-forms', type: 'TEMPLATE' },
   { name: 'facility-forms', type: 'TEMPLATE' },
   {
-    name: 'resident-standard-forms',
+    name: 'resident',
     type: 'DOCUMENT',
   },
   {
-    name: 'resident-custom-forms',
+    name: 'staff',
     type: 'DOCUMENT',
   },
   {
-    name: 'staff-standard-forms',
-    type: 'DOCUMENT',
-  },
-  {
-    name: 'staff-custom-forms',
-    type: 'DOCUMENT',
-  },
-  {
-    name: 'facility-standard-forms',
-    type: 'DOCUMENT',
-  },
-  {
-    name: 'facility-custom-forms',
+    name: 'facility',
     type: 'DOCUMENT',
   },
 ];
