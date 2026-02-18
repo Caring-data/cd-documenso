@@ -36,6 +36,8 @@ export const ZEnvelopeForSigningResponse = z.object({
     authOptions: true,
     userId: true,
     teamId: true,
+    ownerId: true,
+    signingContext: true,
   }).extend({
     documentMeta: DocumentMetaSchema.pick({
       signingOrder: true,

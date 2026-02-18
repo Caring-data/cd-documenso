@@ -7,7 +7,7 @@ import { FieldType } from '@prisma/client';
 import { useRevalidator } from 'react-router';
 
 import { validateTextField } from '@documenso/lib/advanced-fields-validation/validate-text';
-import { useGetResidentInfo } from '@documenso/lib/client-only/hooks/use-get-resident-info';
+import { useGetDocumentContext } from '@documenso/lib/client-only/hooks/use-get-document-context';
 import { DO_NOT_INVALIDATE_QUERY_ON_MUTATION } from '@documenso/lib/constants/trpc';
 import { AppError, AppErrorCode } from '@documenso/lib/errors/app-error';
 import type { TRecipientActionAuth } from '@documenso/lib/types/document-auth';
@@ -95,7 +95,7 @@ export const DocumentSigningTextField = ({
   // Resident field logic - automatically fetch when component mounts if it's a resident field
   const isResidentField = isResidentFieldType(field.type);
 
-  const { data: residentIdData } = trpc.envelope.getResidentInfo.useQuery(
+  const { data: ownerData } = trpc.envelope.getSigningContext.useQuery(
     { token: recipient.token },
     {
       enabled: isResidentField && !isAssistantMode,
@@ -103,12 +103,16 @@ export const DocumentSigningTextField = ({
     },
   );
 
-  const { data: residentInfo } = useGetResidentInfo({
-    residentId: residentIdData?.residentId || '',
+  const contextModule = ownerData?.signingContext?.module ?? 'resident';
+  const ownerId = ownerData?.ownerId ?? '';
+
+  const { data: systemInfo } = useGetDocumentContext({
+    ownerId,
+    module: contextModule,
   });
 
   const residentValue =
-    isResidentField && residentInfo ? getResidentValue(field.type, residentInfo) : '';
+    isResidentField && systemInfo ? getResidentValue(field.type, systemInfo) : '';
 
   // Check if this is RESIDENT_DOB without a value - should use calendar picker
   const isResidentDobWithoutValue =
