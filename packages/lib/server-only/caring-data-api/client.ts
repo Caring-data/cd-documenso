@@ -54,14 +54,19 @@ const handleApiError = async (response: Response): Promise<never> => {
   });
 };
 
+const getFormsPath = (options?: { isSystem?: boolean }): string =>
+  options?.isSystem === true ? 'system-forms' : 'forms';
+
 export const updateTemplateSettings = async (
   externalId: string,
   settings: UpdateTemplateSettingsRequest,
+  options?: { isSystem?: boolean },
 ): Promise<UpdateTemplateSettingsResponse> => {
   const baseUrl = getBaseUrl();
   const apiKey = getApiKey();
+  const formsPath = getFormsPath(options);
 
-  const url = `${baseUrl}/v1/forms/templates/${externalId}/settings`;
+  const url = `${baseUrl}/v1/${formsPath}/templates/${externalId}/settings`;
 
   const response = await fetch(url, {
     method: 'PATCH',
@@ -90,11 +95,13 @@ export const updateTemplateSettings = async (
 export const updateTemplateSigners = async (
   externalId: string,
   signers: UpdateTemplateSignersRequest,
+  options?: { isSystem?: boolean },
 ): Promise<UpdateTemplateSignersResponse> => {
   const baseUrl = getBaseUrl();
   const apiKey = getApiKey();
+  const formsPath = getFormsPath(options);
 
-  const url = `${baseUrl}/v1/forms/templates/${externalId}/signers`;
+  const url = `${baseUrl}/v1/${formsPath}/templates/${externalId}/signers`;
 
   const response = await fetch(url, {
     method: 'PATCH',

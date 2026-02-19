@@ -21,6 +21,7 @@ export const EmbedOptionsProvider = ({ children }: EmbedOptionsProviderProps) =>
 
   useEffect(() => {
     const options = getEmbedOptions();
+    console.log('options', options);
     setIsSystem(options.isSystem === true);
   }, []);
 

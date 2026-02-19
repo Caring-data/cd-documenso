@@ -4,6 +4,7 @@ import { getTemplateByExternalId } from '@documenso/trpc/server/template-router/
 
 import type { Route } from './+types/template.$externalId';
 import { Client } from './components/client';
+import { EmbedOptionsProvider } from './components/providers/embed-options-provider';
 
 export async function loader({ params }: Route.LoaderArgs) {
   const { externalId } = params;
@@ -33,11 +34,13 @@ export default function EmbedTemplatePage({ loaderData }: Route.ComponentProps) 
 
   return (
     <TrpcProvider headers={trpcHeaders}>
-      <Client
-        envelopeId={envelopeId}
-        externalId={externalId}
-        initialEnvelope={initialEnvelope as unknown as TEnvelope}
-      />
+      <EmbedOptionsProvider>
+        <Client
+          envelopeId={envelopeId}
+          externalId={externalId}
+          initialEnvelope={initialEnvelope as unknown as TEnvelope}
+        />
+      </EmbedOptionsProvider>
     </TrpcProvider>
   );
 }

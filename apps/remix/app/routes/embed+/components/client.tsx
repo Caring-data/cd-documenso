@@ -18,6 +18,7 @@ import { Stepper } from '@documenso/ui/primitives/stepper';
 import { useToast } from '@documenso/ui/primitives/use-toast';
 
 import { getEmbedOptions } from '../utils/get-embed-options';
+import { useEmbedOptions } from './providers/embed-options-provider';
 import {
   EmbedTemplateEditorProvider,
   useCurrentEmbedTemplateEditor,
@@ -68,6 +69,7 @@ function ClientInner({ envelopeId, externalId, initialEnvelope }: ClientInnerPro
   const { toast } = useToast();
   const { revalidate } = useRevalidator();
   const [currentStep, setCurrentStep] = useState(1);
+  const { isSystem } = useEmbedOptions();
 
   const { envelope, editorFields, setLocalEnvelope } = useCurrentEmbedTemplateEditor();
 
@@ -190,6 +192,7 @@ function ClientInner({ envelopeId, externalId, initialEnvelope }: ClientInnerPro
         externalId,
         title: data.title,
         recipients: mappedRecipients,
+        isSystem,
       });
     } catch (error) {
       console.error('Error updating template settings:', error);
