@@ -2,7 +2,6 @@ import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
 
-import { NEXT_PUBLIC_WEBAPP_URL } from '@documenso/lib/constants/app';
 import { AppError, AppErrorCode } from '@documenso/lib/errors/app-error';
 import { extractRequestMetadata } from '@documenso/lib/universal/extract-request-metadata';
 
@@ -20,20 +19,6 @@ import type { HonoAuthContext } from './types/context';
 export const auth = new Hono<HonoAuthContext>()
   .use(async (c, next) => {
     c.set('requestMetadata', extractRequestMetadata(c.req.raw));
-
-    const validOrigin = new URL(NEXT_PUBLIC_WEBAPP_URL()).origin;
-    const headerOrigin = c.req.header('Origin');
-
-    if (headerOrigin && headerOrigin !== validOrigin) {
-      return c.json(
-        {
-          message: 'Forbidden',
-          statusCode: 403,
-        },
-        403,
-      );
-    }
-
     await next();
   })
   .get('/csrf', async (c) => {
