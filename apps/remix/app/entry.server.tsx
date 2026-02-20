@@ -49,10 +49,6 @@ export default async function handleRequest(
 
           responseHeaders.set('Content-Type', 'text/html');
 
-          // CSP dinámico por variable de entorno
-          const allowedOrigin = process.env.ALLOWED_FRAME_ORIGIN ?? "'self'";
-          responseHeaders.set('Content-Security-Policy', `frame-ancestors 'self' ${allowedOrigin}`);
-
           resolve(
             new Response(stream, {
               headers: responseHeaders,
