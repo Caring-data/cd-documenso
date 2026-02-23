@@ -56,7 +56,7 @@ export default defineConfig({
     }),
   ],
   ssr: {
-    noExternal: ['react-dropzone', 'plausible-tracker', 'superjson'],
+    noExternal: ['react-dropzone', 'plausible-tracker'],
     external: [
       '@napi-rs/canvas',
       '@node-rs/bcrypt',
