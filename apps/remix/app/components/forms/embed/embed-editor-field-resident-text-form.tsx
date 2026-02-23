@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Trans, useLingui } from '@lingui/react/macro';
 import { useForm, useWatch } from 'react-hook-form';
 import type { z } from 'zod';
 
@@ -14,19 +13,10 @@ import {
   type TTextFieldMeta as TextFieldMeta,
   ZTextFieldMeta,
 } from '@documenso/lib/types/field-meta';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@documenso/ui/primitives/form/form';
-import { Textarea } from '@documenso/ui/primitives/textarea';
+import { Form } from '@documenso/ui/primitives/form/form';
 
 import {
   EditorGenericFontSizeField,
-  EditorGenericReadOnlyField,
   EditorGenericRequiredField,
   EditorGenericTextAlignField,
   EditorGenericVerticalAlignField,
@@ -46,7 +36,6 @@ const ZTextFieldFormSchema = ZTextFieldMeta.pick({
   readOnly: true,
 }).refine(
   (data) => {
-    // A read-only field must have text
     return !data.readOnly || (data.text && data.text.length > 0);
   },
   {
@@ -57,19 +46,17 @@ const ZTextFieldFormSchema = ZTextFieldMeta.pick({
 
 type TTextFieldFormSchema = z.infer<typeof ZTextFieldFormSchema>;
 
-type EmbedEditorFieldTextFormProps = {
+type EmbedEditorFieldResidentTextFormProps = {
   value: TextFieldMeta | undefined;
   onValueChange: (value: TextFieldMeta) => void;
 };
 
-export const EmbedEditorFieldTextForm = ({
+export const EmbedEditorFieldResidentTextForm = ({
   value = {
     type: 'text',
   },
   onValueChange,
-}: EmbedEditorFieldTextFormProps) => {
-  const { t } = useLingui();
-
+}: EmbedEditorFieldResidentTextFormProps) => {
   const form = useForm<TTextFieldFormSchema>({
     resolver: zodResolver(ZTextFieldFormSchema),
     mode: 'onChange',
@@ -94,13 +81,8 @@ export const EmbedEditorFieldTextForm = ({
     control,
   });
 
-  // Dupecode/Inefficient: Done because native isValid won't work for our usecase.
   useEffect(() => {
     const validatedFormValues = ZTextFieldFormSchema.safeParse(formValues);
-
-    if (formValues.readOnly && !formValues.text) {
-      void form.trigger('text');
-    }
 
     if (validatedFormValues.success) {
       onValueChange({
@@ -122,44 +104,9 @@ export const EmbedEditorFieldTextForm = ({
             <EditorGenericVerticalAlignField className="w-full" formControl={form.control} />
           </div>
 
-          <FormField
-            control={form.control}
-            name="text"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  <Trans>Add text</Trans>
-                </FormLabel>
-                <FormControl>
-                  <Textarea
-                    className="h-auto"
-                    placeholder={t`Add text to the field`}
-                    {...field}
-                    onChange={(e) => {
-                      const values = form.getValues();
-                      const characterLimit = values.characterLimit || 0;
-                      let textValue = e.target.value;
-
-                      if (characterLimit > 0 && textValue.length > characterLimit) {
-                        textValue = textValue.slice(0, characterLimit);
-                      }
-
-                      e.target.value = textValue;
-                      field.onChange(e);
-                    }}
-                    rows={1}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
           <div className="mt-1">
             <EditorGenericRequiredField formControl={form.control} />
           </div>
-
-          <EditorGenericReadOnlyField formControl={form.control} />
         </fieldset>
       </div>
     </Form>

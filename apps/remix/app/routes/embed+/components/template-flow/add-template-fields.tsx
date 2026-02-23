@@ -5,6 +5,7 @@ import { msg } from '@lingui/core/macro';
 import { useLingui } from '@lingui/react';
 import { Trans } from '@lingui/react/macro';
 import { FieldType, RecipientRole } from '@prisma/client';
+import { TooltipArrow } from '@radix-ui/react-tooltip';
 import {
   Building,
   CalendarDays,
@@ -32,6 +33,8 @@ import { match } from 'ts-pattern';
 import { getBoundingClientRect } from '@documenso/lib/client-only/get-bounding-client-rect';
 import { useDocumentElement } from '@documenso/lib/client-only/hooks/use-document-element';
 import type { TLocalField } from '@documenso/lib/client-only/hooks/use-editor-fields';
+import { useGetContactCategories } from '@documenso/lib/client-only/hooks/use-get-contact-categories';
+import { useGetTemplateRecipients } from '@documenso/lib/client-only/hooks/use-get-template-recipients';
 import { useCurrentEnvelopeRender } from '@documenso/lib/client-only/providers/envelope-render-provider';
 import { PDF_VIEWER_PAGE_SELECTOR } from '@documenso/lib/constants/pdf-viewer';
 import {
@@ -68,24 +71,21 @@ import { RecipientSelector } from '@documenso/ui/primitives/recipient-selector';
 import { Separator } from '@documenso/ui/primitives/separator';
 import { useStep } from '@documenso/ui/primitives/stepper';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@documenso/ui/primitives/tabs';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@documenso/ui/primitives/tooltip';
 
 import { EditorFieldCheckboxForm } from '~/components/forms/editor/editor-field-checkbox-form';
 import { EditorFieldDateForm } from '~/components/forms/editor/editor-field-date-form';
-import { EditorFieldDropdownForm } from '~/components/forms/editor/editor-field-dropdown-form';
 import { EditorFieldEmailForm } from '~/components/forms/editor/editor-field-email-form';
 import { EditorFieldInitialsForm } from '~/components/forms/editor/editor-field-initials-form';
 import { EditorFieldNameForm } from '~/components/forms/editor/editor-field-name-form';
 import { EditorFieldRadioForm } from '~/components/forms/editor/editor-field-radio-form';
 import { EditorFieldSignatureForm } from '~/components/forms/editor/editor-field-signature-form';
-
-import { EmbedEditorFieldTextForm } from '~/components/forms/embed/embed-editor-field-text-form';
+import { EmbedEditorFieldDropdownForm } from '~/components/forms/embed/embed-editor-field-dropdown-form';
 import { EmbedEditorFieldNumberForm } from '~/components/forms/embed/embed-editor-field-number-form';
+import { EmbedEditorFieldResidentTextForm } from '~/components/forms/embed/embed-editor-field-resident-text-form';
+import { EmbedEditorFieldTextForm } from '~/components/forms/embed/embed-editor-field-text-form';
 
 import { useCurrentEmbedTemplateEditor } from '../providers/embed-template-editor-provider';
-import { useGetContactCategories } from '@documenso/lib/client-only/hooks/use-get-contact-categories';
-import { useGetTemplateRecipients } from '@documenso/lib/client-only/hooks/use-get-template-recipients';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@documenso/ui/primitives/tooltip';
-import { TooltipArrow } from '@radix-ui/react-tooltip';
 
 const MIN_HEIGHT_PX = 12;
 const MIN_WIDTH_PX = 36;
@@ -415,9 +415,7 @@ export const EmbedAddTemplateFieldsFormPartial = ({
   const mergedRecipients = useMemo(() => {
     if (!recipientsFromApi?.length) return recipients;
 
-    const apiByEmail = new Map(
-      recipientsFromApi.map((r) => [r.email?.toLowerCase(), r]),
-    );
+    const apiByEmail = new Map(recipientsFromApi.map((r) => [r.email?.toLowerCase(), r]));
 
     return recipients.map((r) => {
       const api = apiByEmail.get(r.email?.toLowerCase());
@@ -499,8 +497,15 @@ export const EmbedAddTemplateFieldsFormPartial = ({
               </div>
             </TooltipTrigger>
 
-            <TooltipContent side="bottom" align="center" className="max-w-xs border-2 bg-orange-300 fill-orange-300 text-orange-900" sideOffset={2}>
-              <span className="text-sm">Switch between recipients and customize their required fields.</span>
+            <TooltipContent
+              side="bottom"
+              align="center"
+              className="max-w-xs border-2 bg-orange-300 fill-orange-300 text-orange-900"
+              sideOffset={2}
+            >
+              <span className="text-sm">
+                Switch between recipients and customize their required fields.
+              </span>
               <TooltipArrow />
             </TooltipContent>
           </Tooltip>
@@ -797,7 +802,7 @@ export const EmbedAddTemplateFieldsFormPartial = ({
                       />
                     ))
                     .with(FieldType.DROPDOWN, () => (
-                      <EditorFieldDropdownForm
+                      <EmbedEditorFieldDropdownForm
                         value={selectedFieldFromEditor?.fieldMeta as TDropdownFieldMeta | undefined}
                         onValueChange={(value) => updateSelectedFieldMeta(value)}
                       />
@@ -839,13 +844,13 @@ export const EmbedAddTemplateFieldsFormPartial = ({
                       />
                     ))
                     .with(FieldType.RESIDENT_FIRST_NAME, () => (
-                      <EmbedEditorFieldTextForm
+                      <EmbedEditorFieldResidentTextForm
                         value={selectedFieldFromEditor?.fieldMeta as TTextFieldMeta | undefined}
                         onValueChange={(value) => updateSelectedFieldMeta(value)}
                       />
                     ))
                     .with(FieldType.RESIDENT_LAST_NAME, () => (
-                      <EmbedEditorFieldTextForm
+                      <EmbedEditorFieldResidentTextForm
                         value={selectedFieldFromEditor?.fieldMeta as TTextFieldMeta | undefined}
                         onValueChange={(value) => updateSelectedFieldMeta(value)}
                       />
@@ -857,7 +862,7 @@ export const EmbedAddTemplateFieldsFormPartial = ({
                       />
                     ))
                     .with(FieldType.RESIDENT_GENDER_IDENTITY, () => (
-                      <EmbedEditorFieldTextForm
+                      <EmbedEditorFieldResidentTextForm
                         value={selectedFieldFromEditor?.fieldMeta as TTextFieldMeta | undefined}
                         onValueChange={(value) => updateSelectedFieldMeta(value)}
                       />

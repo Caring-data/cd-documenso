@@ -1,6 +1,10 @@
+import { isRouteErrorResponse } from 'react-router';
+
 import type { TEnvelope } from '@documenso/lib/types/envelope';
 import { TrpcProvider } from '@documenso/trpc/react';
 import { getTemplateByExternalId } from '@documenso/trpc/server/template-router/get-template-by-external-id';
+
+import { GenericErrorLayout } from '~/components/general/generic-error-layout';
 
 import type { Route } from './+types/template.$externalId';
 import { Client } from './components/client';
@@ -43,4 +47,10 @@ export default function EmbedTemplatePage({ loaderData }: Route.ComponentProps) 
       </EmbedOptionsProvider>
     </TrpcProvider>
   );
+}
+
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  const errorCode = isRouteErrorResponse(error) ? error.status : 500;
+
+  return <GenericErrorLayout errorCode={errorCode} primaryButton={null} secondaryButton={null} />;
 }

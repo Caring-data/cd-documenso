@@ -35,8 +35,6 @@ import { Separator } from '@documenso/ui/primitives/separator';
 
 import {
   EditorGenericFontSizeField,
-  EditorGenericLetterSpacingField,
-  EditorGenericLineHeightField,
   EditorGenericReadOnlyField,
   EditorGenericRequiredField,
   EditorGenericTextAlignField,
@@ -145,7 +143,7 @@ export const EmbedEditorFieldNumberForm = ({
 
   return (
     <Form {...form}>
-      <form>
+      <div>
         <fieldset className="flex flex-col gap-2">
           <EditorGenericFontSizeField className="w-full" formControl={form.control} />
 
@@ -154,22 +152,6 @@ export const EmbedEditorFieldNumberForm = ({
 
             <EditorGenericVerticalAlignField className="w-full" formControl={form.control} />
           </div>
-
-          <FormField
-            control={form.control}
-            name="placeholder"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  <Trans>Placeholder</Trans>
-                </FormLabel>
-                <FormControl>
-                  <Input className="bg-background" placeholder={t`Placeholder`} {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
 
           <FormField
             control={form.control}
@@ -200,7 +182,7 @@ export const EmbedEditorFieldNumberForm = ({
                     value={field.value === null ? '-1' : field.value}
                     onValueChange={(value) => field.onChange(value === '-1' ? null : value)}
                   >
-                    <SelectTrigger className="text-muted-foreground bg-background w-full">
+                    <SelectTrigger className="w-full bg-background text-muted-foreground">
                       <SelectValue placeholder={t`Field format`} />
                     </SelectTrigger>
                     <SelectContent position="popper">
@@ -220,12 +202,6 @@ export const EmbedEditorFieldNumberForm = ({
               </FormItem>
             )}
           />
-
-          <div className="flex w-full flex-row gap-x-4">
-            <EditorGenericLineHeightField className="w-full" formControl={form.control} />
-
-            <EditorGenericLetterSpacingField className="w-full" formControl={form.control} />
-          </div>
 
           <div className="mt-1">
             <EditorGenericRequiredField formControl={form.control} />
@@ -294,7 +270,7 @@ export const EmbedEditorFieldNumberForm = ({
             </div>
           </section>
         </fieldset>
-      </form>
+      </div>
     </Form>
   );
 };
