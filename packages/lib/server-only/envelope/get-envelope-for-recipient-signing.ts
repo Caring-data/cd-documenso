@@ -255,6 +255,7 @@ export const getEnvelopeForRecipientSigning = async ({
       recipientId: true,
       signatureImageAsBase64: true,
       typedSignature: true,
+      typedSignatureSettings: true,
     },
   });
 

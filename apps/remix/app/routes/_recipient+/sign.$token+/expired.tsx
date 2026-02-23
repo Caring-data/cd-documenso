@@ -23,7 +23,7 @@ export async function loader({ params }: Route.LoaderArgs) {
     return { state: 'InvalidLink' } as const;
   }
 
-  if (!recipient.expired || isTokenExpired(recipient.expired)) {
+  if (recipient.expired && isTokenExpired(recipient.expired)) {
     return { state: 'Expired' } as const;
   }
 

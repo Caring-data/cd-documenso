@@ -389,6 +389,19 @@ export const EnvelopeSigningProvider = ({
         : null;
     }
 
+    if (fieldValue.type === FieldType.INITIALS && fieldValue.typedSignatureSettings) {
+      updatedField.signature = {
+        signatureImageAsBase64: null,
+        typedSignature: insertionValues.customText ?? null,
+        recipientId: recipient.id,
+        created: new Date(),
+        // Dummy IDs.
+        id: 0,
+        fieldId: 0,
+        typedSignatureSettings: fieldValue.typedSignatureSettings,
+      };
+    }
+
     setEnvelopeData((prev) => ({
       ...prev,
       envelope: {

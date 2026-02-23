@@ -249,6 +249,34 @@ export const signEnvelopeFieldRoute = procedure
         });
       }
 
+      if (
+        field.type === FieldType.INITIALS &&
+        fieldValue.type === FieldType.INITIALS &&
+        fieldValue.typedSignatureSettings
+      ) {
+        const signature = await tx.signature.upsert({
+          where: {
+            fieldId: field.id,
+          },
+          create: {
+            fieldId: field.id,
+            recipientId: field.recipientId,
+            signatureImageAsBase64: null,
+            typedSignature: insertionValues.customText,
+            typedSignatureSettings: fieldValue.typedSignatureSettings,
+          },
+          update: {
+            signatureImageAsBase64: null,
+            typedSignature: insertionValues.customText,
+            typedSignatureSettings: fieldValue.typedSignatureSettings,
+          },
+        });
+
+        Object.assign(updatedField, {
+          signature,
+        });
+      }
+
       await tx.documentAuditLog.create({
         data: createDocumentAuditLogData({
           type:

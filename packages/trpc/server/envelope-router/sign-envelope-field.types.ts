@@ -29,6 +29,13 @@ export const ZSignEnvelopeFieldValue = z.discriminatedUnion('type', [
   z.object({
     type: z.literal(FieldType.INITIALS),
     value: z.string().nullable(),
+    typedSignatureSettings: z
+      .object({
+        font: z.string().optional(),
+        color: z.string().optional(),
+      })
+      .nullable()
+      .optional(),
   }),
   z.object({
     type: z.literal(FieldType.TEXT),

@@ -275,6 +275,30 @@ export const signFieldWithToken = async ({
       });
     }
 
+    if (field.type === FieldType.INITIALS && typedSignatureSettings) {
+      const signature = await tx.signature.upsert({
+        where: {
+          fieldId: field.id,
+        },
+        create: {
+          fieldId: field.id,
+          recipientId: field.recipientId,
+          signatureImageAsBase64: null,
+          typedSignature: value,
+          typedSignatureSettings: typedSignatureSettings,
+        },
+        update: {
+          signatureImageAsBase64: null,
+          typedSignature: value,
+          typedSignatureSettings: typedSignatureSettings,
+        },
+      });
+
+      Object.assign(updatedField, {
+        signature,
+      });
+    }
+
     await tx.documentAuditLog.create({
       data: createDocumentAuditLogData({
         type:

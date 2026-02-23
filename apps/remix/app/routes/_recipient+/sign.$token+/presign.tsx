@@ -48,16 +48,16 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   const document = await getDocumentAndSenderByToken({
     token,
     requireAccessAuth: false,
-  });
+  }).catch(() => null);
 
   const details: SigningContext =
-    typeof document.signingContext === 'object' && document.signingContext !== null
+    typeof document?.signingContext === 'object' && document?.signingContext !== null
       ? (document.signingContext as SigningContext)
       : {};
 
   return superLoaderJson({
     token,
-    title: document.title ?? null,
+    title: document?.title ?? null,
     details,
   } as const);
 }

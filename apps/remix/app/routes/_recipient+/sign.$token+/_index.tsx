@@ -195,7 +195,12 @@ const handleV2Loader = async ({ params, request }: Route.LoaderArgs) => {
         } as const;
       }
 
-      throw new Response('Not Found', { status: 404 });
+      if (error.code === AppErrorCode.NOT_FOUND) {
+        throw new Response('Not Found', { status: 404 });
+      }
+
+      // Re-lanzar errores inesperados para obtener 500 con contexto
+      throw e;
     });
 
   if (!envelopeForSigning.isDocumentAccessValid) {
@@ -286,7 +291,7 @@ export async function loader(loaderArgs: Route.LoaderArgs) {
     throw new Response('Not Found', { status: 404 });
   }
 
-  if (!foundRecipient.expired || isTokenExpired(foundRecipient.expired)) {
+  if (foundRecipient.expired && isTokenExpired(foundRecipient.expired)) {
     throw redirect(`/sign/${token}/expired`);
   }
 

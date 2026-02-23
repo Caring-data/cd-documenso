@@ -105,6 +105,27 @@ const upsertFieldText = (field: FieldToRender, options: RenderFieldElementOption
     }
   }
 
+  // For INITIALS fields with typed signature settings, use the stored font/color.
+  let resolvedFontFamily = konvaTextFontFamily;
+  let resolvedFill = konvaTextFill;
+
+  if (
+    field.inserted &&
+    field.type === FieldType.INITIALS &&
+    field.signature?.typedSignatureSettings
+  ) {
+    const settings = field.signature.typedSignatureSettings as
+      | { font?: string; color?: string }
+      | null
+      | undefined;
+    if (settings?.font) {
+      resolvedFontFamily = settings.font;
+    }
+    if (settings?.color) {
+      resolvedFill = settings.color;
+    }
+  }
+
   // Note: Do not use native text padding since it's uniform.
   // We only want to have padding on the left and right hand sides.
   fieldText.setAttrs({
@@ -117,8 +138,8 @@ const upsertFieldText = (field: FieldToRender, options: RenderFieldElementOption
     align: textAlign,
     lineHeight: textLineHeight,
     letterSpacing: textLetterSpacing,
-    fontFamily: konvaTextFontFamily,
-    fill: konvaTextFill,
+    fontFamily: resolvedFontFamily,
+    fill: resolvedFill,
     width: fieldWidth - DEFAULT_TEXT_X_PADDING * 2,
     height: fieldHeight,
   } satisfies Partial<Konva.TextConfig>);

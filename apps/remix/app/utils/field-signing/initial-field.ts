@@ -2,6 +2,7 @@ import { FieldType } from '@prisma/client';
 
 import { AppError, AppErrorCode } from '@documenso/lib/errors/app-error';
 import type { TFieldInitials } from '@documenso/lib/types/field';
+import { DocumentSignatureType } from '@documenso/lib/utils/teams';
 import type { TSignEnvelopeFieldValue } from '@documenso/trpc/server/envelope-router/sign-envelope-field.types';
 
 import { SignFieldInitialsDialog } from '~/components/dialogs/sign-field-initials-dialog';
@@ -9,12 +10,13 @@ import { SignFieldInitialsDialog } from '~/components/dialogs/sign-field-initial
 type HandleInitialsFieldClickOptions = {
   field: TFieldInitials;
   initials: string | null;
+  signature?: { type: string; font?: string; color?: string } | null;
 };
 
 export const handleInitialsFieldClick = async (
   options: HandleInitialsFieldClickOptions,
 ): Promise<Extract<TSignEnvelopeFieldValue, { type: typeof FieldType.INITIALS }> | null> => {
-  const { field, initials } = options;
+  const { field, initials, signature } = options;
 
   if (field.type !== FieldType.INITIALS) {
     throw new AppError(AppErrorCode.INVALID_REQUEST, {
@@ -39,8 +41,16 @@ export const handleInitialsFieldClick = async (
     return null;
   }
 
+  const isTypedSignature = signature?.type === DocumentSignatureType.TYPE;
+
   return {
     type: FieldType.INITIALS,
     value: initials,
+    typedSignatureSettings: isTypedSignature
+      ? {
+          font: signature.font,
+          color: signature.color,
+        }
+      : null,
   };
 };

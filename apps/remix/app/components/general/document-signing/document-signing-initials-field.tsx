@@ -8,6 +8,7 @@ import { AppError, AppErrorCode } from '@documenso/lib/errors/app-error';
 import type { TRecipientActionAuth } from '@documenso/lib/types/document-auth';
 import { ZInitialsFieldMeta } from '@documenso/lib/types/field-meta';
 import { extractInitials } from '@documenso/lib/utils/recipient-formatter';
+import { DocumentSignatureType } from '@documenso/lib/utils/teams';
 import type { FieldWithSignature } from '@documenso/prisma/types/field-with-signature';
 import { trpc } from '@documenso/trpc/react';
 import type {
@@ -40,7 +41,7 @@ export const DocumentSigningInitialsField = ({
   const { _ } = useLingui();
   const { revalidate } = useRevalidator();
 
-  const { fullName } = useRequiredDocumentSigningContext();
+  const { fullName, signature } = useRequiredDocumentSigningContext();
   const { recipient, isAssistantMode } = useDocumentSigningRecipientContext();
 
   const initials = extractInitials(fullName);
@@ -62,12 +63,20 @@ export const DocumentSigningInitialsField = ({
     try {
       const value = initials ?? '';
 
+      const isTypedSignature = signature?.type === DocumentSignatureType.TYPE;
+
       const payload: TSignFieldWithTokenMutationSchema = {
         token: recipient.token,
         fieldId: field.id,
         value,
         isBase64: false,
         authOptions,
+        typedSignatureSettings: isTypedSignature
+          ? {
+              font: signature.font,
+              color: signature.color,
+            }
+          : null,
       };
 
       if (onSignField) {
@@ -138,11 +147,22 @@ export const DocumentSigningInitialsField = ({
         </DocumentSigningFieldsUninserted>
       )}
 
-      {field.inserted && (
-        <DocumentSigningFieldsInserted textAlign={parsedFieldMeta?.textAlign}>
-          {field.customText}
-        </DocumentSigningFieldsInserted>
-      )}
+      {field.inserted &&
+        (() => {
+          const storedSettings = field.signature?.typedSignatureSettings as
+            | { font?: string; color?: string }
+            | null
+            | undefined;
+          const contextFont =
+            signature?.type === DocumentSignatureType.TYPE ? signature.font : undefined;
+          const fontFamily = storedSettings?.font ?? contextFont;
+
+          return (
+            <DocumentSigningFieldsInserted textAlign={parsedFieldMeta?.textAlign}>
+              <span style={fontFamily ? { fontFamily } : undefined}>{field.customText}</span>
+            </DocumentSigningFieldsInserted>
+          );
+        })()}
     </DocumentSigningFieldContainer>
   );
 };

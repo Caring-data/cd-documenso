@@ -164,10 +164,10 @@ export default function EnvelopeSignerPageRenderer() {
           ...field,
           signature: field.signature
             ? {
-              signatureImageAsBase64: field.signature.signatureImageAsBase64,
-              typedSignature: field.signature.typedSignature,
-              typedSignatureSettings: field.signature.typedSignatureSettings,
-            }
+                signatureImageAsBase64: field.signature.signatureImageAsBase64,
+                typedSignature: field.signature.typedSignature,
+                typedSignatureSettings: field.signature.typedSignatureSettings,
+              }
             : null,
           recipient: {
             id: recipient.id,
@@ -259,8 +259,8 @@ export default function EnvelopeSignerPageRenderer() {
           // Get resident value from already fetched systemInfo
           const residentValue =
             systemInfo &&
-              isResidentFieldType(field.type) &&
-              recipient.role !== RecipientRole.ASSISTANT
+            isResidentFieldType(field.type) &&
+            recipient.role !== RecipientRole.ASSISTANT
               ? getResidentValue(field.type, systemInfo) || null
               : null;
 
@@ -433,7 +433,7 @@ export default function EnvelopeSignerPageRenderer() {
         .with({ type: FieldType.INITIALS }, (field) => {
           const initials = localFullName ? extractInitials(localFullName) : null;
 
-          handleInitialsFieldClick({ field, initials })
+          handleInitialsFieldClick({ field, initials, signature })
             .then(async (payload) => {
               if (payload) {
                 fieldGroup.add(loadingSpinnerGroup);
