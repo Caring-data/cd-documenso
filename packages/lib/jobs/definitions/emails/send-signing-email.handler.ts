@@ -171,6 +171,15 @@ export const run = async ({
         renderCustomEmailTemplate(documentMeta?.subject || emailSubject, customEmailTemplate),
         html,
       );
+
+      // await sendEmailWithResend(
+      //   {
+      //     email: recipient.email,
+      //     name: recipient.name ?? undefined,
+      //   },
+      //   renderCustomEmailTemplate(documentMeta?.subject || emailSubject, customEmailTemplate),
+      //   html,
+      // );
     });
   }
 
