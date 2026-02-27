@@ -102,7 +102,7 @@ export const SignFieldCalendarDialog = createCallable<SignFieldCalendarDialogPro
                   </Button>
 
                   <Button type="submit" disabled={!selectedDate}>
-                    <Trans>Sign</Trans>
+                    <Trans>Save</Trans>
                   </Button>
                 </DialogFooter>
               </fieldset>
