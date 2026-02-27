@@ -181,13 +181,15 @@ export const EnvelopeRenderProvider = ({
 
   // Set the selected item to the first item if none is set.
   useEffect(() => {
-    if (currentItem && !envelopeItems.some((item) => item.id === currentItem.id)) {
-      setCurrentItem(null);
-    }
+    startTransition(() => {
+      if (currentItem && !envelopeItems.some((item) => item.id === currentItem.id)) {
+        setCurrentItem(null);
+      }
 
-    if (!currentItem && envelopeItems.length > 0) {
-      setCurrentEnvelopeItem(envelopeItems[0].id);
-    }
+      if (!currentItem && envelopeItems.length > 0) {
+        setCurrentEnvelopeItem(envelopeItems[0].id);
+      }
+    });
   }, [currentItem, envelopeItems]);
 
   // Look for any missing pdf files and load them.

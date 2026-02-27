@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, startTransition, useContext, useEffect, useState } from 'react';
 
 import { getEmbedOptions } from '../../utils/get-embed-options';
 
@@ -21,8 +21,9 @@ export const EmbedOptionsProvider = ({ children }: EmbedOptionsProviderProps) =>
 
   useEffect(() => {
     const options = getEmbedOptions();
-    console.log('options', options);
-    setIsSystem(options.isSystem === true);
+    startTransition(() => {
+      setIsSystem(options.isSystem === true);
+    });
   }, []);
 
   return (

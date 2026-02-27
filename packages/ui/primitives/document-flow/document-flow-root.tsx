@@ -12,23 +12,31 @@ import { Button } from '../button';
 
 export type DocumentFlowFormContainerProps = HTMLAttributes<HTMLFormElement> & {
   children?: React.ReactNode;
+  asDiv?: boolean;
 };
 
 export const DocumentFlowFormContainer = ({
   children,
   id = 'document-flow-form-container',
   className,
+  asDiv = false,
   ...props
 }: DocumentFlowFormContainerProps) => {
+  const containerClassName = cn(
+    'sticky top-20 flex h-full max-h-[64rem] flex-col overflow-auto rounded-xl border border-border bg-widget px-4 py-6 dark:bg-background',
+    className,
+  );
+
+  if (asDiv) {
+    return (
+      <div id={id} className={containerClassName}>
+        <div className={cn('-mx-2 flex flex-1 flex-col px-2')}>{children}</div>
+      </div>
+    );
+  }
+
   return (
-    <form
-      id={id}
-      className={cn(
-        'sticky top-20 flex h-full max-h-[64rem] flex-col overflow-auto rounded-xl border border-border bg-widget px-4 py-6 dark:bg-background',
-        className,
-      )}
-      {...props}
-    >
+    <form id={id} className={containerClassName} {...props}>
       <div className={cn('-mx-2 flex flex-1 flex-col px-2')}>{children}</div>
     </form>
   );

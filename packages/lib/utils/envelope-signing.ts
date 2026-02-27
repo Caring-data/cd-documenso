@@ -35,242 +35,88 @@ export const extractFieldInsertionValues = ({
   field,
   documentMeta,
 }: ExtractFieldInsertionValuesOptions): { customText: string; inserted: boolean } => {
-  return match(fieldValue)
-    .with({ type: FieldType.EMAIL }, (fieldValue) => {
-      const parsedEmailValue = z.string().email().nullable().safeParse(fieldValue.value);
+  return (
+    match(fieldValue)
+      .with({ type: FieldType.EMAIL }, (fieldValue) => {
+        const parsedEmailValue = z.string().email().nullable().safeParse(fieldValue.value);
 
-      if (!parsedEmailValue.success) {
-        throw new AppError(AppErrorCode.INVALID_BODY, {
-          message: 'Invalid email',
-        });
-      }
-
-      if (parsedEmailValue.data === null) {
-        return {
-          customText: '',
-          inserted: false,
-        };
-      }
-
-      return {
-        customText: parsedEmailValue.data,
-        inserted: true,
-      };
-    })
-    .with({ type: P.union(FieldType.NAME, FieldType.INITIALS) }, (fieldValue) => {
-      const parsedGenericStringValue = z.string().min(1).nullable().safeParse(fieldValue.value);
-
-      if (!parsedGenericStringValue.success) {
-        throw new AppError(AppErrorCode.INVALID_BODY, {
-          message: 'Value is required',
-        });
-      }
-
-      if (parsedGenericStringValue.data === null) {
-        return {
-          customText: '',
-          inserted: false,
-        };
-      }
-
-      return {
-        customText: parsedGenericStringValue.data,
-        inserted: true,
-      };
-    })
-    .with({ type: FieldType.DATE }, (fieldValue) => {
-      if (!fieldValue.value) {
-        return {
-          customText: '',
-          inserted: false,
-        };
-      }
-
-      return {
-        customText: DateTime.now()
-          .setZone(documentMeta.timezone ?? DEFAULT_DOCUMENT_TIME_ZONE)
-          .toFormat(documentMeta.dateFormat ?? DEFAULT_DOCUMENT_DATE_FORMAT),
-        inserted: true,
-      };
-    })
-    .with({ type: FieldType.NUMBER }, (fieldValue) => {
-      if (!fieldValue.value) {
-        return {
-          customText: '',
-          inserted: false,
-        };
-      }
-
-      const numberFieldParsedMeta = ZNumberFieldMeta.parse(field.fieldMeta);
-      const errors = validateNumberField(fieldValue.value, numberFieldParsedMeta, true);
-
-      if (errors.length > 0) {
-        throw new AppError(AppErrorCode.INVALID_BODY, {
-          message: 'Invalid number',
-        });
-      }
-
-      return {
-        customText: fieldValue.value,
-        inserted: true,
-      };
-    })
-    .with({ type: FieldType.TEXT }, (fieldValue) => {
-      if (fieldValue.value === null) {
-        return {
-          customText: '',
-          inserted: false,
-        };
-      }
-
-      const parsedTextFieldMeta = ZTextFieldMeta.parse(field.fieldMeta);
-      const errors = validateTextField(fieldValue.value, parsedTextFieldMeta, true);
-
-      if (errors.length > 0) {
-        throw new AppError(AppErrorCode.INVALID_BODY, {
-          message: 'Invalid email',
-        });
-      }
-
-      return {
-        customText: fieldValue.value,
-        inserted: true,
-      };
-    })
-    .with({ type: FieldType.RADIO }, (fieldValue) => {
-      if (fieldValue.value === null) {
-        return {
-          customText: '',
-          inserted: false,
-        };
-      }
-
-      const parsedRadioFieldParsedMeta = ZRadioFieldMeta.parse(field.fieldMeta);
-      const radioFieldValues = parsedRadioFieldParsedMeta.values || [];
-
-      if (!radioFieldValues[fieldValue.value]) {
-        throw new AppError(AppErrorCode.INVALID_BODY, {
-          message: 'Invalid radio value',
-        });
-      }
-
-      return {
-        customText: toRadioCustomText(fieldValue.value),
-        inserted: true,
-      };
-    })
-    .with({ type: FieldType.CHECKBOX }, (fieldValue) => {
-      if (fieldValue.value === null || fieldValue.value.length === 0) {
-        return {
-          customText: '',
-          inserted: false,
-        };
-      }
-
-      const parsedCheckboxFieldParsedMeta = ZCheckboxFieldMeta.parse(field.fieldMeta);
-      const checkboxFieldValues = parsedCheckboxFieldParsedMeta.values || [];
-
-      const { value } = fieldValue;
-
-      const selectedValues = value.map((valueIndex) => checkboxFieldValues[valueIndex]);
-
-      if (selectedValues.some((value) => !value)) {
-        throw new AppError(AppErrorCode.INVALID_BODY, {
-          message: 'Invalid checkbox values',
-        });
-      }
-
-      const { validationRule, validationLength } = parsedCheckboxFieldParsedMeta;
-
-      if (validationRule && validationLength) {
-        const checkboxValidationRule = checkboxValidationSigns.find(
-          (sign) => sign.label === validationRule,
-        );
-
-        if (checkboxValidationRule) {
-          const isValid = validateCheckboxLength(
-            selectedValues.length,
-            checkboxValidationRule.value,
-            validationLength,
-          );
-
-          if (!isValid) {
-            throw new AppError(AppErrorCode.INVALID_BODY, {
-              message: 'Checkbox values failed length validation',
-            });
-          }
-        } else {
-          // Should throw an error, but we don't want to throw configuration errors during signing.
-          // Todo: Logging.
+        if (!parsedEmailValue.success) {
+          throw new AppError(AppErrorCode.INVALID_BODY, {
+            message: 'Invalid email',
+          });
         }
-      }
 
-      return {
-        customText: toCheckboxCustomText(fieldValue.value),
-        inserted: true,
-      };
-    })
-    .with({ type: FieldType.DROPDOWN }, (fieldValue) => {
-      if (fieldValue.value === null) {
+        if (parsedEmailValue.data === null) {
+          return {
+            customText: '',
+            inserted: false,
+          };
+        }
+
         return {
-          customText: '',
-          inserted: false,
+          customText: parsedEmailValue.data,
+          inserted: true,
         };
-      }
+      })
+      .with({ type: P.union(FieldType.NAME, FieldType.INITIALS) }, (fieldValue) => {
+        const parsedGenericStringValue = z.string().min(1).nullable().safeParse(fieldValue.value);
 
-      const parsedDropdownFieldMeta = ZDropdownFieldMeta.parse(field.fieldMeta);
-      const errors = validateDropdownField(fieldValue.value, parsedDropdownFieldMeta, true);
+        if (!parsedGenericStringValue.success) {
+          throw new AppError(AppErrorCode.INVALID_BODY, {
+            message: 'Value is required',
+          });
+        }
 
-      if (errors.length > 0) {
-        throw new AppError(AppErrorCode.INVALID_BODY, {
-          message: 'Invalid dropdown value',
-        });
-      }
+        if (parsedGenericStringValue.data === null) {
+          return {
+            customText: '',
+            inserted: false,
+          };
+        }
 
-      return {
-        customText: fieldValue.value,
-        inserted: true,
-      };
-    })
-    .with({ type: FieldType.SIGNATURE }, (fieldValue) => {
-      const { value } = fieldValue;
-
-      if (!value) {
         return {
-          customText: '',
-          inserted: false,
+          customText: parsedGenericStringValue.data,
+          inserted: true,
         };
-      }
+      })
+      .with({ type: FieldType.DATE }, (fieldValue) => {
+        if (!fieldValue.value) {
+          return {
+            customText: '',
+            inserted: false,
+          };
+        }
 
-      const isBase64 = isBase64Image(value);
+        return {
+          customText: DateTime.now()
+            .setZone(documentMeta.timezone ?? DEFAULT_DOCUMENT_TIME_ZONE)
+            .toFormat(documentMeta.dateFormat ?? DEFAULT_DOCUMENT_DATE_FORMAT),
+          inserted: true,
+        };
+      })
+      .with({ type: FieldType.NUMBER }, (fieldValue) => {
+        if (!fieldValue.value) {
+          return {
+            customText: '',
+            inserted: false,
+          };
+        }
 
-      if (documentMeta.typedSignatureEnabled === false && !isBase64) {
-        throw new AppError(AppErrorCode.INVALID_BODY, {
-          message: 'Typed signatures are not allowed. Please draw your signature',
-        });
-      }
+        const numberFieldParsedMeta = ZNumberFieldMeta.parse(field.fieldMeta);
+        const errors = validateNumberField(fieldValue.value, numberFieldParsedMeta, true);
 
-      return {
-        customText: '',
-        inserted: true,
-      };
-    })
-    // Resident fields - most behave like text fields
-    .with(
-      {
-        type: P.union(
-          FieldType.RESIDENT_FIRST_NAME,
-          FieldType.RESIDENT_LAST_NAME,
-          FieldType.RESIDENT_GENDER_IDENTITY,
-          FieldType.RESIDENT_LOCATION_NAME,
-          FieldType.RESIDENT_LOCATION_STATE,
-          FieldType.RESIDENT_LOCATION_ADDRESS,
-          FieldType.RESIDENT_LOCATION_CITY,
-          FieldType.RESIDENT_LOCATION_ZIP_CODE,
-          FieldType.RESIDENT_LOCATION_COUNTRY,
-        ),
-      },
-      (fieldValue) => {
+        if (errors.length > 0) {
+          throw new AppError(AppErrorCode.INVALID_BODY, {
+            message: 'Invalid number',
+          });
+        }
+
+        return {
+          customText: fieldValue.value,
+          inserted: true,
+        };
+      })
+      .with({ type: FieldType.TEXT }, (fieldValue) => {
         if (fieldValue.value === null) {
           return {
             customText: '',
@@ -283,7 +129,7 @@ export const extractFieldInsertionValues = ({
 
         if (errors.length > 0) {
           throw new AppError(AppErrorCode.INVALID_BODY, {
-            message: 'Invalid text value',
+            message: 'Invalid email',
           });
         }
 
@@ -291,37 +137,198 @@ export const extractFieldInsertionValues = ({
           customText: fieldValue.value,
           inserted: true,
         };
-      },
-    )
-    // CALENDAR behaves like a date field - the value comes as YYYY-MM-DD
-    .with({ type: FieldType.CALENDAR }, (fieldValue) => {
-      if (!fieldValue.value) {
+      })
+      .with({ type: FieldType.RADIO }, (fieldValue) => {
+        if (fieldValue.value === null) {
+          return {
+            customText: '',
+            inserted: false,
+          };
+        }
+
+        const parsedRadioFieldParsedMeta = ZRadioFieldMeta.parse(field.fieldMeta);
+        const radioFieldValues = parsedRadioFieldParsedMeta.values || [];
+
+        if (!radioFieldValues[fieldValue.value]) {
+          throw new AppError(AppErrorCode.INVALID_BODY, {
+            message: 'Invalid radio value',
+          });
+        }
+
+        return {
+          customText: toRadioCustomText(fieldValue.value),
+          inserted: true,
+        };
+      })
+      .with({ type: FieldType.CHECKBOX }, (fieldValue) => {
+        if (fieldValue.value === null || fieldValue.value.length === 0) {
+          return {
+            customText: '',
+            inserted: false,
+          };
+        }
+
+        const parsedCheckboxFieldParsedMeta = ZCheckboxFieldMeta.parse(field.fieldMeta);
+        const checkboxFieldValues = parsedCheckboxFieldParsedMeta.values || [];
+
+        const { value } = fieldValue;
+
+        const selectedValues = value.map((valueIndex) => checkboxFieldValues[valueIndex]);
+
+        if (selectedValues.some((value) => !value)) {
+          throw new AppError(AppErrorCode.INVALID_BODY, {
+            message: 'Invalid checkbox values',
+          });
+        }
+
+        const { validationRule, validationLength } = parsedCheckboxFieldParsedMeta;
+
+        if (validationRule && validationLength) {
+          const checkboxValidationRule = checkboxValidationSigns.find(
+            (sign) => sign.label === validationRule,
+          );
+
+          if (checkboxValidationRule) {
+            const isValid = validateCheckboxLength(
+              selectedValues.length,
+              checkboxValidationRule.value,
+              validationLength,
+            );
+
+            if (!isValid) {
+              throw new AppError(AppErrorCode.INVALID_BODY, {
+                message: 'Checkbox values failed length validation',
+              });
+            }
+          } else {
+            // Should throw an error, but we don't want to throw configuration errors during signing.
+            // Todo: Logging.
+          }
+        }
+
+        return {
+          customText: toCheckboxCustomText(fieldValue.value),
+          inserted: true,
+        };
+      })
+      .with({ type: FieldType.DROPDOWN }, (fieldValue) => {
+        if (fieldValue.value === null) {
+          return {
+            customText: '',
+            inserted: false,
+          };
+        }
+
+        const parsedDropdownFieldMeta = ZDropdownFieldMeta.parse(field.fieldMeta);
+        const errors = validateDropdownField(fieldValue.value, parsedDropdownFieldMeta, true);
+
+        if (errors.length > 0) {
+          throw new AppError(AppErrorCode.INVALID_BODY, {
+            message: 'Invalid dropdown value',
+          });
+        }
+
+        return {
+          customText: fieldValue.value,
+          inserted: true,
+        };
+      })
+      .with({ type: FieldType.SIGNATURE }, (fieldValue) => {
+        const { value } = fieldValue;
+
+        if (!value) {
+          return {
+            customText: '',
+            inserted: false,
+          };
+        }
+
+        const isBase64 = isBase64Image(value);
+
+        if (documentMeta.typedSignatureEnabled === false && !isBase64) {
+          throw new AppError(AppErrorCode.INVALID_BODY, {
+            message: 'Typed signatures are not allowed. Please draw your signature',
+          });
+        }
+
         return {
           customText: '',
-          inserted: false,
+          inserted: true,
         };
-      }
+      })
+      // Resident fields - most behave like text fields
+      .with(
+        {
+          type: P.union(
+            FieldType.RESIDENT_FIRST_NAME,
+            FieldType.RESIDENT_LAST_NAME,
+            FieldType.RESIDENT_GENDER_IDENTITY,
+            FieldType.RESIDENT_LOCATION_NAME,
+            FieldType.RESIDENT_LOCATION_STATE,
+            FieldType.RESIDENT_LOCATION_ADDRESS,
+            FieldType.RESIDENT_LOCATION_CITY,
+            FieldType.RESIDENT_LOCATION_ZIP_CODE,
+            FieldType.RESIDENT_LOCATION_COUNTRY,
+            FieldType.RESIDENT_LOCATION_FAX,
+            FieldType.RESIDENT_LOCATION_LICENSING,
+            FieldType.RESIDENT_LOCATION_LICENSING_NAME,
+            FieldType.RESIDENT_LOCATION_ADMINISTRATOR_NAME,
+            FieldType.RESIDENT_LOCATION_ADMINISTRATOR_PHONE,
+          ),
+        },
+        (fieldValue) => {
+          if (fieldValue.value === null) {
+            return {
+              customText: '',
+              inserted: false,
+            };
+          }
 
-      // The value comes as YYYY-MM-DD from the calendar picker, we just use it as-is
-      return {
-        customText: fieldValue.value,
-        inserted: true,
-      };
-    })
-    // RESIDENT_DOB behaves like a date field - format the value as date
-    .with({ type: FieldType.RESIDENT_DOB }, (fieldValue) => {
-      if (!fieldValue.value) {
+          const parsedTextFieldMeta = ZTextFieldMeta.parse(field.fieldMeta);
+          const errors = validateTextField(fieldValue.value, parsedTextFieldMeta, true);
+
+          if (errors.length > 0) {
+            throw new AppError(AppErrorCode.INVALID_BODY, {
+              message: 'Invalid text value',
+            });
+          }
+
+          return {
+            customText: fieldValue.value,
+            inserted: true,
+          };
+        },
+      )
+      // CALENDAR behaves like a date field - the value comes as YYYY-MM-DD
+      .with({ type: FieldType.CALENDAR }, (fieldValue) => {
+        if (!fieldValue.value) {
+          return {
+            customText: '',
+            inserted: false,
+          };
+        }
+
+        // The value comes as YYYY-MM-DD from the calendar picker, we just use it as-is
         return {
-          customText: '',
-          inserted: false,
+          customText: fieldValue.value,
+          inserted: true,
         };
-      }
+      })
+      // RESIDENT_DOB behaves like a date field - format the value as date
+      .with({ type: FieldType.RESIDENT_DOB }, (fieldValue) => {
+        if (!fieldValue.value) {
+          return {
+            customText: '',
+            inserted: false,
+          };
+        }
 
-      // The value comes as YYYY-MM-DD from the date input, we just use it as-is
-      return {
-        customText: fieldValue.value,
-        inserted: true,
-      };
-    })
-    .exhaustive();
+        // The value comes as YYYY-MM-DD from the date input, we just use it as-is
+        return {
+          customText: fieldValue.value,
+          inserted: true,
+        };
+      })
+      .exhaustive()
+  );
 };

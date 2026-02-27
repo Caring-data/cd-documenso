@@ -105,6 +105,26 @@ export const ZSignEnvelopeFieldValue = z.discriminatedUnion('type', [
     type: z.literal(FieldType.RESIDENT_LOCATION_COUNTRY),
     value: z.string().nullable(),
   }),
+  z.object({
+    type: z.literal(FieldType.RESIDENT_LOCATION_FAX),
+    value: z.string().nullable(),
+  }),
+  z.object({
+    type: z.literal(FieldType.RESIDENT_LOCATION_LICENSING),
+    value: z.string().nullable(),
+  }),
+  z.object({
+    type: z.literal(FieldType.RESIDENT_LOCATION_LICENSING_NAME),
+    value: z.string().nullable(),
+  }),
+  z.object({
+    type: z.literal(FieldType.RESIDENT_LOCATION_ADMINISTRATOR_NAME),
+    value: z.string().nullable(),
+  }),
+  z.object({
+    type: z.literal(FieldType.RESIDENT_LOCATION_ADMINISTRATOR_PHONE),
+    value: z.string().nullable(),
+  }),
 ]);
 
 export const ZSignEnvelopeFieldRequestSchema = z.object({

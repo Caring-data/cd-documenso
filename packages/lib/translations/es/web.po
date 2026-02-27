@@ -1166,11 +1166,13 @@ msgid "Add team email"
 msgstr "Agregar correo electrónico del equipo"
 
 #: apps/remix/app/components/forms/editor/editor-field-text-form.tsx
+#: apps/remix/app/components/forms/embed/embed-editor-field-text-form.tsx
 #: packages/ui/primitives/document-flow/field-items-advanced-settings/text-field.tsx
 msgid "Add text"
 msgstr "Agregar texto"
 
 #: apps/remix/app/components/forms/editor/editor-field-text-form.tsx
+#: apps/remix/app/components/forms/embed/embed-editor-field-text-form.tsx
 #: packages/ui/primitives/document-flow/field-items-advanced-settings/text-field.tsx
 msgid "Add text to the field"
 msgstr "Agregar texto al campo"
@@ -2253,6 +2255,10 @@ msgstr "Elija un destinatario existente de abajo para continuar"
 msgid "Choose Direct Link Recipient"
 msgstr "Elija el destinatario del enlace directo"
 
+#: packages/ui/primitives/signature-pad/signature-pad-type.tsx
+msgid "Choose font"
+msgstr ""
+
 #: apps/remix/app/components/general/document/document-edit-form.tsx
 msgid "Choose how the document will reach recipients"
 msgstr "Elige cómo el documento llegará a los destinatarios"
@@ -2978,6 +2984,8 @@ msgstr "Zona horaria predeterminada"
 
 #: apps/remix/app/components/forms/editor/editor-field-dropdown-form.tsx
 #: apps/remix/app/components/forms/editor/editor-field-dropdown-form.tsx
+#: apps/remix/app/components/forms/embed/embed-editor-field-dropdown-form.tsx
+#: apps/remix/app/components/forms/embed/embed-editor-field-dropdown-form.tsx
 msgid "Default Value"
 msgstr "Valor Predeterminado"
 
@@ -3808,6 +3816,7 @@ msgid "Dropdown"
 msgstr "Menú desplegable"
 
 #: apps/remix/app/components/forms/editor/editor-field-dropdown-form.tsx
+#: apps/remix/app/components/forms/embed/embed-editor-field-dropdown-form.tsx
 msgid "Dropdown must have at least one option"
 msgstr "El menú desplegable debe tener al menos una opción"
 
@@ -3821,6 +3830,7 @@ msgid "Dropdown Settings"
 msgstr "Configuración de Menú Desplegable"
 
 #: apps/remix/app/components/forms/editor/editor-field-dropdown-form.tsx
+#: apps/remix/app/components/forms/embed/embed-editor-field-dropdown-form.tsx
 msgid "Dropdown values"
 msgstr "Valores del Menú Desplegable"
 
@@ -3854,6 +3864,7 @@ msgid "Duplicate Template"
 msgstr "Plantilla Duplicada"
 
 #: apps/remix/app/components/forms/editor/editor-field-dropdown-form.tsx
+#: apps/remix/app/components/forms/embed/embed-editor-field-dropdown-form.tsx
 msgid "Duplicate values are not allowed"
 msgstr "No se permiten valores duplicados"
 
@@ -4476,6 +4487,7 @@ msgid "Field font size"
 msgstr "Tamaño de fuente del campo"
 
 #: apps/remix/app/components/forms/editor/editor-field-number-form.tsx
+#: apps/remix/app/components/forms/embed/embed-editor-field-number-form.tsx
 #: packages/ui/primitives/document-flow/field-items-advanced-settings/number-field.tsx
 msgid "Field format"
 msgstr "Formato de campo"
@@ -5017,6 +5029,7 @@ msgstr "Dominios no válidos"
 msgid "Invalid email"
 msgstr "Email inválido"
 
+#: apps/remix/app/routes/_recipient+/sign.$token+/expired.tsx
 #: apps/remix/app/routes/_unauthenticated+/team.verify.email.$token.tsx
 msgid "Invalid link"
 msgstr "Enlace inválido"
@@ -5607,6 +5620,7 @@ msgid "MAU (signed in)"
 msgstr "MAU (con sesión iniciada)"
 
 #: apps/remix/app/components/forms/editor/editor-field-number-form.tsx
+#: apps/remix/app/components/forms/embed/embed-editor-field-number-form.tsx
 #: packages/ui/primitives/document-flow/field-items-advanced-settings/number-field.tsx
 msgid "Max"
 msgstr "Máx"
@@ -5662,6 +5676,7 @@ msgid "Middle"
 msgstr "Centro"
 
 #: apps/remix/app/components/forms/editor/editor-field-number-form.tsx
+#: apps/remix/app/components/forms/embed/embed-editor-field-number-form.tsx
 #: packages/ui/primitives/document-flow/field-items-advanced-settings/number-field.tsx
 msgid "Min"
 msgstr "Mín"
@@ -5930,6 +5945,7 @@ msgstr "No se encontró valor."
 
 #: apps/remix/app/components/embed/authoring/configure-document-advanced-settings.tsx
 #: apps/remix/app/components/forms/editor/editor-field-number-form.tsx
+#: apps/remix/app/components/forms/embed/embed-editor-field-number-form.tsx
 #: apps/remix/app/components/tables/admin-organisations-table.tsx
 #: packages/lib/constants/document.ts
 msgid "None"
@@ -5958,6 +5974,7 @@ msgid "Number"
 msgstr "Número"
 
 #: apps/remix/app/components/forms/editor/editor-field-number-form.tsx
+#: apps/remix/app/components/forms/embed/embed-editor-field-number-form.tsx
 #: packages/ui/primitives/document-flow/field-items-advanced-settings/number-field.tsx
 msgid "Number format"
 msgstr "Formato de número"
@@ -6044,6 +6061,7 @@ msgid "Opened"
 msgstr "Abierto"
 
 #: apps/remix/app/components/forms/editor/editor-field-dropdown-form.tsx
+#: apps/remix/app/components/forms/embed/embed-editor-field-dropdown-form.tsx
 msgid "Option value cannot be empty"
 msgstr "El valor de la opción no puede estar vacío"
 
@@ -7320,6 +7338,7 @@ msgid "Select Date"
 msgstr "Seleccionar Fecha"
 
 #: apps/remix/app/components/forms/editor/editor-field-dropdown-form.tsx
+#: apps/remix/app/components/forms/embed/embed-editor-field-dropdown-form.tsx
 #: packages/ui/primitives/document-flow/field-items-advanced-settings/dropdown-field.tsx
 msgid "Select default option"
 msgstr "Seleccionar opción predeterminada"
@@ -7734,6 +7753,10 @@ msgstr "Firme sus iniciales en el campo"
 msgid "Signature"
 msgstr "Firma"
 
+#: apps/remix/app/components/forms/profile.tsx
+msgid "Signature cannot be empty."
+msgstr ""
+
 #: apps/remix/app/routes/_internal+/[__htmltopdf]+/certificate.tsx
 msgid "Signature Certificate"
 msgstr "Certificado de Firma"
@@ -7741,10 +7764,6 @@ msgstr "Certificado de Firma"
 #: packages/ui/primitives/signature-pad/signature-pad-draw.tsx
 msgid "Signature is too small"
 msgstr "La firma es demasiado pequeña"
-
-#: apps/remix/app/components/forms/profile.tsx
-msgid "Signature Pad cannot be empty."
-msgstr "El área de firma no puede estar vacío."
 
 #: apps/remix/app/components/general/envelope-editor/envelope-editor-fields-page.tsx
 #: apps/remix/app/routes/embed+/components/template-flow/add-template-fields.tsx
@@ -8994,14 +9013,18 @@ msgstr "Esta es la URL que los usuarios usarán para iniciar sesión en su organ
 msgid "This item cannot be deleted"
 msgstr "Este elemento no se puede eliminar"
 
+#: apps/remix/app/routes/_recipient+/sign.$token+/expired.tsx
+msgid "This link is invalid or has expired. Please contact the sender."
+msgstr ""
+
 #: apps/remix/app/routes/_unauthenticated+/team.verify.email.$token.tsx
 msgid "This link is invalid or has expired. Please contact your team to resend a verification."
 msgstr "Este enlace es inválido o ha expirado. Por favor, contacta a tu equipo para reenviar una verificación."
 
 #. placeholder {0}: tokenExpiration ? new Date(tokenExpiration).toLocaleDateString('en-US') : 'N/A'
 #: packages/email/template-components/template-document-invite.tsx
-msgid "This link is valid until {0}"
-msgstr "Este enlace es válido hasta {0}"
+msgid "This link is valid until {0}.<0/>If the process is disabled, please contact Administrator to send the document again."
+msgstr ""
 
 #: apps/remix/app/routes/_unauthenticated+/organisation.sso.confirmation.$token.tsx
 msgid "This organisation will have administrative control over your account. You can revoke this access later, but they will retain access to any data they've already collected."
@@ -9020,6 +9043,10 @@ msgstr "Este destinatario ya no puede ser modificado ya que ha firmado un campo 
 #: packages/ui/primitives/document-flow/add-signers.tsx
 msgid "This signer has already signed the document."
 msgstr "Este firmante ya ha firmado el documento."
+
+#: apps/remix/app/routes/_recipient+/sign.$token+/expired.tsx
+msgid "This signing link has expired. Please contact the sender to request a new link."
+msgstr ""
 
 #: apps/remix/app/routes/_authenticated+/t.$teamUrl+/settings._index.tsx
 msgid "This team, and any associated data excluding billing invoices will be permanently deleted."
@@ -9719,6 +9746,7 @@ msgstr "Usuarios"
 
 #: apps/remix/app/components/forms/editor/editor-field-checkbox-form.tsx
 #: apps/remix/app/components/forms/editor/editor-field-number-form.tsx
+#: apps/remix/app/components/forms/embed/embed-editor-field-number-form.tsx
 #: packages/ui/primitives/document-flow/field-items-advanced-settings/checkbox-field.tsx
 #: packages/ui/primitives/document-flow/field-items-advanced-settings/number-field.tsx
 msgid "Validation"
@@ -9730,6 +9758,8 @@ msgstr "Validación fallida"
 
 #: apps/remix/app/components/forms/editor/editor-field-number-form.tsx
 #: apps/remix/app/components/forms/editor/editor-field-number-form.tsx
+#: apps/remix/app/components/forms/embed/embed-editor-field-number-form.tsx
+#: apps/remix/app/components/forms/embed/embed-editor-field-number-form.tsx
 #: apps/remix/app/components/tables/admin-document-recipient-item-table.tsx
 #: packages/ui/primitives/document-flow/field-items-advanced-settings/number-field.tsx
 #: packages/ui/primitives/document-flow/field-items-advanced-settings/number-field.tsx
@@ -11013,6 +11043,10 @@ msgstr "Su sobre ha sido duplicado exitosamente."
 #: apps/remix/app/routes/_authenticated+/t.$teamUrl+/settings.tokens.tsx
 msgid "Your existing tokens"
 msgstr "Tus tokens existentes"
+
+#: apps/remix/app/routes/_recipient+/sign.$token+/expired.tsx
+msgid "Your link has expired!"
+msgstr ""
 
 #: apps/remix/app/components/general/document-signing/document-signing-complete-dialog.tsx
 msgid "Your Name"
