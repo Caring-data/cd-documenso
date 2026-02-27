@@ -114,7 +114,7 @@ export const SignFieldTextDialog = createCallable<SignFieldTextDialogProps, stri
                   </Button>
 
                   <Button type="submit" disabled={isDisabled}>
-                    <Trans>Enter</Trans>
+                    <Trans>Save</Trans>
                   </Button>
                 </DialogFooter>
               </fieldset>

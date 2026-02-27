@@ -23,7 +23,7 @@ export const getResidentValue = (
     case FieldType.RESIDENT_DOB: {
       const dob = resident?.dob;
       if (dob && typeof dob === 'string') {
-        return DateTime.fromJSDate(new Date(dob)).toFormat(DEFAULT_DOCUMENT_DATE_FORMAT);
+        return DateTime.fromISO(dob, { zone: 'utc' }).toFormat(DEFAULT_DOCUMENT_DATE_FORMAT);
       }
       return '';
     }
