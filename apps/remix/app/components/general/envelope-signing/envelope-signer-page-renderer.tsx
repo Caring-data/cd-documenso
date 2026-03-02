@@ -63,6 +63,20 @@ type GenericLocalField = TEnvelope['fields'][number] & {
   signature?: SignatureForRender | null;
 };
 
+const RESIDENT_LOCATION_FIELD_TYPES = new Set<FieldType>([
+  FieldType.RESIDENT_LOCATION_NAME,
+  FieldType.RESIDENT_LOCATION_STATE,
+  FieldType.RESIDENT_LOCATION_ADDRESS,
+  FieldType.RESIDENT_LOCATION_CITY,
+  FieldType.RESIDENT_LOCATION_ZIP_CODE,
+  FieldType.RESIDENT_LOCATION_COUNTRY,
+  FieldType.RESIDENT_LOCATION_FAX,
+  FieldType.RESIDENT_LOCATION_LICENSING,
+  FieldType.RESIDENT_LOCATION_LICENSING_NAME,
+  FieldType.RESIDENT_LOCATION_ADMINISTRATOR_NAME,
+  FieldType.RESIDENT_LOCATION_ADMINISTRATOR_PHONE,
+]);
+
 export default function EnvelopeSignerPageRenderer() {
   const { t, i18n } = useLingui();
   const { currentEnvelopeItem, setRenderError } = useCurrentEnvelopeRender();
