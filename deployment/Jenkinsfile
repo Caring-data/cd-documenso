@@ -1,7 +1,7 @@
 def branchConfig = [
     'main'        : ['production' , 'cd_production', 'rise.caringdata.com', '5001'],
-    'staging'     : ['staging'    , 'cd_staging'   , 'staging.caringdata.com', '5001'],
-    'development' : ['development', 'cd_development', 'caringdata.at.services', '5001']
+    'staging'     : ['staging'    , 'cd_staging'   , 'staging.caringdata.com', '4443'],
+    'development' : ['development', 'cd_development', 'caringdata.at.services', '4443']
 ]
 
 def config = branchConfig[env.BRANCH_NAME] ?: branchConfig['development']
