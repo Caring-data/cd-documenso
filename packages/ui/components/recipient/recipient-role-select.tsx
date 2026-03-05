@@ -12,15 +12,25 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@documenso/ui/primitive
 import { cn } from '../../lib/utils';
 
 export type RecipientRoleSelectProps = SelectProps & {
+  showAdvancedRoles?: boolean;
   hideCCRecipients?: boolean;
   isAssistantEnabled?: boolean;
   hideAssistant?: boolean;
 };
 
 export const RecipientRoleSelect = forwardRef<HTMLButtonElement, RecipientRoleSelectProps>(
-  ({ hideCCRecipients, isAssistantEnabled = true, hideAssistant = false, ...props }, ref) => (
+  (
+    {
+      showAdvancedRoles = true,
+      hideCCRecipients,
+      isAssistantEnabled = true,
+      hideAssistant = false,
+      ...props
+    },
+    ref,
+  ) => (
     <Select {...props}>
-      <SelectTrigger ref={ref} className="bg-background w-[50px] p-2">
+      <SelectTrigger ref={ref} className="w-[50px] bg-background p-2">
         {/* eslint-disable-next-line @typescript-eslint/consistent-type-assertions */}
         {ROLE_ICONS[props.value as RecipientRole]}
       </SelectTrigger>
@@ -36,7 +46,7 @@ export const RecipientRoleSelect = forwardRef<HTMLButtonElement, RecipientRoleSe
               <TooltipTrigger>
                 <InfoIcon className="h-4 w-4" />
               </TooltipTrigger>
-              <TooltipContent className="text-foreground z-9999 max-w-md p-4">
+              <TooltipContent className="z-9999 max-w-md p-4 text-foreground">
                 <p>
                   <Trans>
                     The recipient is required to sign the document for it to be completed.
@@ -47,47 +57,51 @@ export const RecipientRoleSelect = forwardRef<HTMLButtonElement, RecipientRoleSe
           </div>
         </SelectItem>
 
-        <SelectItem value={RecipientRole.APPROVER}>
-          <div className="flex items-center">
-            <div className="flex w-[150px] items-center">
-              <span className="mr-2">{ROLE_ICONS[RecipientRole.APPROVER]}</span>
-              <Trans>Needs to approve</Trans>
-            </div>
-            <Tooltip>
-              <TooltipTrigger>
-                <InfoIcon className="h-4 w-4" />
-              </TooltipTrigger>
-              <TooltipContent className="text-foreground z-9999 max-w-md p-4">
-                <p>
-                  <Trans>
-                    The recipient is required to approve the document for it to be completed.
-                  </Trans>
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-        </SelectItem>
+        {showAdvancedRoles && (
+          <>
+            <SelectItem value={RecipientRole.APPROVER}>
+              <div className="flex items-center">
+                <div className="flex w-[150px] items-center">
+                  <span className="mr-2">{ROLE_ICONS[RecipientRole.APPROVER]}</span>
+                  <Trans>Needs to approve</Trans>
+                </div>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <InfoIcon className="h-4 w-4" />
+                  </TooltipTrigger>
+                  <TooltipContent className="z-9999 max-w-md p-4 text-foreground">
+                    <p>
+                      <Trans>
+                        The recipient is required to approve the document for it to be completed.
+                      </Trans>
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </SelectItem>
 
-        <SelectItem value={RecipientRole.VIEWER}>
-          <div className="flex items-center">
-            <div className="flex w-[150px] items-center">
-              <span className="mr-2">{ROLE_ICONS[RecipientRole.VIEWER]}</span>
-              <Trans>Needs to view</Trans>
-            </div>
-            <Tooltip>
-              <TooltipTrigger>
-                <InfoIcon className="h-4 w-4" />
-              </TooltipTrigger>
-              <TooltipContent className="text-foreground z-9999 max-w-md p-4">
-                <p>
-                  <Trans>
-                    The recipient is required to view the document for it to be completed.
-                  </Trans>
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-        </SelectItem>
+            <SelectItem value={RecipientRole.VIEWER}>
+              <div className="flex items-center">
+                <div className="flex w-[150px] items-center">
+                  <span className="mr-2">{ROLE_ICONS[RecipientRole.VIEWER]}</span>
+                  <Trans>Needs to view</Trans>
+                </div>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <InfoIcon className="h-4 w-4" />
+                  </TooltipTrigger>
+                  <TooltipContent className="z-9999 max-w-md p-4 text-foreground">
+                    <p>
+                      <Trans>
+                        The recipient is required to view the document for it to be completed.
+                      </Trans>
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </SelectItem>
+          </>
+        )}
 
         {!hideCCRecipients && (
           <SelectItem value={RecipientRole.CC}>
@@ -100,7 +114,7 @@ export const RecipientRoleSelect = forwardRef<HTMLButtonElement, RecipientRoleSe
                 <TooltipTrigger>
                   <InfoIcon className="h-4 w-4" />
                 </TooltipTrigger>
-                <TooltipContent className="text-foreground z-9999 max-w-md p-4">
+                <TooltipContent className="z-9999 max-w-md p-4 text-foreground">
                   <p>
                     <Trans>
                       The recipient is not required to take any action and receives a copy of the
@@ -131,7 +145,7 @@ export const RecipientRoleSelect = forwardRef<HTMLButtonElement, RecipientRoleSe
                 <TooltipTrigger>
                   <InfoIcon className="h-4 w-4" />
                 </TooltipTrigger>
-                <TooltipContent className="text-foreground z-9999 max-w-md p-4">
+                <TooltipContent className="z-9999 max-w-md p-4 text-foreground">
                   <p>
                     {isAssistantEnabled ? (
                       <Trans>

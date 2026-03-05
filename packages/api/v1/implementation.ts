@@ -369,18 +369,6 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
         groupedByRecipient.get(recipientId)!.push(log);
       });
 
-      await createLog({
-        level: LogLevel.INFO,
-        category: LogCategory.DOCUMENT,
-        action: 'get_signature_audit_grouped_by_recipient',
-        message: 'Audit logs grouped by recipient',
-        data: {
-          recipientsCount: envelope.recipients.length,
-          recipientsWithLogs: groupedByRecipient.size,
-        },
-        envelopeId: envelope.id,
-      });
-
       const result = envelope.recipients.map((recipient) => {
         const logs = groupedByRecipient.get(recipient.id) || [];
         const sortedLogs = [...logs].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
@@ -474,17 +462,6 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
           status: formatStatus(latestEvent?.type),
           history,
         };
-      });
-
-      await createLog({
-        level: LogLevel.INFO,
-        category: LogCategory.DOCUMENT,
-        action: 'get_signature_audit_success',
-        message: 'Signature audit retrieved successfully',
-        data: {
-          envelopeId: envelope.id,
-        },
-        envelopeId: envelope.id,
       });
 
       return {
@@ -1190,6 +1167,7 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
         data: {
           type: EnvelopeType.TEMPLATE,
           title: fileName,
+          formKey: key,
           envelopeItems: [
             {
               documentDataId: templateDocumentDataId,
@@ -1820,6 +1798,9 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
 
       const templateId = Number(params.templateId);
 
+      const ccRecipients = body.ccRecipients ?? null;
+      const normalizedCc = ccRecipients?.length ? ccRecipients : null;
+
       await createLog({
         level: LogLevel.INFO,
         category: LogCategory.DOCUMENT,
@@ -1835,6 +1816,7 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
           folderName: body.folderName,
           formKey: body.formKey,
           signingContext: body.signingContext,
+          ccRecipients: normalizedCc,
         },
         metadata,
         userId: user.id,
@@ -1902,6 +1884,7 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
           formKey: body.formKey,
           signingContext: body.signingContext,
           customDocumentData,
+          ccRecipients: normalizedCc,
         });
       } catch (err) {
         return AppError.toRestAPIError(err);

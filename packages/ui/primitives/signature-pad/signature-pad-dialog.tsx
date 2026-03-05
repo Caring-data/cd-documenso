@@ -1,23 +1,33 @@
 import type { HTMLAttributes } from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import type { MessageDescriptor } from '@lingui/core';
 import { Trans, useLingui } from '@lingui/react/macro';
 import { motion } from 'framer-motion';
 
 import { parseMessageDescriptor } from '@documenso/lib/utils/i18n';
-import { Dialog, DialogClose, DialogContent, DialogFooter } from '@documenso/ui/primitives/dialog';
+import { DocumentSignatureType } from '@documenso/lib/utils/teams';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@documenso/ui/primitives/dialog';
 
 import { cn } from '../../lib/utils';
 import { Button } from '../button';
+import type { SignaturePadValue } from './signature-pad';
 import { SignaturePad } from './signature-pad';
 import { SignatureRender } from './signature-render';
 
 export type SignaturePadDialogProps = Omit<HTMLAttributes<HTMLCanvasElement>, 'onChange'> & {
   disabled?: boolean;
   fullName?: string;
-  value?: string;
-  onChange: (_value: string) => void;
+  recipientEmail?: string;
+  value?: SignaturePadValue;
+  onChange: (_value: SignaturePadValue) => void;
   dialogConfirmText?: MessageDescriptor | string;
   disableAnimation?: boolean;
   typedSignatureEnabled?: boolean;
@@ -28,6 +38,7 @@ export type SignaturePadDialogProps = Omit<HTMLAttributes<HTMLCanvasElement>, 'o
 export const SignaturePadDialog = ({
   className,
   fullName,
+  recipientEmail,
   value,
   onChange,
   disabled = false,
@@ -40,7 +51,25 @@ export const SignaturePadDialog = ({
   const { i18n } = useLingui();
 
   const [showSignatureModal, setShowSignatureModal] = useState(false);
-  const [signature, setSignature] = useState<string>(value ?? '');
+  const [signature, setSignature] = useState<SignaturePadValue>({
+    type: value?.type ?? DocumentSignatureType.DRAW,
+    value: value?.value ?? '',
+    font: value?.font ?? 'Dancing Script',
+    color: value?.color ?? 'black',
+  });
+
+  const hasSignature = Boolean(value?.value?.trim());
+
+  useEffect(() => {
+    if (showSignatureModal) return;
+
+    setSignature({
+      type: value?.type ?? DocumentSignatureType.DRAW,
+      value: value?.value ?? '',
+      font: value?.font ?? 'Dancing Script',
+      color: value?.color ?? 'black',
+    });
+  }, [value?.type, value?.value, value?.font, value?.color, showSignatureModal]);
 
   return (
     <div
@@ -52,9 +81,9 @@ export const SignaturePadDialog = ({
         },
       )}
     >
-      {value && (
+      {hasSignature && (
         <div className="inset-0 h-full w-full">
-          <SignatureRender value={value} />
+          <SignatureRender value={value!.value} font={value!.font} color={value!.color} />
         </div>
       )}
 
@@ -66,7 +95,7 @@ export const SignaturePadDialog = ({
         onClick={() => setShowSignatureModal(true)}
         whileHover="onHover"
       >
-        {!value && !disableAnimation && (
+        {!hasSignature && !disableAnimation && (
           <motion.svg
             width="120"
             height="120"
@@ -112,13 +141,24 @@ export const SignaturePadDialog = ({
 
       <Dialog open={showSignatureModal} onOpenChange={disabled ? undefined : setShowSignatureModal}>
         <DialogContent hideClose={true} className="p-6 pt-4">
+          <DialogHeader>
+            <DialogTitle>
+              <Trans>
+                Sign as {fullName}{' '}
+                {recipientEmail && (
+                  <div className="mb-2 h-5 text-muted-foreground">({recipientEmail})</div>
+                )}
+              </Trans>
+            </DialogTitle>
+          </DialogHeader>
+
           <SignaturePad
             id="signature"
             fullName={fullName}
-            value={value}
+            value={signature}
             className={className}
             disabled={disabled}
-            onChange={({ value }) => setSignature(value)}
+            onChange={setSignature}
             typedSignatureEnabled={typedSignatureEnabled}
             uploadSignatureEnabled={uploadSignatureEnabled}
             drawSignatureEnabled={drawSignatureEnabled}

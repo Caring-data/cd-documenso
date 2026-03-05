@@ -1,10 +1,10 @@
-import { EnvelopeType, RecipientRole } from '@prisma/client';
+import type { RecipientRole } from '@prisma/client';
+import { EnvelopeType } from '@prisma/client';
 
 import { prisma } from '@documenso/prisma';
 
 import { AppError, AppErrorCode } from '../../errors/app-error';
 import type { TRecipientActionAuthTypes } from '../../types/document-auth';
-import type { EnvelopeIdOptions } from '../../utils/envelope';
 import {
   updateTemplateSettings as updateCaringDataTemplateSettings,
   updateTemplateSigners as updateCaringDataTemplateSigners,
@@ -18,6 +18,7 @@ export interface UpdateTemplateSettingsOptions {
   teamId: number;
   envelopeId: string;
   title: string;
+  isSystem?: boolean;
   recipients: {
     id?: number;
     email: string;
@@ -25,6 +26,7 @@ export interface UpdateTemplateSettingsOptions {
     role: RecipientRole;
     signingOrder?: number | null;
     actionAuth?: TRecipientActionAuthTypes[];
+    contactCategoryKey?: string | null;
   }[];
 }
 
@@ -33,6 +35,7 @@ export const updateTemplateSettings = async ({
   teamId,
   envelopeId,
   title,
+  isSystem,
   recipients,
 }: UpdateTemplateSettingsOptions) => {
   const { envelopeWhereInput } = await getEnvelopeWhereInput({
@@ -64,13 +67,17 @@ export const updateTemplateSettings = async ({
       const documentMeta = envelope.documentMeta;
 
       // Update template settings in Caring Data
-      await updateCaringDataTemplateSettings(envelope.externalId, {
-        title,
-        defaultLanguage: documentMeta?.language || 'en',
-        defaultTimezone: documentMeta?.timezone || 'Etc/UTC',
-        defaultEmailSubject: documentMeta?.subject || '',
-        defaultEmailMessage: documentMeta?.message || '',
-      });
+      await updateCaringDataTemplateSettings(
+        envelope.externalId,
+        {
+          title,
+          defaultLanguage: documentMeta?.language || 'en',
+          defaultTimezone: documentMeta?.timezone || 'Etc/UTC',
+          defaultEmailSubject: documentMeta?.subject || '',
+          defaultEmailMessage: documentMeta?.message || '',
+        },
+        { isSystem },
+      );
 
       // Map recipients to Caring Data format
       const caringDataSigners = recipients.map((recipient) => ({
@@ -79,10 +86,11 @@ export const updateTemplateSettings = async ({
         email: recipient.email,
         role: mapRecipientRoleToCaringData(recipient.role),
         signingOrder: recipient.signingOrder ?? null,
+        contactCategoryKey: recipient.contactCategoryKey ?? null,
       }));
 
       // Update template signers in Caring Data
-      await updateCaringDataTemplateSigners(envelope.externalId, caringDataSigners);
+      await updateCaringDataTemplateSigners(envelope.externalId, caringDataSigners, { isSystem });
     } catch (error) {
       // Log the error for debugging with context
       console.error('Failed to sync template settings with Caring Data API:', {

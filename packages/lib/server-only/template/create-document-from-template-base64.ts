@@ -74,6 +74,11 @@ type FinalRecipient = Pick<
   fields: Field[];
 };
 
+type CcRecipient = {
+  name: string;
+  email: string;
+};
+
 export type createDocumentFromTemplateBase64Options = {
   id: EnvelopeIdOptions;
   externalId?: string | null;
@@ -86,6 +91,7 @@ export type createDocumentFromTemplateBase64Options = {
     signingOrder?: number | null;
     expired?: Date | null;
   }[];
+  ccRecipients?: CcRecipient[] | null;
   folderId?: string;
   folderName?: string;
   prefillFields?: TFieldMetaPrefillFieldsSchema[];
@@ -97,8 +103,8 @@ export type createDocumentFromTemplateBase64Options = {
     documentName?: string;
     ownerName?: string;
     locationName?: string;
-    formType?: 'custom' | 'standard' | 'custom_default';
-    module?: 'resident' | 'staff' | 'facility';
+    formType?: 'custom' | 'standard' | 'system';
+    module?: 'resident' | 'staff' | 'facility' | 'reports';
   };
 
   customDocumentData?: {
@@ -318,6 +324,7 @@ export const createDocumentFromTemplateBase64 = async ({
   userId,
   teamId,
   recipients,
+  ccRecipients,
   customDocumentData = [],
   override,
   requestMetadata,
@@ -414,11 +421,30 @@ export const createDocumentFromTemplateBase64 = async ({
   });
 
   if (folderName && !folderId) {
+    const moduleName = signingContext?.module;
+
+    let parentFolderId: string | undefined;
+
+    if (moduleName) {
+      const moduleFolder = await prisma.folder.findFirst({
+        where: {
+          name: moduleName,
+          type: FolderType.DOCUMENT,
+          team: buildTeamWhereQuery({ teamId, userId }),
+          parentId: null,
+        },
+        select: { id: true },
+      });
+
+      parentFolderId = moduleFolder?.id;
+    }
+
     const folder = await prisma.folder.findFirst({
       where: {
         name: folderName,
-        team: buildTeamWhereQuery({ teamId, userId }),
         type: FolderType.DOCUMENT,
+        team: buildTeamWhereQuery({ teamId, userId }),
+        ...(parentFolderId ? { parentId: parentFolderId } : {}),
       },
     });
 
@@ -588,6 +614,28 @@ export const createDocumentFromTemplateBase64 = async ({
     }),
   });
 
+  const normalizedCc = ccRecipients?.length
+    ? ccRecipients
+        .map((r) => ({
+          name: r.name?.trim() || '',
+          email: r.email?.trim().toLowerCase() || '',
+        }))
+        .filter((r) => r.email)
+    : null;
+
+  const ccToCreate = (normalizedCc ?? []).map(
+    (cc): Prisma.RecipientCreateManyEnvelopeInput => ({
+      email: cc.email,
+      name: cc.name || cc.email,
+      role: RecipientRole.CC,
+      sendStatus: SendStatus.SENT,
+      signingStatus: SigningStatus.SIGNED,
+      signingOrder: null,
+      expired: DateTime.now().plus({ days: 7 }).toJSDate(),
+      token: nanoid(),
+    }),
+  );
+
   const envelope = await prisma.$transaction(async (tx) => {
     const envelope = await tx.envelope.create({
       data: {
@@ -620,28 +668,32 @@ export const createDocumentFromTemplateBase64 = async ({
         signingContext,
         recipients: {
           createMany: {
-            data: finalRecipients.map((recipient) => {
-              const authOptions = ZRecipientAuthOptionsSchema.parse(recipient?.authOptions);
+            data: [
+              ...finalRecipients.map((recipient) => {
+                const authOptions = ZRecipientAuthOptionsSchema.parse(recipient?.authOptions);
 
-              return {
-                email: recipient.email,
-                name: recipient.name,
-                role: recipient.role,
-                authOptions: createRecipientAuthOptions({
-                  accessAuth: authOptions.accessAuth,
-                  actionAuth: authOptions.actionAuth,
-                }),
-                sendStatus:
-                  recipient.role === RecipientRole.CC ? SendStatus.SENT : SendStatus.NOT_SENT,
-                signingStatus:
-                  recipient.role === RecipientRole.CC
-                    ? SigningStatus.SIGNED
-                    : SigningStatus.NOT_SIGNED,
-                signingOrder: recipient.signingOrder,
-                expired: recipient?.expired,
-                token: recipient.token,
-              };
-            }),
+                return {
+                  email: recipient.email,
+                  name: recipient.name,
+                  role: recipient.role,
+                  authOptions: createRecipientAuthOptions({
+                    accessAuth: authOptions.accessAuth,
+                    actionAuth: authOptions.actionAuth,
+                  }),
+                  sendStatus:
+                    recipient.role === RecipientRole.CC ? SendStatus.SENT : SendStatus.NOT_SENT,
+                  signingStatus:
+                    recipient.role === RecipientRole.CC
+                      ? SigningStatus.SIGNED
+                      : SigningStatus.NOT_SIGNED,
+                  signingOrder: recipient.signingOrder,
+                  expired: recipient?.expired,
+                  token: recipient.token,
+                };
+              }),
+
+              ...ccToCreate,
+            ],
           },
         },
       },
@@ -704,16 +756,61 @@ export const createDocumentFromTemplateBase64 = async ({
 
     const isStandardForm = signingContext?.formType === 'standard';
 
-    const base64Pdf = isStandardForm ? template.envelopeItems[0]?.documentData?.data : null;
+    let base64Pdf: string | null = null;
+
+    if (isStandardForm) {
+      if (customDocumentData && customDocumentData.length > 0) {
+        const customDocData = await prisma.documentData.findFirst({
+          where: {
+            id: customDocumentData[0].documentDataId,
+          },
+        });
+
+        if (!customDocData) {
+          throw new AppError(AppErrorCode.NOT_FOUND, {
+            message: 'Custom document data not found',
+          });
+        }
+
+        base64Pdf = customDocData.data;
+
+        await createLog({
+          level: LogLevel.INFO,
+          category: LogCategory.DOCUMENT,
+          action: 'using_custom_document_for_scanning',
+          message: 'Using custom document PDF for field scanning',
+          data: {
+            documentDataId: customDocData.id,
+            dataLength: customDocData.data?.length,
+          },
+          metadata: requestMetadata,
+          userId,
+        });
+      } else {
+        base64Pdf = template.envelopeItems[0]?.documentData?.data || null;
+
+        await createLog({
+          level: LogLevel.WARN,
+          category: LogCategory.DOCUMENT,
+          action: 'using_template_document_for_scanning',
+          message: 'Using template PDF for field scanning (no custom document provided)',
+          data: {
+            templateId: template.id,
+          },
+          metadata: requestMetadata,
+          userId,
+        });
+      }
+    }
 
     if (isStandardForm && !base64Pdf) {
       throw new AppError(AppErrorCode.INVALID_BODY, {
-        message: 'Standard document PDF data not found on template envelope item',
+        message: 'Standard document PDF data not found',
       });
     }
 
     const shouldSkipCoordinateSearch =
-      signingContext?.formType === 'custom' || signingContext?.formType === 'custom_default';
+      signingContext?.formType === 'custom' || signingContext?.formType === 'system';
 
     const variableCounters: Record<string, number> = {};
 

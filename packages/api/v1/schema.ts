@@ -425,9 +425,18 @@ export const ZGenerateDocumentFromTemplateBase64MutationSchema =
         documentName: z.string().optional(),
         ownerName: z.string().optional(),
         locationName: z.string().optional(),
-        formType: z.enum(['custom', 'standard', 'custom_default']).optional(),
-        module: z.enum(['resident', 'staff', 'facility']).optional(),
+        formType: z.enum(['custom', 'standard', 'system']).optional(),
+        module: z.enum(['resident', 'staff', 'facility', 'reports']).optional(),
       })
+      .optional(),
+    ccRecipients: z
+      .array(
+        z.object({
+          name: z.string().min(1),
+          email: z.string().email(),
+        }),
+      )
+      .nullable()
       .optional(),
   });
 

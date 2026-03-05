@@ -108,7 +108,7 @@ export const SignFieldNumberDialog = createCallable<SignFieldNumberDialogProps, 
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              <Trans>Sign Number Field</Trans>
+              <Trans>Number Field</Trans>
             </DialogTitle>
 
             <DialogDescription className="mt-4">
@@ -150,7 +150,7 @@ export const SignFieldNumberDialog = createCallable<SignFieldNumberDialogProps, 
                   </Button>
 
                   <Button type="submit">
-                    <Trans>Sign</Trans>
+                    <Trans>Save</Trans>
                   </Button>
                 </DialogFooter>
               </fieldset>

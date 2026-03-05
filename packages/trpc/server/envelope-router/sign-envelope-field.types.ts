@@ -29,6 +29,13 @@ export const ZSignEnvelopeFieldValue = z.discriminatedUnion('type', [
   z.object({
     type: z.literal(FieldType.INITIALS),
     value: z.string().nullable(),
+    typedSignatureSettings: z
+      .object({
+        font: z.string().optional(),
+        color: z.string().optional(),
+      })
+      .nullable()
+      .optional(),
   }),
   z.object({
     type: z.literal(FieldType.TEXT),
@@ -49,6 +56,13 @@ export const ZSignEnvelopeFieldValue = z.discriminatedUnion('type', [
   z.object({
     type: z.literal(FieldType.SIGNATURE),
     value: z.string().nullable(),
+    typedSignatureSettings: z
+      .object({
+        font: z.string().optional(),
+        color: z.string().optional(),
+      })
+      .nullable()
+      .optional(),
   }),
   // Resident fields - all behave like text fields
   z.object({
@@ -89,6 +103,26 @@ export const ZSignEnvelopeFieldValue = z.discriminatedUnion('type', [
   }),
   z.object({
     type: z.literal(FieldType.RESIDENT_LOCATION_COUNTRY),
+    value: z.string().nullable(),
+  }),
+  z.object({
+    type: z.literal(FieldType.RESIDENT_LOCATION_FAX),
+    value: z.string().nullable(),
+  }),
+  z.object({
+    type: z.literal(FieldType.RESIDENT_LOCATION_LICENSING),
+    value: z.string().nullable(),
+  }),
+  z.object({
+    type: z.literal(FieldType.RESIDENT_LOCATION_LICENSING_NAME),
+    value: z.string().nullable(),
+  }),
+  z.object({
+    type: z.literal(FieldType.RESIDENT_LOCATION_ADMINISTRATOR_NAME),
+    value: z.string().nullable(),
+  }),
+  z.object({
+    type: z.literal(FieldType.RESIDENT_LOCATION_ADMINISTRATOR_PHONE),
     value: z.string().nullable(),
   }),
 ]);

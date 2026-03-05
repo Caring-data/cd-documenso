@@ -36,6 +36,8 @@ export const ZEnvelopeForSigningResponse = z.object({
     authOptions: true,
     userId: true,
     teamId: true,
+    ownerId: true,
+    signingContext: true,
   }).extend({
     documentMeta: DocumentMetaSchema.pick({
       signingOrder: true,
@@ -67,6 +69,7 @@ export const ZEnvelopeForSigningResponse = z.object({
           signature: SignatureSchema.pick({
             signatureImageAsBase64: true,
             typedSignature: true,
+            typedSignatureSettings: true,
           }).nullish(),
         }).array(),
       })
@@ -122,6 +125,7 @@ export const ZEnvelopeForSigningResponse = z.object({
   recipientSignature: SignatureSchema.pick({
     signatureImageAsBase64: true,
     typedSignature: true,
+    typedSignatureSettings: true,
   }).nullable(),
 
   isCompleted: z.boolean(),
@@ -251,6 +255,7 @@ export const getEnvelopeForRecipientSigning = async ({
       recipientId: true,
       signatureImageAsBase64: true,
       typedSignature: true,
+      typedSignatureSettings: true,
     },
   });
 

@@ -25,6 +25,7 @@ import { getTeamSettings } from '@documenso/lib/server-only/team/get-team-settin
 import { getUserByEmail } from '@documenso/lib/server-only/user/get-user-by-email';
 import { DocumentAccessAuth } from '@documenso/lib/types/document-auth';
 import { extractDocumentAuthMethods } from '@documenso/lib/utils/document-auth';
+import { isTokenExpired } from '@documenso/lib/utils/token-verification';
 import { prisma } from '@documenso/prisma';
 import { SigningCard3D } from '@documenso/ui/components/signing-card';
 
@@ -194,7 +195,12 @@ const handleV2Loader = async ({ params, request }: Route.LoaderArgs) => {
         } as const;
       }
 
-      throw new Response('Not Found', { status: 404 });
+      if (error.code === AppErrorCode.NOT_FOUND) {
+        throw new Response('Not Found', { status: 404 });
+      }
+
+      // Re-lanzar errores inesperados para obtener 500 con contexto
+      throw e;
     });
 
   if (!envelopeForSigning.isDocumentAccessValid) {
@@ -266,18 +272,13 @@ export async function loader(loaderArgs: Route.LoaderArgs) {
     throw redirect(`/sign/${token}/rejected`);
   }
 
-  // Check if user has accessed the pre-signing page
-  // If not, redirect to presign route
-  if (url.searchParams.get('accessed') !== 'true') {
-    throw redirect(`/sign/${token}/presign`);
-  }
-
   // Not efficient but works for now until we remove v1.
   const foundRecipient = await prisma.recipient.findFirst({
     where: {
       token,
     },
     select: {
+      expired: true,
       envelope: {
         select: {
           internalVersion: true,
@@ -288,6 +289,16 @@ export async function loader(loaderArgs: Route.LoaderArgs) {
 
   if (!foundRecipient) {
     throw new Response('Not Found', { status: 404 });
+  }
+
+  if (foundRecipient.expired && isTokenExpired(foundRecipient.expired)) {
+    throw redirect(`/sign/${token}/expired`);
+  }
+
+  // Check if user has accessed the pre-signing page
+  // If not, redirect to presign route
+  if (url.searchParams.get('accessed') !== 'true') {
+    throw redirect(`/sign/${token}/presign`);
   }
 
   if (foundRecipient.envelope.internalVersion === 2) {
@@ -367,16 +378,16 @@ const SigningPageV1 = ({ data }: { data: Awaited<ReturnType<typeof handleV1Loade
             </Trans>
           </h2>
 
-          <p className="text-muted-foreground/60 mt-2.5 max-w-[60ch] text-center text-sm font-medium md:text-base">
+          <p className="mt-2.5 max-w-[60ch] text-center text-sm font-medium text-muted-foreground/60 md:text-base">
             <Trans>This document has been cancelled by the owner.</Trans>
           </p>
 
           {user ? (
-            <Link to="/" className="text-documenso-700 hover:text-documenso-600 mt-36">
+            <Link to="/" className="mt-36 text-documenso-700 hover:text-documenso-600">
               <Trans>Go Back Home</Trans>
             </Link>
           ) : (
-            <p className="text-muted-foreground/60 mt-36 text-sm">
+            <p className="mt-36 text-sm text-muted-foreground/60">
               <Trans>
                 Want to send slick signing links like this one?{' '}
                 <Link
@@ -467,16 +478,16 @@ const SigningPageV2 = ({ data }: { data: Awaited<ReturnType<typeof handleV2Loade
             </Trans>
           </h2>
 
-          <p className="text-muted-foreground/60 mt-2.5 max-w-[60ch] text-center text-sm font-medium md:text-base">
+          <p className="mt-2.5 max-w-[60ch] text-center text-sm font-medium text-muted-foreground/60 md:text-base">
             <Trans>This document has been cancelled by the owner.</Trans>
           </p>
 
           {user ? (
-            <Link to="/" className="text-documenso-700 hover:text-documenso-600 mt-36">
+            <Link to="/" className="mt-36 text-documenso-700 hover:text-documenso-600">
               <Trans>Go Back Home</Trans>
             </Link>
           ) : (
-            <p className="text-muted-foreground/60 mt-36 text-sm">
+            <p className="mt-36 text-sm text-muted-foreground/60">
               <Trans>
                 Want to send slick signing links like this one?{' '}
                 <Link

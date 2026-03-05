@@ -10,6 +10,14 @@ export type TFindUserSecurityAuditLogsSchema = z.infer<typeof ZFindUserSecurityA
 export const ZUpdateProfileMutationSchema = z.object({
   name: z.string().min(1),
   signature: z.string(),
+  signatureFont: z.string().optional(),
+  signatureTypedSettings: z
+    .object({
+      font: z.string().optional(),
+      color: z.string().optional(),
+    })
+    .nullable()
+    .optional(),
 });
 
 export type TUpdateProfileMutationSchema = z.infer<typeof ZUpdateProfileMutationSchema>;

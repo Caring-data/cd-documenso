@@ -3,14 +3,26 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Signature } from '@prisma/client';
 import { animate, motion, useMotionTemplate, useMotionValue, useTransform } from 'framer-motion';
 import { P, match } from 'ts-pattern';
+import z from 'zod';
 
 import { cn } from '../lib/utils';
 import { Card, CardContent } from '../primitives/card';
 
+const ZTypedSignatureSettings = z
+  .object({
+    font: z.string().optional(),
+    color: z.string().optional(),
+  })
+  .nullable()
+  .optional();
+
 export type SigningCardProps = {
   className?: string;
   name: string;
-  signature?: Pick<Signature, 'signatureImageAsBase64' | 'typedSignature'>;
+  signature?: Pick<
+    Signature,
+    'signatureImageAsBase64' | 'typedSignature' | 'typedSignatureSettings'
+  >;
   signingCelebrationImage?: string;
 };
 
@@ -132,7 +144,7 @@ export const SigningCard3D = ({
       style={{ perspective: 800 }}
     >
       <motion.div
-        className="bg-background w-full rounded-lg [--sheen-color:180_180_180] dark:[--sheen-color:200_200_200]"
+        className="w-full rounded-lg bg-background [--sheen-color:180_180_180] dark:[--sheen-color:200_200_200]"
         ref={cardRef}
         style={{
           perspective: '800',
@@ -154,7 +166,10 @@ export const SigningCard3D = ({
 
 type SigningCardContentProps = {
   name: string;
-  signature?: Pick<Signature, 'signatureImageAsBase64' | 'typedSignature'>;
+  signature?: Pick<
+    Signature,
+    'signatureImageAsBase64' | 'typedSignature' | 'typedSignatureSettings'
+  >;
   className?: string;
 };
 
@@ -169,7 +184,7 @@ const SigningCardContent = ({ className, name, signature }: SigningCardContentPr
       gradient
     >
       <CardContent
-        className="font-signature p-6 text-center"
+        className="p-6 text-center font-signature"
         style={{
           container: 'main',
         }}
@@ -182,21 +197,28 @@ const SigningCardContent = ({ className, name, signature }: SigningCardContentPr
               className="h-full max-w-[100%] dark:invert"
             />
           ))
-          .with({ typedSignature: P.string }, (signature) => (
-            <span
-              className="text-muted-foreground/60 group-hover:text-primary/80 break-all font-semibold duration-300"
-              style={{
-                fontSize: `max(min(4rem, ${(100 / signature.typedSignature.length / 2).toFixed(
-                  4,
-                )}cqw), 1.875rem)`,
-              }}
-            >
-              {signature.typedSignature}
-            </span>
-          ))
+          .with({ typedSignature: P.string }, (signature) => {
+            const parsed = ZTypedSignatureSettings.safeParse(signature.typedSignatureSettings);
+            const settings = parsed.success ? parsed.data : undefined;
+
+            return (
+              <span
+                className="break-normal font-semibold text-muted-foreground/60 duration-300 group-hover:text-primary/80"
+                style={{
+                  fontFamily: settings?.font || 'Dancing Script',
+                  color: settings?.color || 'black',
+                  fontSize: `max(min(4rem, ${(100 / signature.typedSignature.length / 2).toFixed(
+                    4,
+                  )}cqw), 1.875rem)`,
+                }}
+              >
+                {signature.typedSignature}
+              </span>
+            );
+          })
           .otherwise(() => (
             <span
-              className="text-muted-foreground/60 group-hover:text-primary/80 break-all font-semibold duration-300"
+              className="break-normal font-semibold text-muted-foreground/60 duration-300 group-hover:text-primary/80"
               style={{
                 fontSize: `max(min(4rem, ${(100 / name.length / 2).toFixed(4)}cqw), 1.875rem)`,
               }}

@@ -18,11 +18,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './signature-tabs';
 export type SignaturePadValue = {
   type: DocumentSignatureType;
   value: string;
+  font?: string;
+  color?: string;
 };
 
 export type SignaturePadProps = Omit<HTMLAttributes<HTMLCanvasElement>, 'onChange'> & {
   fullName?: string;
-  value?: string;
+  value?: SignaturePadValue;
   onChange?: (_value: SignaturePadValue) => void;
 
   disabled?: boolean;
@@ -36,23 +38,28 @@ export type SignaturePadProps = Omit<HTMLAttributes<HTMLCanvasElement>, 'onChang
 
 export const SignaturePad = ({
   fullName,
-  value = '',
+  value,
   onChange,
   disabled = false,
   typedSignatureEnabled = true,
   uploadSignatureEnabled = true,
   drawSignatureEnabled = true,
 }: SignaturePadProps) => {
-  const [imageSignature, setImageSignature] = useState(isBase64Image(value) ? value : '');
-  const [drawSignature, setDrawSignature] = useState(isBase64Image(value) ? value : '');
-  const [typedSignature, setTypedSignature] = useState(isBase64Image(value) ? '' : value);
+  const [imageSignature, setImageSignature] = useState(
+    value?.value && isBase64Image(value.value) ? value.value : '',
+  );
 
-  /**
-   * This is cooked.
-   *
-   * Get the first enabled tab that has a signature if possible, otherwise just get
-   * the first enabled tab.
-   */
+  const [drawSignature, setDrawSignature] = useState(
+    value?.value && isBase64Image(value.value) ? value.value : '',
+  );
+
+  const [typedSignature, setTypedSignature] = useState(
+    value?.value && !isBase64Image(value.value) ? value.value : '',
+  );
+
+  const [typedFont, setTypedFont] = useState(value?.font || 'Dancing Script');
+  const [typedColor, setTypedColor] = useState(value?.color || 'black');
+
   const [tab, setTab] = useState(
     ((): 'draw' | 'text' | 'image' => {
       // First passthrough to check to see if there's a signature for a given tab.
@@ -68,7 +75,7 @@ export const SignaturePad = ({
         return 'image';
       }
 
-      // Second passthrough to just select the first avaliable tab.
+      // Second passthrough to just select the first available tab.
       if (drawSignatureEnabled) {
         return 'draw';
       }
@@ -85,46 +92,50 @@ export const SignaturePad = ({
     })(),
   );
 
-  const onImageSignatureChange = (value: string) => {
-    setImageSignature(value);
+  const onImageSignatureChange = (newValue: string) => {
+    setImageSignature(newValue);
 
     onChange?.({
       type: DocumentSignatureType.UPLOAD,
-      value,
+      value: newValue,
     });
   };
 
-  const onDrawSignatureChange = (value: string) => {
-    setDrawSignature(value);
+  const onDrawSignatureChange = (newValue: string) => {
+    setDrawSignature(newValue);
 
     onChange?.({
       type: DocumentSignatureType.DRAW,
-      value,
+      value: newValue,
     });
   };
 
-  const onTypedSignatureChange = (value: string) => {
-    setTypedSignature(value);
+  const onTypedSignatureChange = (signature: SignaturePadValue) => {
+    setTypedSignature(signature.value);
+    setTypedFont(signature.font || 'Dancing Script');
+    setTypedColor(signature.color || 'black');
 
-    onChange?.({
-      type: DocumentSignatureType.TYPE,
-      value,
-    });
+    onChange?.(signature);
   };
 
-  const onTabChange = (value: 'draw' | 'text' | 'image') => {
+  const onTabChange = (selectedTab: 'draw' | 'text' | 'image') => {
     if (disabled) {
       return;
     }
 
-    setTab(value);
+    setTab(selectedTab);
 
-    match(value)
+    match(selectedTab)
       .with('draw', () => {
         onDrawSignatureChange(drawSignature);
       })
       .with('text', () => {
-        onTypedSignatureChange(typedSignature);
+        onTypedSignatureChange({
+          type: DocumentSignatureType.TYPE,
+          value: typedSignature,
+          font: typedFont,
+          color: typedColor,
+        });
       })
       .with('image', () => {
         onImageSignatureChange(imageSignature);
@@ -139,7 +150,7 @@ export const SignaturePad = ({
   return (
     <Tabs
       defaultValue={tab}
-      className={cn({
+      className={cn('mt-0', {
         'pointer-events-none': disabled,
       })}
       // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
@@ -184,7 +195,12 @@ export const SignaturePad = ({
         className="relative flex aspect-signature-pad items-center justify-center rounded-md border border-border bg-neutral-50 text-center dark:bg-background"
       >
         <SignaturePadType
-          value={typedSignature}
+          value={{
+            type: DocumentSignatureType.TYPE,
+            value: typedSignature,
+            font: typedFont,
+            color: typedColor,
+          }}
           defaultValue={fullName}
           onChange={onTypedSignatureChange}
         />

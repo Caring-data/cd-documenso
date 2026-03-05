@@ -48,12 +48,19 @@ export const SignFieldTextDialog = createCallable<SignFieldTextDialogProps, stri
       },
     });
 
+    const textValue = form.watch('text');
+    const characterLimit = fieldMeta?.characterLimit ?? 0;
+
+    const isOverLimit = characterLimit > 0 && (textValue?.length ?? 0) > characterLimit;
+
+    const isDisabled = form.formState.isSubmitting || !form.formState.isValid || isOverLimit;
+
     return (
       <Dialog open={true} onOpenChange={(value) => (!value ? call.end(null) : null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              <Trans>Sign Text Field</Trans>
+              <Trans>Enter Text info</Trans>
             </DialogTitle>
 
             <DialogDescription className="mt-4">
@@ -89,7 +96,7 @@ export const SignFieldTextDialog = createCallable<SignFieldTextDialogProps, stri
                       {fieldMeta?.characterLimit !== undefined &&
                         fieldMeta?.characterLimit > 0 &&
                         !fieldState.error && (
-                          <div className="text-muted-foreground text-sm">
+                          <div className="text-sm text-muted-foreground">
                             <Plural
                               value={fieldMeta?.characterLimit - (field.value?.length ?? 0)}
                               one="# character remaining"
@@ -106,8 +113,8 @@ export const SignFieldTextDialog = createCallable<SignFieldTextDialogProps, stri
                     <Trans>Cancel</Trans>
                   </Button>
 
-                  <Button type="submit">
-                    <Trans>Sign</Trans>
+                  <Button type="submit" disabled={isDisabled}>
+                    <Trans>Save</Trans>
                   </Button>
                 </DialogFooter>
               </fieldset>

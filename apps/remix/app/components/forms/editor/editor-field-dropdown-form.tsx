@@ -172,11 +172,10 @@ export const EditorFieldDropdownForm = ({
                 </FormLabel>
                 <FormControl>
                   <Select
-                    {...field}
                     value={field.value ?? '-1'}
                     onValueChange={(value) => field.onChange(value === '-1' ? undefined : value)}
                   >
-                    <SelectTrigger className="text-muted-foreground bg-background w-full">
+                    <SelectTrigger className="w-full bg-background text-muted-foreground">
                       <SelectValue placeholder={t`Default Value`} />
                     </SelectTrigger>
                     <SelectContent position="popper">

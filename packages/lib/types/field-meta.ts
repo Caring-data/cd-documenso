@@ -321,6 +321,26 @@ export const ZFieldAndMetaSchema = z.discriminatedUnion('type', [
     type: z.literal(FieldType.RESIDENT_LOCATION_COUNTRY),
     fieldMeta: ZTextFieldMeta.optional(),
   }),
+  z.object({
+    type: z.literal(FieldType.RESIDENT_LOCATION_FAX),
+    fieldMeta: ZTextFieldMeta.optional(),
+  }),
+  z.object({
+    type: z.literal(FieldType.RESIDENT_LOCATION_LICENSING),
+    fieldMeta: ZTextFieldMeta.optional(),
+  }),
+  z.object({
+    type: z.literal(FieldType.RESIDENT_LOCATION_LICENSING_NAME),
+    fieldMeta: ZTextFieldMeta.optional(),
+  }),
+  z.object({
+    type: z.literal(FieldType.RESIDENT_LOCATION_ADMINISTRATOR_NAME),
+    fieldMeta: ZTextFieldMeta.optional(),
+  }),
+  z.object({
+    type: z.literal(FieldType.RESIDENT_LOCATION_ADMINISTRATOR_PHONE),
+    fieldMeta: ZTextFieldMeta.optional(),
+  }),
 ]);
 
 export type TFieldAndMeta = z.infer<typeof ZFieldAndMetaSchema>;

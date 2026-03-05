@@ -22,6 +22,8 @@ export interface RecipientSelectorProps {
   onSelectedRecipientChange: (recipient: Recipient) => void;
   recipients: Recipient[];
   align?: 'center' | 'end' | 'start';
+  onOpenChange?: (open: boolean) => void;
+  onTriggerClick?: () => void;
 }
 
 export const RecipientSelector = ({
@@ -30,6 +32,8 @@ export const RecipientSelector = ({
   onSelectedRecipientChange,
   recipients,
   align = 'start',
+  onOpenChange,
+  onTriggerClick,
 }: RecipientSelectorProps) => {
   const { _ } = useLingui();
   const [showRecipientsSelector, setShowRecipientsSelector] = useState(false);
@@ -56,6 +60,7 @@ export const RecipientSelector = ({
         ([role]) =>
           role !== RecipientRole.CC &&
           role !== RecipientRole.VIEWER &&
+          role !== RecipientRole.APPROVER &&
           role !== RecipientRole.ASSISTANT,
       )
       .map(
@@ -94,14 +99,19 @@ export const RecipientSelector = ({
   );
 
   return (
-    <Popover open={showRecipientsSelector} onOpenChange={setShowRecipientsSelector}>
+    <Popover
+      open={showRecipientsSelector}
+      onOpenChange={(open) => {
+        setShowRecipientsSelector(open);
+        onOpenChange?.(open);
+      }}>
       <PopoverTrigger asChild>
         <Button
           type="button"
           variant="outline"
           role="combobox"
           className={cn(
-            'bg-background text-muted-foreground hover:text-foreground justify-between font-normal',
+            'justify-between bg-background font-normal text-muted-foreground hover:text-foreground',
             getRecipientColorStyles(
               Math.max(
                 recipients.findIndex((r) => r.id === selectedRecipient?.id),
@@ -110,6 +120,12 @@ export const RecipientSelector = ({
             ).comboxBoxTrigger,
             className,
           )}
+          onMouseDown={() => {
+            onTriggerClick?.();
+          }}
+          onClick={() => {
+            onTriggerClick?.();
+          }}
         >
           {selectedRecipient && (
             <span className="flex-1 truncate text-left">
@@ -126,21 +142,21 @@ export const RecipientSelector = ({
           <CommandInput />
 
           <CommandEmpty>
-            <span className="text-muted-foreground inline-block px-4">
+            <span className="inline-block px-4 text-muted-foreground">
               <Trans>No recipient matching this description was found.</Trans>
             </span>
           </CommandEmpty>
 
           {recipientsByRoleToDisplay.map(([role, roleRecipients], roleIndex) => (
             <CommandGroup key={roleIndex}>
-              <div className="text-muted-foreground mb-1 ml-2 mt-2 text-xs font-medium">
+              <div className="mb-1 ml-2 mt-2 text-xs font-medium text-muted-foreground">
                 {_(RECIPIENT_ROLES_DESCRIPTION[role].roleNamePlural)}
               </div>
 
               {roleRecipients.length === 0 && (
                 <div
                   key={`${role}-empty`}
-                  className="text-muted-foreground/80 px-4 pb-4 pt-2.5 text-center text-xs"
+                  className="px-4 pb-4 pt-2.5 text-center text-xs text-muted-foreground/80"
                 >
                   <Trans>No recipients with this role</Trans>
                 </div>
@@ -168,7 +184,7 @@ export const RecipientSelector = ({
                   disabled={recipient.signingStatus !== SigningStatus.NOT_SIGNED}
                 >
                   <span
-                    className={cn('text-foreground/70 truncate', {
+                    className={cn('truncate text-foreground/70', {
                       'text-foreground/80': recipient.id === selectedRecipient?.id,
                     })}
                   >
@@ -190,7 +206,7 @@ export const RecipientSelector = ({
                           <Info className="ml-2 h-4 w-4" />
                         </TooltipTrigger>
 
-                        <TooltipContent className="text-muted-foreground max-w-xs">
+                        <TooltipContent className="max-w-xs text-muted-foreground">
                           <Trans>
                             This document has already been sent to this recipient. You can no longer
                             edit this recipient.

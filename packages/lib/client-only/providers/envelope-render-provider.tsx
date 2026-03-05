@@ -81,6 +81,13 @@ interface EnvelopeRenderProviderProps {
   token: string | undefined;
 
   /**
+   * The external ID to access the envelope (for public embed access).
+   *
+   * If provided, allows unauthenticated access to template PDFs.
+   */
+  externalId?: string | undefined;
+
+  /**
    * Custom override settings for generic page renderers.
    */
   overrideSettings?: EnvelopeRenderOverrideSettings;
@@ -106,6 +113,7 @@ export const EnvelopeRenderProvider = ({
   envelope,
   fields,
   token,
+  externalId,
   recipients = [],
   overrideSettings,
 }: EnvelopeRenderProviderProps) => {
@@ -137,6 +145,7 @@ export const EnvelopeRenderProvider = ({
         type: 'view',
         envelopeItem: envelopeItem,
         token,
+        externalId,
       });
 
       const blob = await fetch(downloadUrl).then(async (res) => res.blob());
@@ -172,13 +181,15 @@ export const EnvelopeRenderProvider = ({
 
   // Set the selected item to the first item if none is set.
   useEffect(() => {
-    if (currentItem && !envelopeItems.some((item) => item.id === currentItem.id)) {
-      setCurrentItem(null);
-    }
+    startTransition(() => {
+      if (currentItem && !envelopeItems.some((item) => item.id === currentItem.id)) {
+        setCurrentItem(null);
+      }
 
-    if (!currentItem && envelopeItems.length > 0) {
-      setCurrentEnvelopeItem(envelopeItems[0].id);
-    }
+      if (!currentItem && envelopeItems.length > 0) {
+        setCurrentEnvelopeItem(envelopeItems[0].id);
+      }
+    });
   }, [currentItem, envelopeItems]);
 
   // Look for any missing pdf files and load them.

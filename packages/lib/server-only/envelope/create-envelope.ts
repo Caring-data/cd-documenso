@@ -106,6 +106,7 @@ export const createEnvelope = async ({
   const {
     type,
     title,
+    formKey,
     externalId,
     formValues,
     userTimezone,
@@ -279,6 +280,7 @@ export const createEnvelope = async ({
         title,
         qrToken: prefixedId('qr'),
         externalId,
+        formKey,
         envelopeItems: {
           createMany: {
             data: envelopeItems.map((item, i) => ({
@@ -304,7 +306,6 @@ export const createEnvelope = async ({
         visibility,
         folderId: resolvedFolderId,
         formValues,
-        formKey: data.formKey,
         source: type === EnvelopeType.DOCUMENT ? DocumentSource.DOCUMENT : DocumentSource.TEMPLATE,
         documentMetaId: documentMeta.id,
 

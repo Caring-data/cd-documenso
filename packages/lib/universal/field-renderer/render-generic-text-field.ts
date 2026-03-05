@@ -1,5 +1,8 @@
+import { FieldType } from '@prisma/client';
 import Konva from 'konva';
+import { DateTime } from 'luxon';
 
+import { DEFAULT_DOCUMENT_DATE_FORMAT } from '../../constants/date-formats';
 import { DEFAULT_STANDARD_FONT_SIZE } from '../../constants/pdf';
 import type { GenericTextFieldTypeMetas } from '../../types/field-meta';
 import {
@@ -86,12 +89,40 @@ const upsertFieldText = (field: FieldToRender, options: RenderFieldElementOption
   if (field.inserted) {
     textToRender = field.customText;
 
+    if (field.type === FieldType.CALENDAR || field.type === FieldType.RESIDENT_DOB) {
+      const dt = DateTime.fromISO(field.customText);
+      if (dt.isValid) {
+        textToRender = dt.toFormat(DEFAULT_DOCUMENT_DATE_FORMAT);
+      }
+    }
+
     textAlign = fieldMeta?.textAlign || FIELD_DEFAULT_GENERIC_ALIGN;
 
     if (fieldMeta?.type === 'text' || fieldMeta?.type === 'number') {
       textVerticalAlign = fieldMeta.verticalAlign || FIELD_DEFAULT_GENERIC_VERTICAL_ALIGN;
       textLetterSpacing = fieldMeta.letterSpacing || FIELD_DEFAULT_LETTER_SPACING;
       textLineHeight = fieldMeta.lineHeight || FIELD_DEFAULT_LINE_HEIGHT;
+    }
+  }
+
+  // For INITIALS fields with typed signature settings, use the stored font/color.
+  let resolvedFontFamily = konvaTextFontFamily;
+  let resolvedFill = konvaTextFill;
+
+  if (
+    field.inserted &&
+    field.type === FieldType.INITIALS &&
+    field.signature?.typedSignatureSettings
+  ) {
+    const settings = field.signature.typedSignatureSettings as
+      | { font?: string; color?: string }
+      | null
+      | undefined;
+    if (settings?.font) {
+      resolvedFontFamily = settings.font;
+    }
+    if (settings?.color) {
+      resolvedFill = settings.color;
     }
   }
 
@@ -107,8 +138,8 @@ const upsertFieldText = (field: FieldToRender, options: RenderFieldElementOption
     align: textAlign,
     lineHeight: textLineHeight,
     letterSpacing: textLetterSpacing,
-    fontFamily: konvaTextFontFamily,
-    fill: konvaTextFill,
+    fontFamily: resolvedFontFamily,
+    fill: resolvedFill,
     width: fieldWidth - DEFAULT_TEXT_X_PADDING * 2,
     height: fieldHeight,
   } satisfies Partial<Konva.TextConfig>);

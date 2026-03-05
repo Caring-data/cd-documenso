@@ -20,7 +20,6 @@ import { deleteTemplateDirectLink } from '@documenso/lib/server-only/template/de
 import { findTemplates } from '@documenso/lib/server-only/template/find-templates';
 import { getTemplateById } from '@documenso/lib/server-only/template/get-template-by-id';
 import { toggleTemplateDirectLink } from '@documenso/lib/server-only/template/toggle-template-direct-link';
-import { updateTemplateSettings } from '@documenso/lib/server-only/template/update-template-settings';
 import { putNormalizedPdfFileServerSide } from '@documenso/lib/universal/upload/put-file.server';
 import { getPresignPostUrl } from '@documenso/lib/universal/upload/server-actions';
 import { mapSecondaryIdToTemplateId } from '@documenso/lib/utils/envelope';
@@ -30,6 +29,7 @@ import { mapEnvelopeToTemplateLite } from '@documenso/lib/utils/templates';
 
 import { ZGenericSuccessResponse, ZSuccessResponseSchema } from '../schema';
 import { authenticatedProcedure, maybeAuthenticatedProcedure, router } from '../trpc';
+import { getTemplateByExternalIdRoute } from './get-template-by-external-id';
 import {
   ZBulkSendTemplateMutationSchema,
   ZCreateDocumentFromDirectTemplateRequestSchema,
@@ -55,6 +55,7 @@ import {
   ZUpdateTemplateResponseSchema,
 } from './schema';
 import { updateTemplateSettingsRoute } from './update-template-settings';
+import { updateTemplateSettingsByExternalIdRoute } from './update-template-settings-by-external-id';
 
 export const templateRouter = router({
   /**
@@ -367,6 +368,16 @@ export const templateRouter = router({
    * @public
    */
   updateTemplateSettings: updateTemplateSettingsRoute,
+
+  /**
+   * @public - embed: no auth, externalId in URL is sufficient
+   */
+  updateTemplateSettingsByExternalId: updateTemplateSettingsByExternalIdRoute,
+
+  /**
+   * @public - embed: no auth, externalId in URL is sufficient
+   */
+  getTemplateByExternalId: getTemplateByExternalIdRoute,
 
   /**
    * @public

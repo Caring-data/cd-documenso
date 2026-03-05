@@ -34,6 +34,8 @@ declare namespace NodeJS {
     NEXT_PRIVATE_NOTIFY_PASSWORD?: string;
     NEXT_PRIVATE_NOTIFY_ENDPOINT?: string;
 
+    NEXT_PRIVATE_RESEND_API_KEY?: string;
+
     NEXT_PUBLIC_DISABLE_SIGNUP?: string;
 
     NEXT_PRIVATE_API_KEY?: string;

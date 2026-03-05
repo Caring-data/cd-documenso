@@ -4,8 +4,8 @@ import type { MessageDescriptor } from '@lingui/core';
 import { msg } from '@lingui/core/macro';
 import { useLingui } from '@lingui/react';
 import { Trans } from '@lingui/react/macro';
-import { DocumentStatus, FieldType, RecipientRole } from '@prisma/client';
-import { FileTextIcon, SparklesIcon } from 'lucide-react';
+import { FieldType, RecipientRole } from '@prisma/client';
+import { FileTextIcon } from 'lucide-react';
 import { Link, useRevalidator, useSearchParams } from 'react-router';
 import { isDeepEqual } from 'remeda';
 import { match } from 'ts-pattern';
@@ -82,8 +82,8 @@ const FieldSettingsTypeTranslations: Record<FieldType, MessageDescriptor> = {
   [FieldType.RESIDENT_LOCATION_FAX]: msg`Fax Settings`,
   [FieldType.RESIDENT_LOCATION_LICENSING]: msg`Licensing Settings`,
   [FieldType.RESIDENT_LOCATION_LICENSING_NAME]: msg`Licensing Name Settings`,
-  [FieldType.RESIDENT_LOCATION_ADMINISTRATOR_NAME]: msg`Administrator Name Settings`,
-  [FieldType.RESIDENT_LOCATION_ADMINISTRATOR_PHONE]: msg`Administrator Phone Settings`,
+  [FieldType.RESIDENT_LOCATION_ADMINISTRATOR_NAME]: msg`Admin Name Settings`,
+  [FieldType.RESIDENT_LOCATION_ADMINISTRATOR_PHONE]: msg`Admin Phone Settings`,
 };
 
 export const EnvelopeEditorFieldsPage = () => {
@@ -265,7 +265,7 @@ export const EnvelopeEditorFieldsPage = () => {
               selectedEnvelopeItemId={currentEnvelopeItem?.id ?? null}
             />
 
-            <Button
+            {/* <Button
               type="button"
               variant="outline"
               size="sm"
@@ -280,7 +280,7 @@ export const EnvelopeEditorFieldsPage = () => {
             >
               <SparklesIcon className="-ml-1 mr-2 h-4 w-4" />
               <Trans>Detect with AI</Trans>
-            </Button>
+            </Button> */}
 
             <AiFieldDetectionDialog
               open={isAiFieldDialogOpen}

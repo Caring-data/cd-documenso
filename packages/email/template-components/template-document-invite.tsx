@@ -43,16 +43,16 @@ export const TemplateDocumentInvite = ({
         {match(role)
           .with(RecipientRole.SIGNER, () => (
             <>
-              <Text className="self-stretch text-sm leading-5 font-medium text-zinc-600">
+              <Text className="self-stretch text-sm font-medium leading-5 text-zinc-600">
                 <Trans>Dear </Trans> {recipientName},
               </Text>
               {customBody ? (
                 <>
-                  <Text className="text-sm leading-5 font-medium text-zinc-600">{customBody}</Text>
+                  <Text className="text-sm font-medium leading-5 text-zinc-600">{customBody}</Text>
                 </>
               ) : (
                 <>
-                  <Text className="text-sm leading-5 font-medium text-zinc-600">
+                  <Text className="text-sm font-medium leading-5 text-zinc-600">
                     <Trans>
                       <span className="font-semibold">{signingContext?.facilityAdministrator}</span>{' '}
                       from <span className="font-semibold">{signingContext?.locationName}</span> has
@@ -65,7 +65,7 @@ export const TemplateDocumentInvite = ({
                       alt="Document Icon"
                       className="my-auto h-4 w-auto pr-2 align-middle"
                     />
-                    <div className="flex flex-col text-sm leading-5 font-medium text-zinc-600">
+                    <div className="flex flex-col text-sm font-medium leading-5 text-zinc-600">
                       <Text>
                         <Trans>Regarding: {signingContext?.ownerName}</Trans>
                       </Text>
@@ -77,7 +77,7 @@ export const TemplateDocumentInvite = ({
                       alt="Document Icon"
                       className="my-auto h-4 w-auto pr-2 align-middle"
                     />
-                    <div className="flex flex-col justify-center text-sm leading-5 font-medium text-zinc-600">
+                    <div className="flex flex-col justify-center text-sm font-medium leading-5 text-zinc-600">
                       <Text>
                         <Trans>Document: {signingContext?.documentName}</Trans>
                       </Text>
@@ -85,12 +85,11 @@ export const TemplateDocumentInvite = ({
                   </div>
                 </>
               )}
-              <Text className="text-xs leading-5 font-medium text-zinc-600">
+              <Text className="text-xs font-medium leading-5 text-zinc-600">
                 <Trans>
                   Ready to get started?
                   <br />
-                  Click the button and log into your Caring Data account to accept the invite and
-                  sign the document.
+                  Click the button below to review and sign the document.
                 </Trans>
               </Text>
             </>
@@ -98,9 +97,9 @@ export const TemplateDocumentInvite = ({
           .otherwise(() => null)}
       </Section>
 
-      <Section className="mt-8 mb-4 text-center">
+      <Section className="mb-4 mt-8 text-center">
         <Button
-          className="bg-brand inline-flex items-center justify-center rounded-lg px-6 py-3 text-center text-sm font-medium text-white no-underline"
+          className="inline-flex items-center justify-center rounded-lg bg-brand px-6 py-3 text-center text-sm font-medium text-white no-underline"
           href={signDocumentLink}
         >
           {match(role)
@@ -112,10 +111,12 @@ export const TemplateDocumentInvite = ({
             .exhaustive()}
         </Button>
       </Section>
-      <Text className="text-center text-xs leading-4 font-medium text-red-600">
+      <Text className="text-center text-xs font-medium leading-4 text-red-600">
         <Trans>
           This link is valid until{' '}
-          {tokenExpiration ? new Date(tokenExpiration).toLocaleDateString('en-US') : 'N/A'}
+          {tokenExpiration ? new Date(tokenExpiration).toLocaleDateString('en-US') : 'N/A'}.
+          <br />
+          If the process is disabled, please contact Administrator to send the document again.
         </Trans>
       </Text>
     </>

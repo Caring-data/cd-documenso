@@ -210,6 +210,11 @@ export const EnvelopeEditorPreviewPage = () => {
             { type: FieldType.RESIDENT_LOCATION_CITY },
             { type: FieldType.RESIDENT_LOCATION_ZIP_CODE },
             { type: FieldType.RESIDENT_LOCATION_COUNTRY },
+            { type: FieldType.RESIDENT_LOCATION_FAX },
+            { type: FieldType.RESIDENT_LOCATION_LICENSING },
+            { type: FieldType.RESIDENT_LOCATION_LICENSING_NAME },
+            { type: FieldType.RESIDENT_LOCATION_ADMINISTRATOR_NAME },
+            { type: FieldType.RESIDENT_LOCATION_ADMINISTRATOR_PHONE },
             () => ({
               customText: '',
             }),

@@ -17,6 +17,8 @@ import type { DocumentFlowStep } from '@documenso/ui/primitives/document-flow/ty
 import { Stepper } from '@documenso/ui/primitives/stepper';
 import { useToast } from '@documenso/ui/primitives/use-toast';
 
+import { getEmbedOptions } from '../utils/get-embed-options';
+import { useEmbedOptions } from './providers/embed-options-provider';
 import {
   EmbedTemplateEditorProvider,
   useCurrentEmbedTemplateEditor,
@@ -36,16 +38,21 @@ export type ClientProps = {
   initialEnvelope: TEnvelope;
 };
 
-export function Client({ envelopeId, externalId: _externalId, initialEnvelope }: ClientProps) {
+export function Client({ envelopeId, externalId, initialEnvelope }: ClientProps) {
   return (
     <EmbedTemplateEditorProvider initialEnvelope={initialEnvelope}>
       <EnvelopeRenderProvider
         envelope={initialEnvelope}
         token={undefined}
+        externalId={externalId}
         fields={initialEnvelope.fields}
         recipients={initialEnvelope.recipients}
       >
-        <ClientInner envelopeId={envelopeId} initialEnvelope={initialEnvelope} />
+        <ClientInner
+          envelopeId={envelopeId}
+          externalId={externalId}
+          initialEnvelope={initialEnvelope}
+        />
       </EnvelopeRenderProvider>
     </EmbedTemplateEditorProvider>
   );
@@ -53,14 +60,16 @@ export function Client({ envelopeId, externalId: _externalId, initialEnvelope }:
 
 type ClientInnerProps = {
   envelopeId: string;
+  externalId: string;
   initialEnvelope: TEnvelope;
 };
 
-function ClientInner({ envelopeId, initialEnvelope }: ClientInnerProps) {
+function ClientInner({ envelopeId, externalId, initialEnvelope }: ClientInnerProps) {
   const { t } = useLingui();
   const { toast } = useToast();
   const { revalidate } = useRevalidator();
   const [currentStep, setCurrentStep] = useState(1);
+  const { isSystem } = useEmbedOptions();
 
   const { envelope, editorFields, setLocalEnvelope } = useCurrentEmbedTemplateEditor();
 
@@ -75,7 +84,7 @@ function ClientInner({ envelopeId, initialEnvelope }: ClientInnerProps) {
   }, []);
 
   const { mutateAsync: updateTemplateSettings, isPending: _isPending } =
-    trpc.template.updateTemplateSettings.useMutation({
+    trpc.template.updateTemplateSettingsByExternalId.useMutation({
       onSuccess: async (data) => {
         await revalidate();
 
@@ -89,6 +98,7 @@ function ClientInner({ envelopeId, initialEnvelope }: ClientInnerProps) {
             readStatus: ReadStatus.NOT_OPENED,
             signingStatus: SigningStatus.NOT_SIGNED,
             sendStatus: SendStatus.NOT_SENT,
+            formKey: envelope.formKey,
             documentDeletedAt: null,
             expired: null,
             signedAt: null,
@@ -113,7 +123,7 @@ function ClientInner({ envelopeId, initialEnvelope }: ClientInnerProps) {
       },
     });
 
-  const { mutateAsync: setEnvelopeFields } = trpc.envelope.field.set.useMutation({
+  const { mutateAsync: setEnvelopeFields } = trpc.envelope.field.setByExternalId.useMutation({
     onSuccess: () => {
       toast({
         title: t`Success`,
@@ -138,8 +148,8 @@ function ClientInner({ envelopeId, initialEnvelope }: ClientInnerProps) {
       stepIndex: 1,
     },
     fields: {
-      title: msg`Add Template Fields`,
-      description: msg`Add template fields to your envelope.`,
+      title: msg`Add Fields`,
+      description: msg`Add all relevant fields for each recipient. Drag the fields you need and edit, duplicate, or delete them.`,
       stepIndex: 2,
     },
   };
@@ -153,6 +163,7 @@ function ClientInner({ envelopeId, initialEnvelope }: ClientInnerProps) {
       email: string;
       role: RecipientRole;
       signingOrder?: number;
+      contactCategoryKey?: string;
       actionAuth?: TRecipientActionAuthTypes[];
     }>;
   }) => {
@@ -173,16 +184,19 @@ function ClientInner({ envelopeId, initialEnvelope }: ClientInnerProps) {
           role: recipient.role,
           signingOrder: recipient.signingOrder,
           actionAuth: recipient.actionAuth,
+          contactCategoryKey: recipient.contactCategoryKey ?? null,
         };
       });
 
       await updateTemplateSettings({
-        envelopeId,
+        externalId,
         title: data.title,
         recipients: mappedRecipients,
+        isSystem,
       });
     } catch (error) {
       console.error('Error updating template settings:', error);
+      throw error;
     }
   };
 
@@ -207,8 +221,7 @@ function ClientInner({ envelopeId, initialEnvelope }: ClientInnerProps) {
       });
 
       await setEnvelopeFields({
-        envelopeId: initialEnvelope.id,
-        envelopeType: initialEnvelope.type,
+        externalId,
         fields: fields,
       });
     } catch (error) {
@@ -219,6 +232,12 @@ function ClientInner({ envelopeId, initialEnvelope }: ClientInnerProps) {
   const handleStepChange = (step: number) => {
     setCurrentStep(step);
   };
+
+  useEffect(() => {
+    const options = getEmbedOptions();
+    const isSystem = options.isSystem === true;
+    console.log('embed isSystem', isSystem);
+  }, []);
 
   useEffect(() => {
     const firstSelectableRecipient = envelope.recipients.find(
@@ -234,7 +253,7 @@ function ClientInner({ envelopeId, initialEnvelope }: ClientInnerProps) {
   }, [envelope.recipients]);
 
   return (
-    <div className="bg-muted/10 flex h-screen w-full overflow-hidden">
+    <div className="flex h-screen w-full overflow-hidden bg-muted/10">
       <main className="relative flex-1 overflow-y-auto scroll-smooth p-4 lg:p-8">
         <div className="mx-auto flex min-h-full max-w-[800px] flex-col items-center justify-center">
           <Suspense
@@ -249,12 +268,9 @@ function ClientInner({ envelopeId, initialEnvelope }: ClientInnerProps) {
         </div>
       </main>
 
-      <aside className="bg-background flex w-full max-w-md flex-col border-l shadow-2xl lg:w-[550px] xl:max-w-lg 2xl:max-w-xl">
-        <div className="flex h-full flex-col overflow-y-auto p-6">
-          <DocumentFlowFormContainer
-            className="flex flex-1 flex-col gap-6"
-            onSubmit={(e) => e.preventDefault()}
-          >
+      <aside className="flex w-full max-w-md flex-col border-l bg-background shadow-2xl lg:w-[550px] xl:max-w-lg 2xl:max-w-xl">
+        <div className="flex h-full flex-col overflow-y-auto p-3">
+          <DocumentFlowFormContainer asDiv className="flex flex-1 flex-col gap-6 py-4">
             <Stepper currentStep={currentStep} setCurrentStep={handleStepChange}>
               <AddTemplateSettingsFormPartial
                 onSubmit={onAddGeneralSettings}

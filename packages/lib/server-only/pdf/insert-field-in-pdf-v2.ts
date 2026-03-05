@@ -26,6 +26,16 @@ export const insertFieldInPDFV2 = async ({
   // eslint-disable-next-line react-hooks/rules-of-hooks
   FontLibrary.use({
     ['Caveat']: [path.join(fontPath, 'caveat.ttf')],
+    ['Cookie']: [path.join(fontPath, 'cookie-regular.ttf')],
+    ['Lato']: [path.join(fontPath, 'lato-regular.ttf')],
+    ['Inter']: [
+      path.join(fontPath, 'inter-regular.ttf'),
+      path.join(fontPath, 'inter-semibold.ttf'),
+      path.join(fontPath, 'inter-bold.ttf'),
+    ],
+    ['Dancing Script']: [path.join(fontPath, 'dancing-script-regular.ttf')],
+    ['Great Vibes']: [path.join(fontPath, 'great-vibes-regular.ttf')],
+    ['Monte Carlo']: [path.join(fontPath, 'monte-carlo-regular.ttf')],
     ['Noto Sans']: [path.join(fontPath, 'noto-sans.ttf')],
     ['Noto Sans Japanese']: [path.join(fontPath, 'noto-sans-japanese.ttf')],
     ['Noto Sans Chinese']: [path.join(fontPath, 'noto-sans-chinese.ttf')],

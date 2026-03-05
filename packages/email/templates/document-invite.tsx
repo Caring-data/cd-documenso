@@ -2,11 +2,11 @@ import { msg } from '@lingui/core/macro';
 import { useLingui } from '@lingui/react';
 import { Trans } from '@lingui/react/macro';
 import type { RecipientRole } from '@prisma/client';
-import { OrganisationType } from '@prisma/client';
+import type { OrganisationType } from '@prisma/client';
 
 import { RECIPIENT_ROLES_DESCRIPTION } from '@documenso/lib/constants/recipient-roles';
 
-import { Body, Container, Head, Html, Img, Preview, Section, Text } from '../components';
+import { Body, Container, Head, Html, Img, Section, Text } from '../components';
 import { useBranding } from '../providers/branding';
 import type { TemplateDocumentInviteProps } from '../template-components/template-document-invite';
 import { TemplateDocumentInvite } from '../template-components/template-document-invite';
@@ -35,17 +35,12 @@ export type DocumentInviteEmailTemplateProps = Partial<TemplateDocumentInvitePro
 };
 
 export const DocumentInviteEmailTemplate = ({
-  inviterName = 'Lucas Smith',
   inviterEmail = 'lucas@documenso.com',
   documentName = 'Open Source Pledge.pdf',
   signDocumentLink = 'https://documenso.com',
   assetBaseUrl = 'http://localhost:3002',
   customBody,
   role,
-  selfSigner = false,
-  teamName = '',
-  includeSenderDetails,
-  organisationType,
   recipientName,
   signingContext,
   tokenExpiration,
@@ -55,17 +50,7 @@ export const DocumentInviteEmailTemplate = ({
 
   const action = _(RECIPIENT_ROLES_DESCRIPTION[role].actionVerb).toLowerCase();
 
-  let previewText = msg`${inviterName} has invited you to ${action} ${documentName}`;
-
-  if (organisationType === OrganisationType.ORGANISATION) {
-    previewText = includeSenderDetails
-      ? msg`${inviterName} on behalf of "${teamName}" has invited you to ${action} ${documentName}`
-      : msg`${teamName} has invited you to ${action} ${documentName}`;
-  }
-
-  if (selfSigner) {
-    previewText = msg`Please ${action} your document ${documentName}`;
-  }
+  const previewText = msg`${signingContext?.companyName || ''} has invited you to ${action} ${documentName}`;
 
   const getAssetUrl = (path: string) => {
     return new URL(path, assetBaseUrl).toString();
@@ -74,7 +59,6 @@ export const DocumentInviteEmailTemplate = ({
   return (
     <Html>
       <Head />
-      <Preview>{_(previewText)}</Preview>
 
       <Body className="mx-auto my-auto bg-white font-sans">
         <div className="flex flex-col items-center justify-center gap-6 rounded-lg bg-zinc-50 p-6">

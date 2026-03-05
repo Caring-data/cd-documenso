@@ -228,14 +228,50 @@ export const signEnvelopeFieldRoute = procedure
             recipientId: field.recipientId,
             signatureImageAsBase64: signatureImageAsBase64,
             typedSignature: typedSignature,
+            typedSignatureSettings:
+              typedSignature && fieldValue.type === FieldType.SIGNATURE
+                ? fieldValue.typedSignatureSettings
+                : null,
           },
           update: {
             signatureImageAsBase64: signatureImageAsBase64,
             typedSignature: typedSignature,
+            typedSignatureSettings:
+              typedSignature && fieldValue.type === FieldType.SIGNATURE
+                ? fieldValue.typedSignatureSettings
+                : null,
           },
         });
 
         // Dirty but I don't want to deal with type information
+        Object.assign(updatedField, {
+          signature,
+        });
+      }
+
+      if (
+        field.type === FieldType.INITIALS &&
+        fieldValue.type === FieldType.INITIALS &&
+        fieldValue.typedSignatureSettings
+      ) {
+        const signature = await tx.signature.upsert({
+          where: {
+            fieldId: field.id,
+          },
+          create: {
+            fieldId: field.id,
+            recipientId: field.recipientId,
+            signatureImageAsBase64: null,
+            typedSignature: insertionValues.customText,
+            typedSignatureSettings: fieldValue.typedSignatureSettings,
+          },
+          update: {
+            signatureImageAsBase64: null,
+            typedSignature: insertionValues.customText,
+            typedSignatureSettings: fieldValue.typedSignatureSettings,
+          },
+        });
+
         Object.assign(updatedField, {
           signature,
         });

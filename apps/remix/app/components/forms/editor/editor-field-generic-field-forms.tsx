@@ -81,32 +81,37 @@ export const EditorGenericTextAlignField = ({
     <FormField
       control={formControl}
       name="textAlign"
-      render={({ field }) => (
-        <FormItem className={className}>
-          <FormLabel>
-            <Trans>Text Align</Trans>
-          </FormLabel>
-          <FormControl>
-            <Select {...field} onValueChange={field.onChange}>
-              <SelectTrigger>
-                <SelectValue placeholder={t`Select text align`} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="left">
-                  <Trans>Left</Trans>
-                </SelectItem>
-                <SelectItem value="center">
-                  <Trans>Center</Trans>
-                </SelectItem>
-                <SelectItem value="right">
-                  <Trans>Right</Trans>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
+      render={({ field }) => {
+        const { ref, ...restField } = field;
+        return (
+          <FormItem className={className}>
+            <FormLabel>
+              <Trans>Text Align</Trans>
+            </FormLabel>
+            <FormControl>
+              <div ref={ref}>
+                <Select {...restField} onValueChange={field.onChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t`Select text align`} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="left">
+                      <Trans>Left</Trans>
+                    </SelectItem>
+                    <SelectItem value="center">
+                      <Trans>Center</Trans>
+                    </SelectItem>
+                    <SelectItem value="right">
+                      <Trans>Right</Trans>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        );
+      }}
     />
   );
 };
@@ -124,32 +129,37 @@ export const EditorGenericVerticalAlignField = ({
     <FormField
       control={formControl}
       name="verticalAlign"
-      render={({ field }) => (
-        <FormItem className={className}>
-          <FormLabel>
-            <Trans>Vertical Align</Trans>
-          </FormLabel>
-          <FormControl>
-            <Select {...field} onValueChange={field.onChange}>
-              <SelectTrigger>
-                <SelectValue placeholder={t`Select vertical align`} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="top">
-                  <Trans>Top</Trans>
-                </SelectItem>
-                <SelectItem value="middle">
-                  <Trans>Middle</Trans>
-                </SelectItem>
-                <SelectItem value="bottom">
-                  <Trans>Bottom</Trans>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
+      render={({ field }) => {
+        const { ref, ...restField } = field;
+        return (
+          <FormItem className={className}>
+            <FormLabel>
+              <Trans>Vertical Align</Trans>
+            </FormLabel>
+            <FormControl>
+              <div ref={ref}>
+                <Select {...restField} onValueChange={field.onChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t`Select vertical align`} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="top">
+                      <Trans>Top</Trans>
+                    </SelectItem>
+                    <SelectItem value="middle">
+                      <Trans>Middle</Trans>
+                    </SelectItem>
+                    <SelectItem value="bottom">
+                      <Trans>Bottom</Trans>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        );
+      }}
     />
   );
 };
@@ -255,7 +265,7 @@ export const EditorGenericRequiredField = ({
                 onCheckedChange={field.onChange}
               />
 
-              <label className="text-muted-foreground ml-2 text-sm" htmlFor="field-required">
+              <label className="ml-2 text-sm text-muted-foreground" htmlFor="field-required">
                 <Trans>Required Field</Trans>
               </label>
             </div>
@@ -298,7 +308,7 @@ export const EditorGenericReadOnlyField = ({
                 onCheckedChange={field.onChange}
               />
 
-              <label className="text-muted-foreground ml-2 text-sm" htmlFor="field-read-only">
+              <label className="ml-2 text-sm text-muted-foreground" htmlFor="field-read-only">
                 <Trans>Read Only</Trans>
               </label>
             </div>

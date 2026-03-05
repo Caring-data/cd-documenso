@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { ZRecipientActionAuthTypesSchema } from '@documenso/lib/types/document-auth';
 import { ZRecipientEmailSchema } from '@documenso/lib/types/recipient';
+
 import { ZDocumentTitleSchema } from '../document-router/schema';
 import type { TrpcRouteMeta } from '../trpc';
 
@@ -26,6 +27,7 @@ export const ZUpdateTemplateSettingsRequestSchema = z.object({
       role: z.nativeEnum(RecipientRole),
       signingOrder: z.number().optional().nullable(),
       actionAuth: z.array(ZRecipientActionAuthTypesSchema).optional(),
+      contactCategoryKey: z.string().optional().nullable(),
     }),
   ),
 });
@@ -40,6 +42,7 @@ export const ZUpdateTemplateSettingsResponseSchema = z.object({
       name: z.string(),
       role: z.nativeEnum(RecipientRole),
       signingOrder: z.number().nullable(),
+      contactCategoryKey: z.string().optional().nullable(),
     }),
   ),
 });

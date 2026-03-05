@@ -44,7 +44,7 @@ export const DateFieldAdvancedSettings = ({
   // };
 
   const handleInput = (field: keyof DateFieldMeta, value: string | boolean) => {
-    const fontSize = field === 'fontSize' ? Number(value) : Number(fieldState.fontSize ?? 14);
+    const fontSize = field === 'fontSize' ? Number(value) : Number(fieldState.fontSize ?? 12);
 
     const errors = validateDateFields({
       fontSize,

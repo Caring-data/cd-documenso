@@ -29,6 +29,7 @@ export const ZEnvelopeSchema = EnvelopeSchema.pick({
   completedAt: true,
   deletedAt: true,
   title: true,
+  formKey: true,
   authOptions: true,
   formValues: true,
   publicTitle: true,
@@ -108,6 +109,7 @@ export const ZEnvelopeLiteSchema = EnvelopeSchema.pick({
   userId: true,
   teamId: true,
   folderId: true,
+  formKey: true,
 });
 
 export type TEnvelopeLite = z.infer<typeof ZEnvelopeLiteSchema>;

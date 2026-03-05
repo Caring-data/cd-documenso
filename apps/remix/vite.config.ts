@@ -15,6 +15,9 @@ const require = createRequire(import.meta.url);
 const pdfjsDistPath = path.dirname(require.resolve('pdfjs-dist/package.json'));
 const cMapsDir = normalizePath(path.join(pdfjsDistPath, 'cmaps'));
 
+const fontsPath = path.resolve(__dirname, '../../packages/assets/fonts');
+const fontsGlob = normalizePath(path.join(fontsPath, '*.ttf'));
+
 /**
  * Note: We load the env variables externally so we can have runtime enviroment variables
  * for docker.
@@ -38,6 +41,10 @@ export default defineConfig({
           src: cMapsDir,
           dest: 'static',
         },
+        {
+          src: fontsGlob,
+          dest: 'fonts',
+        },
       ],
     }),
     reactRouter(),
@@ -49,7 +56,7 @@ export default defineConfig({
     }),
   ],
   ssr: {
-    noExternal: ['react-dropzone', 'plausible-tracker', 'superjson'],
+    noExternal: ['react-dropzone', 'plausible-tracker'],
     external: [
       '@napi-rs/canvas',
       '@node-rs/bcrypt',
@@ -106,5 +113,6 @@ export default defineConfig({
         'skia-canvas',
       ],
     },
+    assetsInlineLimit: 0,
   },
 });

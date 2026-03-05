@@ -19,6 +19,7 @@ import type {
 } from '@documenso/trpc/server/field-router/schema';
 import { ElementVisible } from '@documenso/ui/primitives/element-visible';
 
+import { DocumentSigningCalendarField } from '~/components/general/document-signing/document-signing-calendar-field';
 import { DocumentSigningCheckboxField } from '~/components/general/document-signing/document-signing-checkbox-field';
 import { DocumentSigningDateField } from '~/components/general/document-signing/document-signing-date-field';
 import { DocumentSigningDropdownField } from '~/components/general/document-signing/document-signing-dropdown-field';
@@ -89,8 +90,17 @@ export const EmbedDocumentFields = ({
               field={field}
               onSignField={onSignField}
               onUnsignField={onUnsignField}
-              dateFormat={metadata?.dateFormat ?? DEFAULT_DOCUMENT_DATE_FORMAT}
+              dateFormat={DEFAULT_DOCUMENT_DATE_FORMAT}
               timezone={metadata?.timezone ?? DEFAULT_DOCUMENT_TIME_ZONE}
+            />
+          ))
+          .with(FieldType.CALENDAR, () => (
+            <DocumentSigningCalendarField
+              key={field.id}
+              field={field}
+              onSignField={onSignField}
+              onUnsignField={onUnsignField}
+              dateFormat={DEFAULT_DOCUMENT_DATE_FORMAT}
             />
           ))
           .with(FieldType.EMAIL, () => (
