@@ -70,7 +70,7 @@ export type CreateEnvelopeOptions = {
     envelopeItems: { title?: string; documentDataId: string; order?: number }[];
     formValues?: TDocumentFormValues;
 
-    userTimezone?: string;
+    userTimezone?: string | null;
 
     templateType?: TemplateType;
     publicTitle?: string;
@@ -256,7 +256,7 @@ export const createEnvelope = async ({
 
   // userTimezone is last because it's always passed in regardless of the organisation/team settings
   // for uploads from the frontend
-  const timezoneToUse = meta?.timezone || settings.documentTimezone || userTimezone;
+  const timezoneToUse = userTimezone || meta?.timezone || settings.documentTimezone;
 
   const documentMeta = await prisma.documentMeta.create({
     data: extractDerivedDocumentMeta(settings, {

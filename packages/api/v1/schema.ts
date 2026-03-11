@@ -781,6 +781,7 @@ export const ZCreateEmbebedTemplateMutationSchema = z.object({
   data: z.string().min(1),
   key: z.string().min(1).trim(),
   externalId: z.string().nullish(),
+  timezone: z.string().optional(),
   meta: z.object({}).optional(),
 });
 
