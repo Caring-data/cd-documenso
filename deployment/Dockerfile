@@ -69,6 +69,9 @@ COPY --from=builder /app/patches ./patches
 
 RUN npm ci --legacy-peer-deps
 
+# Install musl-specific binary for Alpine Linux (lockfile is generated on GNU Linux)
+RUN npm install @documenso/pdf-sign-linux-x64-musl@0.1.0 --no-save --legacy-peer-deps
+
 # Then copy all the source code (as it changes more often)
 COPY --from=builder /app/out/full/ .
 # Copy scripts folder (not included in turbo prune output)

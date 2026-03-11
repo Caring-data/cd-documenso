@@ -96,19 +96,19 @@ En este caso no hace falta el volumen del cert en el compose. Protege el .env (p
 
 Tras el deploy:
 
-- `https://<DOMAIN>:5001/api/certificate-status` debe indicar que el certificado está disponible.
+- `https://<DOMAIN>:4443/api/certificate-status` debe indicar que el certificado está disponible.
 - Si es así, la firma de documentos debería funcionar con normalidad.
 
 ---
 
 ## Resumen
 
-| Qué          | Dónde / Cómo                                              |
-|-------------|------------------------------------------------------------|
-| Certificado | Un .p12 creado con el bloque de comandos de arriba       |
-| En servidor | Opción A: `/opt/documenso/cert.p12` + compose actual      |
-| Contraseña  | `NEXT_PRIVATE_SIGNING_PASSPHRASE` en el .env              |
-| Transporte  | `NEXT_PRIVATE_SIGNING_TRANSPORT=local` en el .env         |
+| Qué             | Dónde / Cómo                                                                                  |
+| --------------- | --------------------------------------------------------------------------------------------- |
+| Certificado     | Un .p12 creado con el bloque de comandos de arriba                                            |
+| En servidor     | Opción A: `/opt/documenso/cert.p12` + compose actual                                          |
+| Contraseña      | `NEXT_PRIVATE_SIGNING_PASSPHRASE` en el .env                                                  |
+| Transporte      | `NEXT_PRIVATE_SIGNING_TRANSPORT=local` en el .env                                             |
 | Ruta (opcional) | `NEXT_PRIVATE_SIGNING_LOCAL_FILE_PATH="/opt/documenso/cert.p12"` si quieres dejarla explícita |
 
 ---
