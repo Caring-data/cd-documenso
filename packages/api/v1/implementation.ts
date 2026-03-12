@@ -1127,7 +1127,7 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
 
   createEmbebedTemplate: authenticatedMiddleware(async (args, user, team, { logger, metadata }) => {
     const { body } = args;
-    const { title, data, key, externalId } = body;
+    const { title, data, key, externalId, timezone } = body;
 
     try {
       logger.info({
@@ -1175,6 +1175,7 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
           ],
           externalId: externalId ?? undefined,
           templateType: TemplateType.PRIVATE,
+          userTimezone: timezone ?? null,
         },
         requestMetadata: metadata,
       });
