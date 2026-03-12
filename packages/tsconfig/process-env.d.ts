@@ -72,5 +72,7 @@ declare namespace NodeJS {
     SEED_ADMIN_NAME?: string;
     SEED_ADMIN_EMAIL?: string;
     SEED_ADMIN_PASSWORD?: string;
+
+    AZURE_DNS_URL?: string;
   }
 }
