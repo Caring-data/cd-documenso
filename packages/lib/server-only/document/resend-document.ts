@@ -107,10 +107,19 @@ export const resendDocument = async ({
     throw new Error('Can not send completed document');
   }
 
-  const recipientsToRemind = envelope.recipients.filter(
-    (recipient) =>
-      recipients.includes(recipient.id) && recipient.signingStatus === SigningStatus.NOT_SIGNED,
-  );
+  const recipientsToRemind = envelope.recipients.filter((recipient) => {
+    if (recipientEmail) {
+      return (
+        recipient.email === recipientEmail &&
+        recipient.signingStatus === SigningStatus.NOT_SIGNED
+      );
+    }
+
+    return (
+      recipients.includes(recipient.id) &&
+      recipient.signingStatus === SigningStatus.NOT_SIGNED
+    );
+  });
 
   const isRecipientSigningRequestEmailEnabled = extractDerivedDocumentEmailSettings(
     envelope.documentMeta,
