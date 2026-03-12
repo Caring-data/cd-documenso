@@ -66,6 +66,16 @@ export class AzureService {
     return folder ? `${folder}/${uniqueFileName}` : uniqueFileName;
   }
 
+  private transformUrl(url: string): string {
+    const customDns = env('AZURE_DNS_URL');
+
+    if (!customDns) {
+      return url;
+    }
+
+    return url.replace('almacenamientoadicional.blob.core.windows.net', customDns);
+  }
+
   async uploadFile(
     buffer: Buffer,
     fileName: string,
@@ -89,7 +99,7 @@ export class AzureService {
         },
       });
 
-      return blockBlobClient.url;
+      return this.transformUrl(blockBlobClient.url);
     } catch (error) {
       await createLog({
         level: LogLevel.ERROR,
