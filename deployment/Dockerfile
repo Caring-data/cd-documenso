@@ -119,14 +119,16 @@ COPY --from=installer --chown=nodejs:nodejs /app/node_modules ./node_modules
 COPY --from=installer --chown=nodejs:nodejs /app/apps/remix/build ./apps/remix/build
 COPY --from=installer --chown=nodejs:nodejs /app/apps/remix/public ./apps/remix/public
 
-# Copy the full prisma package (schema, migrations, seed files, etc.)
+# Copy all workspace packages (they use TypeScript source directly, required by seed and runtime)
 COPY --from=installer --chown=nodejs:nodejs /app/packages/prisma ./packages/prisma
-
-# Copy workspace packages required by the seed script (they use TypeScript source directly)
 COPY --from=installer --chown=nodejs:nodejs /app/packages/lib ./packages/lib
+COPY --from=installer --chown=nodejs:nodejs /app/packages/trpc ./packages/trpc
 COPY --from=installer --chown=nodejs:nodejs /app/packages/assets ./packages/assets
 COPY --from=installer --chown=nodejs:nodejs /app/packages/email ./packages/email
 COPY --from=installer --chown=nodejs:nodejs /app/packages/signing ./packages/signing
+COPY --from=installer --chown=nodejs:nodejs /app/packages/auth ./packages/auth
+COPY --from=installer --chown=nodejs:nodejs /app/packages/api ./packages/api
+COPY --from=installer --chown=nodejs:nodejs /app/packages/ui ./packages/ui
 
 # Copy scripts folder for migrations
 COPY --from=installer --chown=nodejs:nodejs /app/scripts ./scripts
