@@ -130,8 +130,8 @@ COPY --from=installer --chown=nodejs:nodejs /app/packages/auth ./packages/auth
 COPY --from=installer --chown=nodejs:nodejs /app/packages/api ./packages/api
 COPY --from=installer --chown=nodejs:nodejs /app/packages/ui ./packages/ui
 
-# Copy static assets required by seed and runtime
-COPY --from=installer --chown=nodejs:nodejs /app/assets ./assets
+# Copy static assets required by seed and runtime (from builder which has full repo)
+COPY --from=builder --chown=nodejs:nodejs /app/assets ./assets
 
 # Copy scripts folder for migrations
 COPY --from=installer --chown=nodejs:nodejs /app/scripts ./scripts
