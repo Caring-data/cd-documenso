@@ -119,10 +119,8 @@ COPY --from=installer --chown=nodejs:nodejs /app/node_modules ./node_modules
 COPY --from=installer --chown=nodejs:nodejs /app/apps/remix/build ./apps/remix/build
 COPY --from=installer --chown=nodejs:nodejs /app/apps/remix/public ./apps/remix/public
 
-# Copy the prisma binary, schema, migrations and seed files
-COPY --from=installer --chown=nodejs:nodejs /app/packages/prisma/schema.prisma ./packages/prisma/schema.prisma
-COPY --from=installer --chown=nodejs:nodejs /app/packages/prisma/migrations ./packages/prisma/migrations
-COPY --from=installer --chown=nodejs:nodejs /app/packages/prisma/seed-database.ts ./packages/prisma/seed-database.ts
+# Copy the full prisma package (schema, migrations, seed files, etc.)
+COPY --from=installer --chown=nodejs:nodejs /app/packages/prisma ./packages/prisma
 
 # Copy scripts folder for migrations
 COPY --from=installer --chown=nodejs:nodejs /app/scripts ./scripts
