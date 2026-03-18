@@ -40,6 +40,7 @@ import { legacy_insertFieldInPDF } from '../../../server-only/pdf/legacy-insert-
 import { normalizeSignatureAppearances } from '../../../server-only/pdf/normalize-signature-appearances';
 import { getTeamSettings } from '../../../server-only/team/get-team-settings';
 import { triggerWebhook } from '../../../server-only/webhooks/trigger/trigger-webhook';
+import { type TSigningContext, ZSigningContextSchema } from '../../../types/document';
 import { DOCUMENT_AUDIT_LOG_TYPE } from '../../../types/document-audit-logs';
 import {
   ZWebhookDocumentSchema,
@@ -55,7 +56,6 @@ import { createDocumentAuditLogData } from '../../../utils/document-audit-logs';
 import { mapDocumentIdToSecondaryId, mapSecondaryIdToDocumentId } from '../../../utils/envelope';
 import type { JobRunIO } from '../../client/_internal/job';
 import type { TSealDocumentJobDefinition } from './seal-document';
-import { ZSigningContextSchema, type TSigningContext } from '../../../types/document';
 
 export const run = async ({
   payload,
@@ -185,10 +185,33 @@ export const run = async ({
 
     const legacyDocumentId = mapSecondaryIdToDocumentId(envelope.secondaryId);
 
+    await createLog({
+      level: LogLevel.INFO,
+      action: 'CERTIFICATE_FETCH_START',
+      message: 'Fetching certificate and audit log data',
+      data: {
+        legacyDocumentId,
+        includeCertificate: settings.includeSigningCertificate,
+        includeAuditLog: settings.includeAuditLog,
+      },
+      metadata: requestMetadata,
+    });
+
     const { certificateData, auditLogData } = await getCertificateAndAuditLogData({
       legacyDocumentId,
       documentMeta: envelope.documentMeta,
       settings,
+    });
+
+    await createLog({
+      level: LogLevel.INFO,
+      action: 'CERTIFICATE_FETCH_RESULT',
+      message: 'Certificate and audit log fetch result',
+      data: {
+        hasCertificate: !!certificateData,
+        hasAuditLog: !!auditLogData,
+      },
+      metadata: requestMetadata,
     });
 
     const newDocumentData: Array<{ oldDocumentDataId: string; newDocumentDataId: string }> = [];
@@ -201,6 +224,19 @@ export const run = async ({
       if (!envelopeItemFields) {
         throw new Error(`Envelope item fields not found for envelope item ${envelopeItem.id}`);
       }
+
+      await createLog({
+        level: LogLevel.INFO,
+        action: 'PDF_DECORATION_START',
+        message: 'Starting PDF decoration and signing',
+        data: {
+          envelopeId: envelope.id,
+          hasCertificate: !!certificateData,
+          hasAuditLog: !!auditLogData,
+          isRejected,
+        },
+        metadata: requestMetadata,
+      });
 
       const result = await decorateAndSignPdf({
         envelope,
@@ -300,9 +336,9 @@ export const run = async ({
       const legacyDocumentId = mapSecondaryIdToDocumentId(finalEnvelope.secondaryId);
 
       const parsedSigningContext =
-      finalEnvelope.signingContext === null
-        ? null
-        : ZSigningContextSchema.safeParse(finalEnvelope.signingContext);
+        finalEnvelope.signingContext === null
+          ? null
+          : ZSigningContextSchema.safeParse(finalEnvelope.signingContext);
 
       const documentDetails: TSigningContext = parsedSigningContext?.data || null;
 
@@ -389,7 +425,7 @@ export const run = async ({
         documentDetails,
         legacyDocumentId,
         mainRecipient,
-        true
+        true,
       );
 
       if (result.fileUrl) {
@@ -423,7 +459,7 @@ export const run = async ({
         },
       });
     } catch (error) {
-       await createLog({
+      await createLog({
         level: LogLevel.ERROR,
         action: 'LARAVEL_FINAL_SUBMISSION_ERROR',
         message: 'Error submitting final document to Laravel',
@@ -492,6 +528,12 @@ const decorateAndSignPdf = async ({
   }
 
   if (certificateData) {
+    await createLog({
+      level: LogLevel.INFO,
+      action: 'ADDING_CERTIFICATE_TO_PDF',
+      message: 'Adding certificate to PDF',
+    });
+
     const certificateDoc = await PDFDocument.load(certificateData);
 
     const certificatePages = await pdfDoc.copyPages(
@@ -613,17 +655,69 @@ const decorateAndSignPdf = async ({
 
   const pdfBytes = await pdfDoc.save();
 
-  const pdfBuffer = await signPdf({ pdf: Buffer.from(pdfBytes) });
+  await createLog({
+    level: LogLevel.INFO,
+    action: 'PDF_GENERATED_BEFORE_SIGN',
+    message: 'PDF generated before signing',
+    data: {
+      size: pdfBytes.length,
+    },
+  });
+
+  let pdfBuffer;
+
+  try {
+    pdfBuffer = await signPdf({ pdf: Buffer.from(pdfBytes) });
+
+    await createLog({
+      level: LogLevel.INFO,
+      action: 'PDF_SIGNED_SUCCESS',
+      message: 'PDF signed successfully',
+      data: {
+        size: pdfBuffer.length,
+      },
+    });
+  } catch (error) {
+    await createLog({
+      level: LogLevel.ERROR,
+      action: 'PDF_SIGN_FAILED',
+      message: 'Error signing PDF',
+      data: {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      },
+    });
+
+    throw error;
+  }
 
   const { name } = path.parse(envelopeItem.title);
 
   // Add suffix based on document status
   const suffix = isRejected ? '_rejected.pdf' : '_signed.pdf';
 
+  await createLog({
+    level: LogLevel.INFO,
+    action: 'UPLOAD_FINAL_PDF_START',
+    message: 'Uploading final PDF',
+    data: {
+      fileName: `${name}${suffix}`,
+    },
+  });
+
   const newDocumentData = await putPdfFileServerSide({
     name: `${name}${suffix}`,
     type: 'application/pdf',
     arrayBuffer: async () => Promise.resolve(pdfBuffer),
+  });
+
+  await createLog({
+    level: LogLevel.INFO,
+    action: 'PDF_UPLOAD_SUCCESS',
+    message: 'Final PDF uploaded successfully',
+    data: {
+      newDocumentDataId: newDocumentData.id,
+    },
   });
 
   return {
@@ -645,9 +739,17 @@ export const getCertificateAndAuditLogData = async ({
     ? getCertificatePdf({
         documentId: legacyDocumentId,
         language: documentMeta.language,
-      }).catch((e) => {
-        console.log('Failed to get certificate PDF');
-        console.error(e);
+      }).catch(async (e) => {
+        await createLog({
+          level: LogLevel.ERROR,
+          action: 'CERTIFICATE_GENERATION_FAILED',
+          message: 'Error generating certificate PDF',
+          data: {
+            error: e instanceof Error ? e.message : String(e),
+            stack: e instanceof Error ? e.stack : undefined,
+            legacyDocumentId,
+          },
+        });
 
         return null;
       })
