@@ -342,7 +342,7 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
         }).format(new Date(date));
       };
 
-      const groupedByRecipient = new Map<number, (typeof auditLogs)[number][]>();
+      const groupedByRecipient = new Map<string, (typeof auditLogs)[number][]>();
 
       const isAuditLogData = (data: unknown): data is AuditLogData => {
         return (
@@ -357,20 +357,19 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
           return;
         }
 
-        const data = log.data;
-        const recipientId = data?.recipientId;
+        const email = log.email?.toLowerCase();
 
-        if (!recipientId) return;
+        if (!email) return;
 
-        if (!groupedByRecipient.has(recipientId)) {
-          groupedByRecipient.set(recipientId, []);
+        if (!groupedByRecipient.has(email)) {
+          groupedByRecipient.set(email, []);
         }
 
-        groupedByRecipient.get(recipientId)!.push(log);
+        groupedByRecipient.get(email)!.push(log);
       });
 
       const result = envelope.recipients.map((recipient) => {
-        const logs = groupedByRecipient.get(recipient.id) || [];
+        const logs = groupedByRecipient.get(recipient.email.toLowerCase()) || [];
         const sortedLogs = [...logs].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
         const documentSigned = logs.find((l) => l.type === 'DOCUMENT_RECIPIENT_COMPLETED');
