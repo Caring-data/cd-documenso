@@ -344,20 +344,12 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
 
       const groupedByRecipient = new Map<string, (typeof auditLogs)[number][]>();
 
-      const isAuditLogData = (data: unknown): data is AuditLogData => {
-        return (
-          typeof data === 'object' &&
-          data !== null &&
-          ('recipientId' in data || Object.keys(data).length === 0)
-        );
-      };
-
       auditLogs.forEach((log) => {
-        if (!isAuditLogData(log.data)) {
-          return;
-        }
+        const data = parseData(log.data);
 
-        const email = log.email?.toLowerCase();
+        const email =
+          log.email?.toLowerCase() ||
+          data?.recipientEmail?.toLowerCase();
 
         if (!email) return;
 
@@ -368,6 +360,17 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
         groupedByRecipient.get(email)!.push(log);
       });
 
+      const parseData = (data: unknown): any => {
+        if (typeof data === 'string') {
+          try {
+            return JSON.parse(data);
+          } catch {
+            return {};
+          }
+        }
+        return data;
+      };
+
       const result = envelope.recipients.map((recipient) => {
         const logs = groupedByRecipient.get(recipient.email.toLowerCase()) || [];
         const sortedLogs = [...logs].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
@@ -376,28 +379,31 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
 
         const emailSent = logs
           .filter((log) => {
-            if (!isAuditLogData(log.data)) return false;
+            const data = parseData(log.data);
 
-            const data = log.data;
-            return log.type === 'EMAIL_SENT' && data?.emailType === 'SIGNING_REQUEST';
+            return (
+              log.type === 'EMAIL_SENT' &&
+              data?.emailType === 'SIGNING_REQUEST' &&
+              data?.isResending === false
+            );
           })
           .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())[0];
 
         const resendEmailSent = logs
           .filter((log) => {
-            if (!isAuditLogData(log.data)) return false;
+            const data = parseData(log.data);
 
-            const data = log.data;
-            return log.type === 'EMAIL_SENT' && data?.isResending === true;
+             return (
+              log.type === 'EMAIL_SENT' &&
+              data?.isResending === true
+            );
           })
           .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
 
         const latestEvent = sortedLogs.find((log) => {
           if (log.type !== 'EMAIL_SENT') return true;
 
-          if (!isAuditLogData(log.data)) return false;
-
-          const data = log.data;
+          const data = parseData(log.data);
           return data?.emailType === 'SIGNING_REQUEST' || data?.isResending === true;
         });
 
@@ -406,29 +412,21 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
             const isEmailSent = log.type === 'EMAIL_SENT';
 
             if (!isEmailSent) return true;
-            if (!isAuditLogData(log.data)) return false;
 
-            const data = log.data;
+            const data = parseData(log.data);
+
             const isResend = data?.isResending === true;
             const isSigningRequest = data?.emailType === 'SIGNING_REQUEST';
 
             return isResend || isSigningRequest;
           })
           .map((log) => {
-            if (!isAuditLogData(log.data)) {
-              return {
-                type: toCamelCase(log.type),
-                timestamp: formatDateWithTimeZone(log.createdAt, timezone),
-                ipAddress: log.ipAddress ?? '',
-              };
-            }
-
-            const data = log.data;
-            const isResend = data?.isResending === true;
+            const data = parseData(log.data);
 
             let label = log.type;
+
             if (log.type === 'EMAIL_SENT') {
-              label = isResend ? 'resendEmail' : 'emailSent';
+              label = data?.isResending === true ? 'resendEmail' : 'emailSent';
             } else {
               label = toCamelCase(log.type);
             }
