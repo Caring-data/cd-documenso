@@ -342,24 +342,6 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
         }).format(new Date(date));
       };
 
-      const groupedByRecipient = new Map<string, (typeof auditLogs)[number][]>();
-
-      auditLogs.forEach((log) => {
-        const data = parseData(log.data);
-
-        const email =
-          log.email?.toLowerCase() ||
-          data?.recipientEmail?.toLowerCase();
-
-        if (!email) return;
-
-        if (!groupedByRecipient.has(email)) {
-          groupedByRecipient.set(email, []);
-        }
-
-        groupedByRecipient.get(email)!.push(log);
-      });
-
       const parseData = (data: unknown): any => {
         if (typeof data === 'string') {
           try {
@@ -370,6 +352,24 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
         }
         return data;
       };
+
+      const groupedByRecipient = new Map<string, (typeof auditLogs)[number][]>();
+
+      auditLogs.forEach((log) => {
+        const data = parseData(log.data);
+
+        const email =
+          data?.recipientEmail?.toLowerCase() ||
+          log.email?.toLowerCase();
+
+        if (!email) return;
+
+        if (!groupedByRecipient.has(email)) {
+          groupedByRecipient.set(email, []);
+        }
+
+        groupedByRecipient.get(email)!.push(log);
+      });
 
       const result = envelope.recipients.map((recipient) => {
         const logs = groupedByRecipient.get(recipient.email.toLowerCase()) || [];
