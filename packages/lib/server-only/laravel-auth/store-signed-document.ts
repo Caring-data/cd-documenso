@@ -44,6 +44,8 @@ export const storeSignedDocument = async (
       ownerId: ownerId,
       fileUrl: pdfUrl,
       recipient: allSigned ? 'AllRecipientsSigned' : recipient.email || '',
+      recipientId: allSigned ? null : String(recipient.id),
+      signingOrder: allSigned ? null : recipient.signingOrder,
       formType: String(signingContext?.formType || ''),
       module: String(signingContext?.module || ''),
     };
