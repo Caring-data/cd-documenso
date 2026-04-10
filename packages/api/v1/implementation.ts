@@ -342,53 +342,54 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
         }).format(new Date(date));
       };
 
-      const groupedByRecipient = new Map<number, (typeof auditLogs)[number][]>();
-
-      const isAuditLogData = (data: unknown): data is AuditLogData => {
-        return (
-          typeof data === 'object' &&
-          data !== null &&
-          ('recipientId' in data || Object.keys(data).length === 0)
-        );
+      const parseData = (data: unknown): any => {
+        if (typeof data === 'string') {
+          try {
+            return JSON.parse(data);
+          } catch {
+            return {};
+          }
+        }
+        return data;
       };
 
-      auditLogs.forEach((log) => {
-        if (!isAuditLogData(log.data)) {
-          return;
-        }
+      const groupedByRecipientId = new Map<number, (typeof auditLogs)[number][]>();
 
-        const data = log.data;
-        const recipientId = data?.recipientId;
+      auditLogs.forEach((log) => {
+        const data = parseData(log.data);
+
+        const recipientId = data?.recipientId as number | undefined;
 
         if (!recipientId) return;
 
-        if (!groupedByRecipient.has(recipientId)) {
-          groupedByRecipient.set(recipientId, []);
+        if (!groupedByRecipientId.has(recipientId)) {
+          groupedByRecipientId.set(recipientId, []);
         }
-
-        groupedByRecipient.get(recipientId)!.push(log);
+        groupedByRecipientId.get(recipientId)!.push(log);
       });
 
       const result = envelope.recipients.map((recipient) => {
-        const logs = groupedByRecipient.get(recipient.id) || [];
+        const logs = groupedByRecipientId.get(recipient.id) ?? [];
         const sortedLogs = [...logs].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
         const documentSigned = logs.find((l) => l.type === 'DOCUMENT_RECIPIENT_COMPLETED');
 
         const emailSent = logs
           .filter((log) => {
-            if (!isAuditLogData(log.data)) return false;
+            const data = parseData(log.data);
 
-            const data = log.data;
-            return log.type === 'EMAIL_SENT' && data?.emailType === 'SIGNING_REQUEST';
+            return (
+              log.type === 'EMAIL_SENT' &&
+              data?.emailType === 'SIGNING_REQUEST' &&
+              data?.isResending === false
+            );
           })
           .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())[0];
 
         const resendEmailSent = logs
           .filter((log) => {
-            if (!isAuditLogData(log.data)) return false;
+            const data = parseData(log.data);
 
-            const data = log.data;
             return log.type === 'EMAIL_SENT' && data?.isResending === true;
           })
           .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
@@ -396,40 +397,28 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
         const latestEvent = sortedLogs.find((log) => {
           if (log.type !== 'EMAIL_SENT') return true;
 
-          if (!isAuditLogData(log.data)) return false;
-
-          const data = log.data;
+          const data = parseData(log.data);
           return data?.emailType === 'SIGNING_REQUEST' || data?.isResending === true;
         });
 
         const history = sortedLogs
           .filter((log) => {
             const isEmailSent = log.type === 'EMAIL_SENT';
-
             if (!isEmailSent) return true;
-            if (!isAuditLogData(log.data)) return false;
 
-            const data = log.data;
+            const data = parseData(log.data);
+
             const isResend = data?.isResending === true;
             const isSigningRequest = data?.emailType === 'SIGNING_REQUEST';
-
             return isResend || isSigningRequest;
           })
           .map((log) => {
-            if (!isAuditLogData(log.data)) {
-              return {
-                type: toCamelCase(log.type),
-                timestamp: formatDateWithTimeZone(log.createdAt, timezone),
-                ipAddress: log.ipAddress ?? '',
-              };
-            }
-
-            const data = log.data;
-            const isResend = data?.isResending === true;
+            const data = parseData(log.data);
 
             let label = log.type;
+
             if (log.type === 'EMAIL_SENT') {
-              label = isResend ? 'resendEmail' : 'emailSent';
+              label = data?.isResending === true ? 'resendEmail' : 'emailSent';
             } else {
               label = toCamelCase(log.type);
             }
@@ -440,6 +429,7 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
               ipAddress: log.ipAddress ?? '',
             };
           })
+          .filter((item, index, self) => self.findIndex((i) => i.type === item.type) === index)
           .filter(Boolean);
 
         const signatureStatus: 'signed' | 'notSigned' = documentSigned ? 'signed' : 'notSigned';
@@ -1958,7 +1948,7 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
         },
         userId: user.id,
         teamId: team.id,
-        sendEmail: true,
+        sendEmail: body.sendEmail ?? true,
         requestMetadata: metadata,
       });
 
@@ -1974,7 +1964,11 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
             email: recipient.email,
             token: recipient.token,
             role: recipient.role,
+            expirationDate: recipient.expired,
             signingOrder: recipient.signingOrder,
+            readStatus: recipient.readStatus,
+            signingStatus: recipient.signingStatus,
+            sendStatus: recipient.sendStatus,
             signingUrl: `${NEXT_PUBLIC_WEBAPP_URL()}/sign/${recipient.token}`,
           })),
         },
@@ -2123,7 +2117,7 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
 
   resendDocumentByEmail: authenticatedMiddleware(async (args, user, team, { metadata }) => {
     const { id: documentId } = args.params;
-    const { recipientEmail } = args.body;
+    const { recipientEmail, recipientId } = args.body;
 
     if (!recipientEmail) {
       return {
@@ -2142,6 +2136,7 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
           id: Number(documentId),
         },
         recipients: [],
+        recipientId: recipientId,
         recipientEmail: recipientEmail,
         teamId: team?.id,
         requestMetadata: metadata,
