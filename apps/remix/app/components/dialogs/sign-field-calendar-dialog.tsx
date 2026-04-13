@@ -88,7 +88,8 @@ export const SignFieldCalendarDialog = createCallable<SignFieldCalendarDialogPro
                           selected={field.value}
                           onSelect={field.onChange}
                           captionLayout="dropdown"
-                          initialFocus
+                          startMonth={new Date(1920, 0)}
+                          endMonth={new Date(new Date().getFullYear() + 10, 11)}
                         />
                       </div>
                       <FormMessage />
