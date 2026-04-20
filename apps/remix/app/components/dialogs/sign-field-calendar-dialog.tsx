@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 import { zodResolver } from '@hookform/resolvers/zod';
 import { msg } from '@lingui/core/macro';
 import { Trans } from '@lingui/react/macro';
@@ -49,6 +51,8 @@ export const SignFieldCalendarDialog = createCallable<SignFieldCalendarDialogPro
 
     const selectedDate = form.watch('date');
 
+    const [month, setMonth] = useState<Date>(selectedDate ?? new Date());
+
     return (
       <Dialog open={true} onOpenChange={(value) => (!value ? call.end(null) : null)}>
         <DialogContent>
@@ -86,6 +90,22 @@ export const SignFieldCalendarDialog = createCallable<SignFieldCalendarDialogPro
                         <Calendar
                           mode="single"
                           selected={field.value}
+                          month={month}
+                          onMonthChange={(newMonth) => {
+                            setMonth(newMonth);
+
+                            if (field.value) {
+                              const currentDay = field.value.getDate();
+
+                              const newDate = new Date(
+                                newMonth.getFullYear(),
+                                newMonth.getMonth(),
+                                currentDay,
+                              );
+
+                              field.onChange(newDate);
+                            }
+                          }}
                           onSelect={field.onChange}
                           captionLayout="dropdown"
                           startMonth={new Date(1920, 0)}
