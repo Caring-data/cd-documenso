@@ -133,6 +133,7 @@ export const ZResendDocumentForSigningMutationSchema = z.object({
 
 export const ZResendDocumentByEmailSchema = z.object({
   recipientEmail: z.string().email(),
+  recipientId : z.number(),
 });
 
 export type TResendDocumentForSigningMutationSchema = z.infer<
@@ -438,6 +439,7 @@ export const ZGenerateDocumentFromTemplateBase64MutationSchema =
       )
       .nullable()
       .optional(),
+    sendEmail: z.boolean().default(true).optional(),
   });
 
 export type TGenerateDocumentFromTemplateBase64MutationSchema = z.infer<
