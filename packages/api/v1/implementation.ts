@@ -353,26 +353,23 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
         return data;
       };
 
-      const groupedByRecipient = new Map<string, (typeof auditLogs)[number][]>();
+      const groupedByRecipientId = new Map<number, (typeof auditLogs)[number][]>();
 
       auditLogs.forEach((log) => {
         const data = parseData(log.data);
 
-        const email =
-          data?.recipientEmail?.toLowerCase() ||
-          log.email?.toLowerCase();
+        const recipientId = data?.recipientId as number | undefined;
 
-        if (!email) return;
+        if (!recipientId) return;
 
-        if (!groupedByRecipient.has(email)) {
-          groupedByRecipient.set(email, []);
+        if (!groupedByRecipientId.has(recipientId)) {
+          groupedByRecipientId.set(recipientId, []);
         }
-
-        groupedByRecipient.get(email)!.push(log);
+        groupedByRecipientId.get(recipientId)!.push(log);
       });
 
       const result = envelope.recipients.map((recipient) => {
-        const logs = groupedByRecipient.get(recipient.email.toLowerCase()) || [];
+        const logs = groupedByRecipientId.get(recipient.id) ?? [];
         const sortedLogs = [...logs].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
         const documentSigned = logs.find((l) => l.type === 'DOCUMENT_RECIPIENT_COMPLETED');
@@ -393,10 +390,7 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
           .filter((log) => {
             const data = parseData(log.data);
 
-             return (
-              log.type === 'EMAIL_SENT' &&
-              data?.isResending === true
-            );
+            return log.type === 'EMAIL_SENT' && data?.isResending === true;
           })
           .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
 
@@ -410,14 +404,12 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
         const history = sortedLogs
           .filter((log) => {
             const isEmailSent = log.type === 'EMAIL_SENT';
-
             if (!isEmailSent) return true;
 
             const data = parseData(log.data);
 
             const isResend = data?.isResending === true;
             const isSigningRequest = data?.emailType === 'SIGNING_REQUEST';
-
             return isResend || isSigningRequest;
           })
           .map((log) => {
@@ -437,6 +429,7 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
               ipAddress: log.ipAddress ?? '',
             };
           })
+          .filter((item, index, self) => self.findIndex((i) => i.type === item.type) === index)
           .filter(Boolean);
 
         const signatureStatus: 'signed' | 'notSigned' = documentSigned ? 'signed' : 'notSigned';
@@ -1955,7 +1948,7 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
         },
         userId: user.id,
         teamId: team.id,
-        sendEmail: true,
+        sendEmail: body.sendEmail ?? true,
         requestMetadata: metadata,
       });
 
@@ -1971,7 +1964,11 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
             email: recipient.email,
             token: recipient.token,
             role: recipient.role,
+            expirationDate: recipient.expired,
             signingOrder: recipient.signingOrder,
+            readStatus: recipient.readStatus,
+            signingStatus: recipient.signingStatus,
+            sendStatus: recipient.sendStatus,
             signingUrl: `${NEXT_PUBLIC_WEBAPP_URL()}/sign/${recipient.token}`,
           })),
         },
@@ -2120,7 +2117,7 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
 
   resendDocumentByEmail: authenticatedMiddleware(async (args, user, team, { metadata }) => {
     const { id: documentId } = args.params;
-    const { recipientEmail } = args.body;
+    const { recipientEmail, recipientId } = args.body;
 
     if (!recipientEmail) {
       return {
@@ -2139,6 +2136,7 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
           id: Number(documentId),
         },
         recipients: [],
+        recipientId: recipientId,
         recipientEmail: recipientEmail,
         teamId: team?.id,
         requestMetadata: metadata,

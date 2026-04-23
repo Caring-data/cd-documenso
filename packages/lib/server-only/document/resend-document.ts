@@ -8,6 +8,7 @@ import {
   RecipientRole,
   SigningStatus,
 } from '@prisma/client';
+import { DateTime } from 'luxon';
 
 import { sendEmailWithNotify } from '@documenso/email/notify';
 import { DocumentInviteEmailTemplate } from '@documenso/email/templates/document-invite';
@@ -36,6 +37,7 @@ export type ResendDocumentOptions = {
   userId: number;
   recipients: number[];
   recipientEmail?: string;
+  recipientId?: number;
   teamId: number;
   requestMetadata: ApiRequestMetadata;
 };
@@ -45,6 +47,7 @@ export const resendDocument = async ({
   userId,
   recipients,
   recipientEmail,
+  recipientId,
   teamId,
   requestMetadata,
 }: ResendDocumentOptions) => {
@@ -72,11 +75,13 @@ export const resendDocument = async ({
       recipients: {
         where: {
           AND: [
-            recipientEmail
-              ? { email: recipientEmail }
-              : recipients
-                ? { id: { in: recipients } }
-                : {},
+            recipientId
+              ? { id: recipientId }
+              : recipientEmail
+                ? { email: recipientEmail }
+                : recipients?.length
+                  ? { id: { in: recipients } }
+                  : {},
             { signingStatus: SigningStatus.NOT_SIGNED },
           ],
         },
@@ -108,16 +113,18 @@ export const resendDocument = async ({
   }
 
   const recipientsToRemind = envelope.recipients.filter((recipient) => {
+    if (recipientId) {
+      return recipient.id === recipientId && recipient.signingStatus === SigningStatus.NOT_SIGNED;
+    }
+
     if (recipientEmail) {
       return (
-        recipient.email === recipientEmail &&
-        recipient.signingStatus === SigningStatus.NOT_SIGNED
+        recipient.email === recipientEmail && recipient.signingStatus === SigningStatus.NOT_SIGNED
       );
     }
 
     return (
-      recipients.includes(recipient.id) &&
-      recipient.signingStatus === SigningStatus.NOT_SIGNED
+      recipients.includes(recipient.id) && recipient.signingStatus === SigningStatus.NOT_SIGNED
     );
   });
 
@@ -214,6 +221,13 @@ export const resendDocument = async ({
 
       await prisma.$transaction(
         async (tx) => {
+          await tx.recipient.update({
+            where: { id: recipient.id },
+            data: {
+              expired: DateTime.now().plus({ days: 7 }).toJSDate(),
+            },
+          });
+
           await sendEmailWithNotify(
             {
               email: email,
