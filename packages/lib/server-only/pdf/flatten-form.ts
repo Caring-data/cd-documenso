@@ -15,8 +15,10 @@ import {
   translate,
 } from '@cantoo/pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
+import { LogCategory, LogLevel } from '@prisma/client';
 
 import { NEXT_PRIVATE_INTERNAL_WEBAPP_URL } from '../../constants/app';
+import { createLog } from '../../utils/createLog';
 
 export const removeOptionalContentGroups = (document: PDFDocument) => {
   const context = document.context;
@@ -26,10 +28,11 @@ export const removeOptionalContentGroups = (document: PDFDocument) => {
   }
 };
 
-export const flattenForm = async (document: PDFDocument) => {
+export const flattenForm = async (document: PDFDocument, logContext?: any) => {
   removeOptionalContentGroups(document);
 
   const form = document.getForm();
+  const fields = form.getFields();
 
   const fontNoto = await fetch(`${NEXT_PRIVATE_INTERNAL_WEBAPP_URL()}/fonts/noto-sans.ttf`).then(
     async (res) => res.arrayBuffer(),
@@ -41,15 +44,33 @@ export const flattenForm = async (document: PDFDocument) => {
 
   form.updateFieldAppearances(font);
 
-  for (const field of form.getFields()) {
-    for (const widget of field.acroField.getWidgets()) {
-      flattenWidget(document, field, widget);
-    }
+  for (const field of fields) {
+    const fieldName = field.getName();
 
     try {
+      for (const widget of field.acroField.getWidgets()) {
+        flattenWidget(document, field, widget);
+      }
+
       form.removeField(field);
     } catch (error) {
-      console.error(error);
+      await createLog({
+        level: LogLevel.ERROR,
+        category: LogCategory.DOCUMENT,
+        action: 'flatten_field_failed',
+        message: 'Failed flattening field',
+        data: {
+          ...logContext,
+          fieldName,
+          fieldType: field.constructor.name,
+          errorMessage: error instanceof Error ? error.message : String(error),
+          errorStack: error instanceof Error ? error.stack : null,
+        },
+        metadata: logContext?.metadata,
+        userId: logContext?.userId,
+      });
+
+      throw error;
     }
   }
 };
