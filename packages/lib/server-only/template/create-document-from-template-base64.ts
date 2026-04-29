@@ -636,338 +636,393 @@ export const createDocumentFromTemplateBase64 = async ({
     }),
   );
 
-  const envelope = await prisma.$transaction(async (tx) => {
-    const envelope = await tx.envelope.create({
-      data: {
-        id: prefixedId('envelope'),
-        secondaryId: incrementedDocumentId.formattedDocumentId,
-        type: EnvelopeType.DOCUMENT,
-        internalVersion: template.internalVersion,
-        qrToken: prefixedId('qr'),
-        source: DocumentSource.TEMPLATE,
-        externalId: externalId || template.externalId,
-        templateId: legacyTemplateId, // The template this envelope was created from.
-        userId,
-        folderId: resolvedFolderId,
-        teamId: template.teamId,
-        title: finalEnvelopeTitle,
-        envelopeItems: {
-          createMany: {
-            data: envelopeItemsToCreate,
+  const envelope = await prisma.$transaction(
+    async (tx) => {
+      const envelope = await tx.envelope.create({
+        data: {
+          id: prefixedId('envelope'),
+          secondaryId: incrementedDocumentId.formattedDocumentId,
+          type: EnvelopeType.DOCUMENT,
+          internalVersion: template.internalVersion,
+          qrToken: prefixedId('qr'),
+          source: DocumentSource.TEMPLATE,
+          externalId: externalId || template.externalId,
+          templateId: legacyTemplateId, // The template this envelope was created from.
+          userId,
+          folderId: resolvedFolderId,
+          teamId: template.teamId,
+          title: finalEnvelopeTitle,
+          envelopeItems: {
+            createMany: {
+              data: envelopeItemsToCreate,
+            },
+          },
+          authOptions: createDocumentAuthOptions({
+            globalAccessAuth: templateAuthOptions.globalAccessAuth,
+            globalActionAuth: templateAuthOptions.globalActionAuth,
+          }),
+          visibility: template.visibility || settings.documentVisibility,
+          useLegacyFieldInsertion: template.useLegacyFieldInsertion ?? false,
+          documentMetaId: documentMeta.id,
+          ownerId,
+          formKey,
+          signingContext,
+          recipients: {
+            createMany: {
+              data: [
+                ...finalRecipients.map((recipient) => {
+                  const authOptions = ZRecipientAuthOptionsSchema.parse(recipient?.authOptions);
+
+                  return {
+                    email: recipient.email,
+                    name: recipient.name,
+                    role: recipient.role,
+                    authOptions: createRecipientAuthOptions({
+                      accessAuth: authOptions.accessAuth,
+                      actionAuth: authOptions.actionAuth,
+                    }),
+                    sendStatus:
+                      recipient.role === RecipientRole.CC ? SendStatus.SENT : SendStatus.NOT_SENT,
+                    signingStatus:
+                      recipient.role === RecipientRole.CC
+                        ? SigningStatus.SIGNED
+                        : SigningStatus.NOT_SIGNED,
+                    signingOrder: recipient.signingOrder,
+                    expired: recipient?.expired,
+                    token: recipient.token,
+                  };
+                }),
+
+                ...ccToCreate,
+              ],
+            },
           },
         },
-        authOptions: createDocumentAuthOptions({
-          globalAccessAuth: templateAuthOptions.globalAccessAuth,
-          globalActionAuth: templateAuthOptions.globalActionAuth,
-        }),
-        visibility: template.visibility || settings.documentVisibility,
-        useLegacyFieldInsertion: template.useLegacyFieldInsertion ?? false,
-        documentMetaId: documentMeta.id,
-        ownerId,
-        formKey,
-        signingContext,
-        recipients: {
-          createMany: {
-            data: [
-              ...finalRecipients.map((recipient) => {
-                const authOptions = ZRecipientAuthOptionsSchema.parse(recipient?.authOptions);
-
-                return {
-                  email: recipient.email,
-                  name: recipient.name,
-                  role: recipient.role,
-                  authOptions: createRecipientAuthOptions({
-                    accessAuth: authOptions.accessAuth,
-                    actionAuth: authOptions.actionAuth,
-                  }),
-                  sendStatus:
-                    recipient.role === RecipientRole.CC ? SendStatus.SENT : SendStatus.NOT_SENT,
-                  signingStatus:
-                    recipient.role === RecipientRole.CC
-                      ? SigningStatus.SIGNED
-                      : SigningStatus.NOT_SIGNED,
-                  signingOrder: recipient.signingOrder,
-                  expired: recipient?.expired,
-                  token: recipient.token,
-                };
-              }),
-
-              ...ccToCreate,
-            ],
+        include: {
+          recipients: {
+            orderBy: {
+              id: 'asc',
+            },
+          },
+          envelopeItems: {
+            select: {
+              id: true,
+            },
           },
         },
-      },
-      include: {
-        recipients: {
-          orderBy: {
-            id: 'asc',
-          },
-        },
-        envelopeItems: {
-          select: {
-            id: true,
-          },
-        },
-      },
-    });
+      });
 
-    const fieldsToCreate: Omit<Field, 'id' | 'secondaryId'>[] = [];
+      const fieldsToCreate: Omit<Field, 'id' | 'secondaryId'>[] = [];
 
-    // Get all template field IDs first so we can validate later
-    const allTemplateFieldIds = finalRecipients.flatMap((recipient) =>
-      recipient.fields.map((field) => field.id),
-    );
+      // Get all template field IDs first so we can validate later
+      const allTemplateFieldIds = finalRecipients.flatMap((recipient) =>
+        recipient.fields.map((field) => field.id),
+      );
 
-    if (prefillFields?.length) {
-      // Validate that all prefill field IDs exist in the template
-      const invalidFieldIds = prefillFields
-        .map((prefillField) => prefillField.id)
-        .filter((id) => !allTemplateFieldIds.includes(id));
+      if (prefillFields?.length) {
+        // Validate that all prefill field IDs exist in the template
+        const invalidFieldIds = prefillFields
+          .map((prefillField) => prefillField.id)
+          .filter((id) => !allTemplateFieldIds.includes(id));
 
-      if (invalidFieldIds.length > 0) {
+        if (invalidFieldIds.length > 0) {
+          throw new AppError(AppErrorCode.INVALID_BODY, {
+            message: `The following field IDs do not exist in the template: ${invalidFieldIds.join(', ')}`,
+          });
+        }
+
+        // Validate that all prefill fields have the correct type
+        for (const prefillField of prefillFields) {
+          const templateField = finalRecipients
+            .flatMap((recipient) => recipient.fields)
+            .find((field) => field.id === prefillField.id);
+
+          if (!templateField) {
+            // This should never happen due to the previous validation, but just in case
+            throw new AppError(AppErrorCode.INVALID_BODY, {
+              message: `Field with ID ${prefillField.id} not found in the template`,
+            });
+          }
+
+          const expectedType = templateField.type.toLowerCase();
+          const actualType = prefillField.type;
+
+          if (expectedType !== actualType) {
+            throw new AppError(AppErrorCode.INVALID_BODY, {
+              message: `Field type mismatch for field ${prefillField.id}: expected ${expectedType}, got ${actualType}`,
+            });
+          }
+        }
+      }
+
+      const isStandardForm = signingContext?.formType === 'standard';
+
+      let base64Pdf: string | null = null;
+
+      if (isStandardForm) {
+        if (customDocumentData && customDocumentData.length > 0) {
+          const customDocData = await prisma.documentData.findFirst({
+            where: {
+              id: customDocumentData[0].documentDataId,
+            },
+          });
+
+          if (!customDocData) {
+            throw new AppError(AppErrorCode.NOT_FOUND, {
+              message: 'Custom document data not found',
+            });
+          }
+
+          base64Pdf = customDocData.data;
+
+          await createLog({
+            level: LogLevel.INFO,
+            category: LogCategory.DOCUMENT,
+            action: 'using_custom_document_for_scanning',
+            message: 'Using custom document PDF for field scanning',
+            data: {
+              documentDataId: customDocData.id,
+              dataLength: customDocData.data?.length,
+            },
+            metadata: requestMetadata,
+            userId,
+          });
+        } else {
+          base64Pdf = template.envelopeItems[0]?.documentData?.data || null;
+
+          await createLog({
+            level: LogLevel.WARN,
+            category: LogCategory.DOCUMENT,
+            action: 'using_template_document_for_scanning',
+            message: 'Using template PDF for field scanning (no custom document provided)',
+            data: {
+              templateId: template.id,
+            },
+            metadata: requestMetadata,
+            userId,
+          });
+        }
+      }
+
+      if (isStandardForm && !base64Pdf) {
         throw new AppError(AppErrorCode.INVALID_BODY, {
-          message: `The following field IDs do not exist in the template: ${invalidFieldIds.join(', ')}`,
+          message: 'Standard document PDF data not found',
         });
       }
 
-      // Validate that all prefill fields have the correct type
-      for (const prefillField of prefillFields) {
-        const templateField = finalRecipients
-          .flatMap((recipient) => recipient.fields)
-          .find((field) => field.id === prefillField.id);
+      const shouldSkipCoordinateSearch =
+        signingContext?.formType === 'custom' || signingContext?.formType === 'system';
 
-        if (!templateField) {
-          // This should never happen due to the previous validation, but just in case
-          throw new AppError(AppErrorCode.INVALID_BODY, {
-            message: `Field with ID ${prefillField.id} not found in the template`,
-          });
+      await createLog({
+        level: LogLevel.INFO,
+        category: LogCategory.DOCUMENT,
+        action: 'field_creation_start',
+        message: 'Starting fields creation from template',
+        data: {
+          isStandardForm,
+          hasBase64Pdf: Boolean(base64Pdf),
+          shouldSkipCoordinateSearch,
+          finalRecipientsCount: Object.values(finalRecipients).length,
+          finalRecipients: Object.values(finalRecipients).map(({ token, fields }) => ({
+            token,
+            fieldsCount: fields.length,
+          })),
+        },
+        metadata: requestMetadata,
+        userId,
+      });
+
+      const variableCounters: Record<string, number> = {};
+
+      for (const { token, fields } of Object.values(finalRecipients)) {
+        const recipient = envelope.recipients.find((r) => r.token === token);
+
+        if (!recipient) {
+          throw new Error('Recipient not found.');
         }
 
-        const expectedType = templateField.type.toLowerCase();
-        const actualType = prefillField.type;
+        for (const field of fields) {
+          const prefillField = prefillFields?.find((value) => value.id === field.id);
 
-        if (expectedType !== actualType) {
-          throw new AppError(AppErrorCode.INVALID_BODY, {
-            message: `Field type mismatch for field ${prefillField.id}: expected ${expectedType}, got ${actualType}`,
-          });
+          let coordinates: { x: number; y: number; page: number } | null = null;
+
+          if (!shouldSkipCoordinateSearch && base64Pdf) {
+            const variableName = getFieldVariableName(recipient, field);
+
+                const coordinatesList = await findFieldCoordinatesFromPdf({
+                  base64Pdf,
+                  fieldName: variableName,
+                });
+
+                if (coordinatesList.length > 0) {
+                  const index = variableCounters[variableName] ?? 0;
+                  coordinates = coordinatesList[index] ?? coordinatesList[0];
+                  variableCounters[variableName] = index + 1;
+            }
+          }
+
+          if (!coordinates) {
+            coordinates = {
+              x: Number(field.positionX),
+              y: Number(field.positionY),
+              page: field.page,
+            };
+          }
+
+          const payload: Omit<Field, 'id' | 'secondaryId'> = {
+            envelopeItemId: oldEnvelopeItemToNewEnvelopeItemIdMap[field.envelopeItemId],
+            envelopeId: envelope.id,
+            recipientId: recipient.id,
+            type: field.type,
+            page: coordinates.page,
+            positionX: new Prisma.Decimal(coordinates.x),
+            positionY: new Prisma.Decimal(coordinates.y),
+            width: field.width,
+            height: field.height,
+            customText: '',
+            inserted: false,
+            fieldMeta: field.fieldMeta,
+          };
+
+          if (prefillField) {
+            match(prefillField)
+              .with({ type: 'date' }, (selector) => {
+                if (!selector.value) {
+                  throw new AppError(AppErrorCode.INVALID_BODY, {
+                    message: `Date value is required for field ${field.id}`,
+                  });
+                }
+
+                const date = new Date(selector.value);
+
+                if (isNaN(date.getTime())) {
+                  throw new AppError(AppErrorCode.INVALID_BODY, {
+                    message: `Invalid date value for field ${field.id}: ${selector.value}`,
+                  });
+                }
+
+                payload.customText = DateTime.fromJSDate(date).toFormat(
+                  template.documentMeta?.dateFormat ?? DEFAULT_DOCUMENT_DATE_FORMAT,
+                );
+
+                payload.inserted = true;
+              })
+              .otherwise((selector) => {
+                payload.fieldMeta = getUpdatedFieldMeta(field, selector);
+              });
+          }
+
+          fieldsToCreate.push(payload);
         }
       }
-    }
 
-    const isStandardForm = signingContext?.formType === 'standard';
-
-    let base64Pdf: string | null = null;
-
-    if (isStandardForm) {
-      if (customDocumentData && customDocumentData.length > 0) {
-        const customDocData = await prisma.documentData.findFirst({
-          where: {
-            id: customDocumentData[0].documentDataId,
-          },
+      try {
+        await tx.field.createMany({
+          data: fieldsToCreate.map((field) => ({
+            ...field,
+            fieldMeta: field.fieldMeta ? ZFieldMetaSchema.parse(field.fieldMeta) : undefined,
+          })),
         });
-
-        if (!customDocData) {
-          throw new AppError(AppErrorCode.NOT_FOUND, {
-            message: 'Custom document data not found',
-          });
-        }
-
-        base64Pdf = customDocData.data;
 
         await createLog({
           level: LogLevel.INFO,
           category: LogCategory.DOCUMENT,
-          action: 'using_custom_document_for_scanning',
-          message: 'Using custom document PDF for field scanning',
+          action: 'fields_create_many_success',
+          message: 'Fields created successfully',
           data: {
-            documentDataId: customDocData.id,
-            dataLength: customDocData.data?.length,
+            fieldsCount: fieldsToCreate.length,
           },
           metadata: requestMetadata,
           userId,
         });
-      } else {
-        base64Pdf = template.envelopeItems[0]?.documentData?.data || null;
-
+      } catch (error) {
         await createLog({
-          level: LogLevel.WARN,
+          level: LogLevel.ERROR,
           category: LogCategory.DOCUMENT,
-          action: 'using_template_document_for_scanning',
-          message: 'Using template PDF for field scanning (no custom document provided)',
+          action: 'fields_create_many_failed',
+          message: 'Failed creating fields in database',
           data: {
-            templateId: template.id,
+            fieldsCount: fieldsToCreate.length,
+            errorMessage: error instanceof Error ? error.message : String(error),
+            errorStack: error instanceof Error ? error.stack : null,
           },
           metadata: requestMetadata,
           userId,
         });
-      }
-    }
 
-    if (isStandardForm && !base64Pdf) {
-      throw new AppError(AppErrorCode.INVALID_BODY, {
-        message: 'Standard document PDF data not found',
-      });
-    }
-
-    const shouldSkipCoordinateSearch =
-      signingContext?.formType === 'custom' || signingContext?.formType === 'system';
-
-    const variableCounters: Record<string, number> = {};
-
-    for (const { token, fields } of Object.values(finalRecipients)) {
-      const recipient = envelope.recipients.find((r) => r.token === token);
-
-      if (!recipient) {
-        throw new Error('Recipient not found.');
+        throw error;
       }
 
-      for (const field of fields) {
-        const prefillField = prefillFields?.find((value) => value.id === field.id);
-
-        let coordinates: { x: number; y: number; page: number } | null = null;
-
-        if (!shouldSkipCoordinateSearch && base64Pdf) {
-          const variableName = getFieldVariableName(recipient, field);
-
-          const coordinatesList = await findFieldCoordinatesFromPdf({
-            base64Pdf,
-            fieldName: variableName,
-          });
-
-          if (coordinatesList.length > 0) {
-            const index = variableCounters[variableName] ?? 0;
-            coordinates = coordinatesList[index] ?? coordinatesList[0];
-            variableCounters[variableName] = index + 1;
-          }
-        }
-
-        if (!coordinates) {
-          coordinates = {
-            x: Number(field.positionX),
-            y: Number(field.positionY),
-            page: field.page,
-          };
-        }
-
-        const payload: Omit<Field, 'id' | 'secondaryId'> = {
-          envelopeItemId: oldEnvelopeItemToNewEnvelopeItemIdMap[field.envelopeItemId],
+      await tx.documentAuditLog.create({
+        data: createDocumentAuditLogData({
+          type: DOCUMENT_AUDIT_LOG_TYPE.DOCUMENT_CREATED,
           envelopeId: envelope.id,
-          recipientId: recipient.id,
-          type: field.type,
-          page: coordinates.page,
-          positionX: new Prisma.Decimal(coordinates.x),
-          positionY: new Prisma.Decimal(coordinates.y),
-          width: field.width,
-          height: field.height,
-          customText: '',
-          inserted: false,
-          fieldMeta: field.fieldMeta,
-        };
-
-        if (prefillField) {
-          match(prefillField)
-            .with({ type: 'date' }, (selector) => {
-              if (!selector.value) {
-                throw new AppError(AppErrorCode.INVALID_BODY, {
-                  message: `Date value is required for field ${field.id}`,
-                });
-              }
-
-              const date = new Date(selector.value);
-
-              if (isNaN(date.getTime())) {
-                throw new AppError(AppErrorCode.INVALID_BODY, {
-                  message: `Invalid date value for field ${field.id}: ${selector.value}`,
-                });
-              }
-
-              payload.customText = DateTime.fromJSDate(date).toFormat(
-                template.documentMeta?.dateFormat ?? DEFAULT_DOCUMENT_DATE_FORMAT,
-              );
-
-              payload.inserted = true;
-            })
-            .otherwise((selector) => {
-              payload.fieldMeta = getUpdatedFieldMeta(field, selector);
-            });
-        }
-
-        fieldsToCreate.push(payload);
-      }
-    }
-
-    await tx.field.createMany({
-      data: fieldsToCreate.map((field) => ({
-        ...field,
-        fieldMeta: field.fieldMeta ? ZFieldMetaSchema.parse(field.fieldMeta) : undefined,
-      })),
-    });
-
-    await tx.documentAuditLog.create({
-      data: createDocumentAuditLogData({
-        type: DOCUMENT_AUDIT_LOG_TYPE.DOCUMENT_CREATED,
-        envelopeId: envelope.id,
-        metadata: requestMetadata,
-        data: {
-          title: envelope.title,
-          source: {
-            type: DocumentSource.TEMPLATE,
-            templateId: legacyTemplateId,
+          metadata: requestMetadata,
+          data: {
+            title: envelope.title,
+            source: {
+              type: DocumentSource.TEMPLATE,
+              templateId: legacyTemplateId,
+            },
           },
-        },
-      }),
-    });
-
-    const templateAttachments = await tx.envelopeAttachment.findMany({
-      where: {
-        envelopeId: template.id,
-      },
-    });
-
-    const attachmentsToCreate = [
-      ...templateAttachments.map((attachment) => ({
-        envelopeId: envelope.id,
-        type: attachment.type,
-        label: attachment.label,
-        data: attachment.data,
-      })),
-      ...(attachments || []).map((attachment) => ({
-        envelopeId: envelope.id,
-        type: attachment.type || 'link',
-        label: attachment.label,
-        data: attachment.data,
-      })),
-    ];
-
-    if (attachmentsToCreate.length > 0) {
-      await tx.envelopeAttachment.createMany({
-        data: attachmentsToCreate,
+        }),
       });
-    }
 
-    const createdEnvelope = await tx.envelope.findFirst({
-      where: {
-        id: envelope.id,
-      },
-      include: {
-        documentMeta: true,
-        recipients: true,
-      },
-    });
+      const templateAttachments = await tx.envelopeAttachment.findMany({
+        where: {
+          envelopeId: template.id,
+        },
+      });
 
-    if (!createdEnvelope) {
-      throw new Error('Document not found');
-    }
+      const attachmentsToCreate = [
+        ...templateAttachments.map((attachment) => ({
+          envelopeId: envelope.id,
+          type: attachment.type,
+          label: attachment.label,
+          data: attachment.data,
+        })),
+        ...(attachments || []).map((attachment) => ({
+          envelopeId: envelope.id,
+          type: attachment.type || 'link',
+          label: attachment.label,
+          data: attachment.data,
+        })),
+      ];
 
-    await triggerWebhook({
-      event: WebhookTriggerEvents.DOCUMENT_CREATED,
-      data: ZWebhookDocumentSchema.parse(mapEnvelopeToWebhookDocumentPayload(createdEnvelope)),
-      userId,
-      teamId,
-    });
+      if (attachmentsToCreate.length > 0) {
+        await tx.envelopeAttachment.createMany({
+          data: attachmentsToCreate,
+        });
+      }
 
-    return envelope;
-  });
+      const createdEnvelope = await tx.envelope.findFirst({
+        where: {
+          id: envelope.id,
+        },
+        include: {
+          documentMeta: true,
+          recipients: true,
+        },
+      });
+
+      if (!createdEnvelope) {
+        throw new Error('Document not found');
+      }
+
+      await triggerWebhook({
+        event: WebhookTriggerEvents.DOCUMENT_CREATED,
+        data: ZWebhookDocumentSchema.parse(mapEnvelopeToWebhookDocumentPayload(createdEnvelope)),
+        userId,
+        teamId,
+      });
+
+      return envelope;
+    },
+    {
+      timeout: 60000,
+      maxWait: 10000,
+    },
+  );
 
   await createLog({
     level: LogLevel.INFO,
