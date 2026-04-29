@@ -810,9 +810,7 @@ export const createDocumentFromTemplateBase64 = async ({
         });
       }
 
-      const formsWithoutCoordinateSearch = [
-        'lic604a_admission_agreement_rcfe_esign',
-      ];
+      const formsWithoutCoordinateSearch = ['lic604a_admission_agreement_rcfe_esign'];
 
       const shouldSkipCoordinateSearch =
         signingContext?.formType === 'custom' ||
@@ -855,16 +853,16 @@ export const createDocumentFromTemplateBase64 = async ({
           if (!shouldSkipCoordinateSearch && base64Pdf) {
             const variableName = getFieldVariableName(recipient, field);
 
-      const coordinatesList = await findFieldCoordinatesFromPdf({
-        base64Pdf,
-        fieldName: variableName,
-      });
+            const coordinatesList = await findFieldCoordinatesFromPdf({
+              base64Pdf,
+              fieldName: variableName,
+            });
 
-      if (coordinatesList.length > 0) {
-        const index = variableCounters[variableName] ?? 0;
-        coordinates = coordinatesList[index] ?? coordinatesList[0];
-        variableCounters[variableName] = index + 1;
-  }
+            if (coordinatesList.length > 0) {
+              const index = variableCounters[variableName] ?? 0;
+              coordinates = coordinatesList[index] ?? coordinatesList[0];
+              variableCounters[variableName] = index + 1;
+            }
           }
 
           if (!coordinates) {
