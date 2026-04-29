@@ -1,7 +1,10 @@
+import { useEffect } from 'react';
+
 import { useLingui } from '@lingui/react/macro';
 import { Trans } from '@lingui/react/macro';
 import { DocumentStatus, FieldType, RecipientRole } from '@prisma/client';
 import { CheckCircle2, Clock8, Loader2 } from 'lucide-react';
+import { useRevalidator } from 'react-router';
 import { match } from 'ts-pattern';
 
 import signingCelebration from '@documenso/assets/images/signing-celebration.png';
@@ -15,17 +18,15 @@ import { getRecipientSignatures } from '@documenso/lib/server-only/recipient/get
 import { getUserByEmail } from '@documenso/lib/server-only/user/get-user-by-email';
 import { env } from '@documenso/lib/utils/env';
 import { trpc } from '@documenso/trpc/react';
+import { DocumentDownloadButton } from '@documenso/ui/components/document/document-download-button';
 import { SigningCard3D } from '@documenso/ui/components/signing-card';
 import { cn } from '@documenso/ui/lib/utils';
 import { Badge } from '@documenso/ui/primitives/badge';
 
 import { DocumentSigningAuthPageView } from '~/components/general/document-signing/document-signing-auth-page';
-import { DocumentDownloadButton } from '@documenso/ui/components/document/document-download-button';
-
-import { DocumentPreviewButton } from './document-preview-button';
-
 
 import type { Route } from './+types/complete';
+import { DocumentPreviewButton } from './document-preview-button';
 
 export async function loader({ params, request }: Route.LoaderArgs) {
   const { user } = await getOptionalSession(request);
@@ -101,6 +102,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
 export default function CompletedSigningPage({ loaderData }: Route.ComponentProps) {
   const { t } = useLingui();
+  const revalidator = useRevalidator();
 
   const { sessionData } = useOptionalSession();
   const user = sessionData?.user;
@@ -131,14 +133,26 @@ export default function CompletedSigningPage({ loaderData }: Route.ComponentProp
     },
   );
 
+  // Use signing status from query if available, otherwise fall back to document status
+  const signingStatus = signingStatusData?.status ?? 'PENDING';
+
+  // When the polled status flips to COMPLETED but the loader's document
+  // is still PENDING, re-run the loader to fetch the freshly signed PDF.
+  useEffect(() => {
+    if (
+      signingStatus === 'COMPLETED' &&
+      document?.status !== DocumentStatus.COMPLETED &&
+      revalidator.state === 'idle'
+    ) {
+      void revalidator.revalidate();
+    }
+  }, [signingStatus, document?.status, revalidator]);
+
   if (!isDocumentAccessValid) {
     return <DocumentSigningAuthPageView email={recipientEmail} />;
   }
 
   const documentData = document.documentData;
-
-  // Use signing status from query if available, otherwise fall back to document status
-  const signingStatus = signingStatusData?.status ?? 'PENDING';
 
   return (
     <div
@@ -215,8 +229,8 @@ export default function CompletedSigningPage({ loaderData }: Route.ComponentProp
             .with({ status: 'COMPLETED' }, () => (
               <p className="mt-2.5 max-w-[60ch] text-center text-sm font-medium text-muted-foreground/60 md:text-base">
                 <Trans>
-                  A copy of the completed document will be sent to your email shortly. You may
-                  also download it below.
+                  A copy of the completed document will be sent to your email shortly. You may also
+                  download it below.
                 </Trans>
               </p>
             ))
@@ -273,7 +287,6 @@ export default function CompletedSigningPage({ loaderData }: Route.ComponentProp
               </Button>
             )}
           </div> */}
-
 
           <div className="mt-8 flex w-full max-w-sm items-center justify-center gap-4">
             {document.status === DocumentStatus.COMPLETED ? (
