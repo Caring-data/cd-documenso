@@ -136,8 +136,8 @@ export default function EnvelopeSignerPageRenderer() {
     },
   );
 
-  const contextModule = ownerData?.signingContext?.module ?? 'resident';
   const ownerId = ownerData?.ownerId ?? '';
+  const contextModule = ownerData?.signingContext?.module ?? 'resident';
 
   const { data: systemInfo } = useGetDocumentContext({
     ownerId,
@@ -687,7 +687,7 @@ export default function EnvelopeSignerPageRenderer() {
     renderFields();
 
     pageLayer.current.batchDraw();
-  }, [localPageFields, showPendingFieldTooltip, fullName, signature, email]);
+  }, [localPageFields, showPendingFieldTooltip, fullName, signature, email, systemInfo]);
 
   /**
    * Rerender the whole page if the selected assistant recipient changes.
