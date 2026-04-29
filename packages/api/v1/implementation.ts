@@ -1119,6 +1119,15 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
     const { body } = args;
     const { title, data, key, externalId, timezone } = body;
 
+    const logBase = {
+      title,
+      key,
+      externalId,
+      timezone,
+      hasData: Boolean(data),
+      dataLength: data?.length,
+    };
+
     try {
       logger.info({
         input: {
@@ -1148,7 +1157,14 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
         arrayBuffer: async () => Promise.resolve(arrayBuffer),
       };
 
-      const { id: templateDocumentDataId } = await putNormalizedPdfFileServerSide(file);
+      const { id: templateDocumentDataId } = await putNormalizedPdfFileServerSide(file, {
+        key,
+        title,
+        externalId,
+        timezone,
+        metadata,
+        userId: user.id,
+      });
 
       const createdTemplate = await createEnvelope({
         userId: user.id,
@@ -1196,8 +1212,23 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
           Recipient: fullTemplate.recipients,
         },
       };
-    } catch (err) {
-      return AppError.toRestAPIError(err);
+    } catch (error) {
+      await createLog({
+        level: LogLevel.ERROR,
+        category: LogCategory.DOCUMENT,
+        action: 'embedded_template_failed',
+        message: 'Failed creating embedded template',
+        data: {
+          ...logBase,
+          errorName: error instanceof Error ? error.name : null,
+          errorMessage: error instanceof Error ? error.message : String(error),
+          errorStack: error instanceof Error ? error.stack : null,
+        },
+        metadata,
+        userId: user.id,
+      });
+
+      return AppError.toRestAPIError(error);
     }
   }),
 
