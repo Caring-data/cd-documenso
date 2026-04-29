@@ -1878,6 +1878,20 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
           ccRecipients: normalizedCc,
         });
       } catch (err) {
+        await createLog({
+          level: LogLevel.ERROR,
+          category: LogCategory.DOCUMENT,
+          action: 'create_document_from_template_failed',
+          message: 'createDocumentFromTemplateBase64 failed',
+          data: {
+            errorMessage: err instanceof Error ? err.message : String(err),
+            errorStack: err instanceof Error ? err.stack : null,
+            errorName: err instanceof Error ? err.name : null,
+          },
+          metadata,
+          userId: user.id,
+        });
+
         return AppError.toRestAPIError(err);
       }
 
