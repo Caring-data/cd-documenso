@@ -1,8 +1,9 @@
 import { PDFDocument } from '@cantoo/pdf-lib';
-import { DocumentDataType } from '@prisma/client';
+import { DocumentDataType, LogCategory, LogLevel } from '@prisma/client';
 import { base64 } from '@scure/base';
 import { match } from 'ts-pattern';
 
+import { createLog } from '@documenso/lib/utils/createLog';
 import { env } from '@documenso/lib/utils/env';
 
 import { AppError } from '../../errors/app-error';
@@ -47,23 +48,43 @@ export const putPdfFileServerSide = async (file: File) => {
 /**
  * Uploads a pdf file and normalizes it.
  */
-export const putNormalizedPdfFileServerSide = async (file: File) => {
-  const buffer = Buffer.from(await file.arrayBuffer());
+export const putNormalizedPdfFileServerSide = async (file: File, logContext?: any) => {
+  try {
+    const buffer = Buffer.from(await file.arrayBuffer());
 
-  const normalized = await normalizePdf(buffer);
+    const normalized: Buffer = await normalizePdf(buffer, logContext);
 
-  const fileName = file.name.endsWith('.pdf') ? file.name : `${file.name}.pdf`;
+    const fileName = file.name.endsWith('.pdf') ? file.name : `${file.name}.pdf`;
 
-  const documentData = await putFileServerSide({
-    name: fileName,
-    type: 'application/pdf',
-    arrayBuffer: async () => Promise.resolve(normalized),
-  });
+    const documentData = await putFileServerSide({
+      name: fileName,
+      type: 'application/pdf',
+      arrayBuffer: async () => Promise.resolve(normalized),
+    });
 
-  return await createDocumentData({
-    type: documentData.type,
-    data: documentData.data,
-  });
+    return await createDocumentData({
+      type: documentData.type,
+      data: documentData.data,
+    });
+  } catch (error) {
+    await createLog({
+      level: LogLevel.ERROR,
+      category: LogCategory.DOCUMENT,
+      action: 'put_normalized_pdf_failed',
+      message: 'Failed putting normalized PDF',
+      data: {
+        ...logContext,
+        fileName: file.name,
+        errorName: error instanceof Error ? error.name : null,
+        errorMessage: error instanceof Error ? error.message : String(error),
+        errorStack: error instanceof Error ? error.stack : null,
+      },
+      metadata: logContext?.metadata,
+      userId: logContext?.userId,
+    });
+
+    throw error;
+  }
 };
 
 /**
