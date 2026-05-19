@@ -26,9 +26,10 @@ const calculateDropdownPosition = (options: CalculateDropdownPositionOptions) =>
 
   const fieldPadding = 8;
   const arrowSize = 12;
+  const gap = 4;
 
   const textHeight = fieldHeight - fieldPadding * 2;
-  const textWidth = fieldWidth - fieldPadding * 2;
+  const textWidth = fieldWidth - fieldPadding * 2 - arrowSize - gap;
   const textX = fieldPadding;
   const textY = fieldPadding;
 
@@ -128,7 +129,7 @@ export const renderDropdownFieldElement = (
 
   fieldGroup.add(selectedText);
 
-  if (!field.inserted || mode === 'export') {
+  if (mode !== 'export') {
     fieldGroup.add(arrow);
   }
 
