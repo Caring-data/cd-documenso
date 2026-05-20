@@ -353,31 +353,66 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
         return data;
       };
 
+      const MIGRATION_CUTOFF = new Date('2026-03-06T00:00:00Z');
+
       const groupedByRecipientId = new Map<number, (typeof auditLogs)[number][]>();
+      const groupedByEmailAndName = new Map<string, (typeof auditLogs)[number][]>();
+
+      const normalize = (s: string | null | undefined) => (s ?? '').toLowerCase().trim();
+
+      const makeEmailNameKey = (
+        email: string | null | undefined,
+        name: string | null | undefined,
+      ) => `${normalize(email)}|${normalize(name)}`;
 
       auditLogs.forEach((log) => {
         const data = parseData(log.data);
+        const isPreMigration = log.createdAt < MIGRATION_CUTOFF;
 
-        const recipientId = data?.recipientId as number | undefined;
+        if (isPreMigration) {
+          const recipientEmail = (data?.recipientEmail ?? log.email) as string | undefined;
+          const recipientName = (data?.recipientName ?? log.name) as string | undefined;
 
-        if (!recipientId) return;
+          if (recipientEmail && recipientName) {
+            const key = makeEmailNameKey(recipientEmail, recipientName);
+            if (!groupedByEmailAndName.has(key)) {
+              groupedByEmailAndName.set(key, []);
+            }
+            groupedByEmailAndName.get(key)!.push(log);
+          }
+        } else {
+          const recipientId = data?.recipientId as number | undefined;
 
-        if (!groupedByRecipientId.has(recipientId)) {
-          groupedByRecipientId.set(recipientId, []);
+          if (recipientId) {
+            if (!groupedByRecipientId.has(recipientId)) {
+              groupedByRecipientId.set(recipientId, []);
+            }
+            groupedByRecipientId.get(recipientId)!.push(log);
+          }
         }
-        groupedByRecipientId.get(recipientId)!.push(log);
       });
 
       const result = envelope.recipients.map((recipient) => {
-        const logs = groupedByRecipientId.get(recipient.id) ?? [];
-        const sortedLogs = [...logs].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+        const logsById = groupedByRecipientId.get(recipient.id) ?? [];
+
+        const emailNameKey = makeEmailNameKey(recipient.email, recipient.name);
+        const logsByEmailName = groupedByEmailAndName.get(emailNameKey) ?? [];
+
+        const logs = [...logsById, ...logsByEmailName];
 
         const documentSigned = logs.find((l) => l.type === 'DOCUMENT_RECIPIENT_COMPLETED');
 
-        const emailSent = logs
+        const relevantLogs = documentSigned
+          ? logs.filter((l) => l.createdAt.getTime() <= documentSigned.createdAt.getTime())
+          : logs;
+
+        const sortedLogs = [...relevantLogs].sort(
+          (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+        );
+
+        const emailSent = relevantLogs
           .filter((log) => {
             const data = parseData(log.data);
-
             return (
               log.type === 'EMAIL_SENT' &&
               data?.emailType === 'SIGNING_REQUEST' &&
@@ -386,20 +421,20 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
           })
           .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())[0];
 
-        const resendEmailSent = logs
+        const resendEmailSent = relevantLogs
           .filter((log) => {
             const data = parseData(log.data);
-
             return log.type === 'EMAIL_SENT' && data?.isResending === true;
           })
           .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
 
-        const latestEvent = sortedLogs.find((log) => {
-          if (log.type !== 'EMAIL_SENT') return true;
-
-          const data = parseData(log.data);
-          return data?.emailType === 'SIGNING_REQUEST' || data?.isResending === true;
-        });
+        const latestEvent =
+          documentSigned ??
+          sortedLogs.find((log) => {
+            if (log.type !== 'EMAIL_SENT') return true;
+            const data = parseData(log.data);
+            return data?.emailType === 'SIGNING_REQUEST' || data?.isResending === true;
+          });
 
         const history = sortedLogs
           .filter((log) => {
@@ -407,7 +442,6 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
             if (!isEmailSent) return true;
 
             const data = parseData(log.data);
-
             const isResend = data?.isResending === true;
             const isSigningRequest = data?.emailType === 'SIGNING_REQUEST';
             return isResend || isSigningRequest;
@@ -416,7 +450,6 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
             const data = parseData(log.data);
 
             let label = log.type;
-
             if (log.type === 'EMAIL_SENT') {
               label = data?.isResending === true ? 'resendEmail' : 'emailSent';
             } else {
