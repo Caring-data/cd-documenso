@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
 import { Trans, useLingui } from '@lingui/react/macro';
 import {
@@ -14,6 +14,7 @@ import type { KonvaEventObject } from 'konva/lib/Node';
 import { match } from 'ts-pattern';
 
 import { useGetDocumentContext } from '@documenso/lib/client-only/hooks/use-get-document-context';
+import type { DocumentContext } from '@documenso/lib/client-only/hooks/use-get-document-context';
 import { usePageRenderer } from '@documenso/lib/client-only/hooks/use-page-renderer';
 import { useCurrentEnvelopeRender } from '@documenso/lib/client-only/providers/envelope-render-provider';
 import { useOptionalSession } from '@documenso/lib/client-only/providers/session';
@@ -76,6 +77,51 @@ const RESIDENT_LOCATION_FIELD_TYPES = new Set<FieldType>([
   FieldType.RESIDENT_LOCATION_ADMINISTRATOR_NAME,
   FieldType.RESIDENT_LOCATION_ADMINISTRATOR_PHONE,
 ]);
+
+const buildResidentAutoFillPayload = (
+  field: { id: number; type: FieldType },
+  systemInfo: DocumentContext,
+): TSignEnvelopeFieldValue | null => {
+  if (!isResidentFieldType(field.type)) return null;
+
+  const residentValue = getResidentValue(field.type, systemInfo);
+  if (!residentValue) return null;
+
+  switch (field.type) {
+    case FieldType.RESIDENT_FIRST_NAME:
+      return { type: FieldType.RESIDENT_FIRST_NAME, value: residentValue };
+    case FieldType.RESIDENT_LAST_NAME:
+      return { type: FieldType.RESIDENT_LAST_NAME, value: residentValue };
+    case FieldType.RESIDENT_DOB:
+      return { type: FieldType.RESIDENT_DOB, value: residentValue };
+    case FieldType.RESIDENT_GENDER_IDENTITY:
+      return { type: FieldType.RESIDENT_GENDER_IDENTITY, value: residentValue };
+    case FieldType.RESIDENT_LOCATION_NAME:
+      return { type: FieldType.RESIDENT_LOCATION_NAME, value: residentValue };
+    case FieldType.RESIDENT_LOCATION_STATE:
+      return { type: FieldType.RESIDENT_LOCATION_STATE, value: residentValue };
+    case FieldType.RESIDENT_LOCATION_ADDRESS:
+      return { type: FieldType.RESIDENT_LOCATION_ADDRESS, value: residentValue };
+    case FieldType.RESIDENT_LOCATION_CITY:
+      return { type: FieldType.RESIDENT_LOCATION_CITY, value: residentValue };
+    case FieldType.RESIDENT_LOCATION_ZIP_CODE:
+      return { type: FieldType.RESIDENT_LOCATION_ZIP_CODE, value: residentValue };
+    case FieldType.RESIDENT_LOCATION_COUNTRY:
+      return { type: FieldType.RESIDENT_LOCATION_COUNTRY, value: residentValue };
+    case FieldType.RESIDENT_LOCATION_FAX:
+      return { type: FieldType.RESIDENT_LOCATION_FAX, value: residentValue };
+    case FieldType.RESIDENT_LOCATION_LICENSING:
+      return { type: FieldType.RESIDENT_LOCATION_LICENSING, value: residentValue };
+    case FieldType.RESIDENT_LOCATION_LICENSING_NAME:
+      return { type: FieldType.RESIDENT_LOCATION_LICENSING_NAME, value: residentValue };
+    case FieldType.RESIDENT_LOCATION_ADMINISTRATOR_NAME:
+      return { type: FieldType.RESIDENT_LOCATION_ADMINISTRATOR_NAME, value: residentValue };
+    case FieldType.RESIDENT_LOCATION_ADMINISTRATOR_PHONE:
+      return { type: FieldType.RESIDENT_LOCATION_ADMINISTRATOR_PHONE, value: residentValue };
+    default:
+      return null;
+  }
+};
 
 export default function EnvelopeSignerPageRenderer() {
   const { t, i18n } = useLingui();
@@ -704,6 +750,51 @@ export default function EnvelopeSignerPageRenderer() {
 
     pageLayer.current.batchDraw();
   }, [selectedAssistantRecipient]);
+
+  const autoFilledRef = useRef(false);
+
+  useEffect(() => {
+    if (autoFilledRef.current) return;
+    if (!systemInfo) return;
+    if (recipient.role === RecipientRole.ASSISTANT) return;
+    if (!hasResidentFields) return;
+
+    const fieldsToAutoFill = recipientFields
+      .filter(
+        (field) => isResidentFieldType(field.type) && !field.inserted && !field.fieldMeta?.readOnly,
+      )
+      .sort((a, b) => {
+        if (a.page !== b.page) return a.page - b.page;
+
+        const ay = Number(a.positionY);
+        const by = Number(b.positionY);
+        if (ay !== by) return ay - by;
+
+        return Number(a.positionX) - Number(b.positionX);
+      });
+
+    if (fieldsToAutoFill.length === 0) {
+      autoFilledRef.current = true;
+      return;
+    }
+
+    autoFilledRef.current = true;
+
+    const runAutoFill = async () => {
+      for (const field of fieldsToAutoFill) {
+        const payload = buildResidentAutoFillPayload(field, systemInfo);
+        if (!payload) continue;
+
+        try {
+          await signField(field.id, payload);
+        } catch (err) {
+          console.error(`Auto-fill failed for field ${field.id} (${field.type}):`, err);
+        }
+      }
+    };
+
+    void runAutoFill();
+  }, [systemInfo, recipient.role, hasResidentFields, recipientFields]);
 
   if (!currentEnvelopeItem) {
     return null;
