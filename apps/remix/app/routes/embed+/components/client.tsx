@@ -1,4 +1,4 @@
-import { Suspense, lazy, startTransition, useCallback, useEffect, useState } from 'react';
+import { Suspense, lazy, startTransition, useCallback, useEffect, useRef, useState } from 'react';
 
 import { msg } from '@lingui/core/macro';
 import { useLingui } from '@lingui/react/macro';
@@ -17,6 +17,7 @@ import type { DocumentFlowStep } from '@documenso/ui/primitives/document-flow/ty
 import { Stepper } from '@documenso/ui/primitives/stepper';
 import { useToast } from '@documenso/ui/primitives/use-toast';
 
+import { useIntervalSave } from '../hooks/use-interval-save';
 import { getEmbedOptions } from '../utils/get-embed-options';
 import { useEmbedOptions } from './providers/embed-options-provider';
 import {
@@ -29,6 +30,8 @@ import { AddTemplateSettingsFormPartial } from './template-flow/add-template-set
 const EmbedFieldsPageRenderer = lazy(
   async () => import('./template-flow/embed-fields-page-renderer'),
 );
+
+const AUTO_SAVE_INTERVAL_MS = 10 * 60 * 1000;
 
 type TemplateStep = 'general' | 'fields';
 
@@ -72,6 +75,14 @@ function ClientInner({ envelopeId, externalId, initialEnvelope }: ClientInnerPro
   const { isSystem } = useEmbedOptions();
 
   const { envelope, editorFields, setLocalEnvelope } = useCurrentEmbedTemplateEditor();
+
+  const currentStepRef = useRef(currentStep);
+  useEffect(() => {
+    currentStepRef.current = currentStep;
+  }, [currentStep]);
+
+  const isManualSavingRef = useRef(false);
+  const isAutoSavingRef = useRef(false);
 
   const postMessage = useCallback((action: string, data?: unknown) => {
     try {
@@ -125,11 +136,20 @@ function ClientInner({ envelopeId, externalId, initialEnvelope }: ClientInnerPro
 
   const { mutateAsync: setEnvelopeFields } = trpc.envelope.field.setByExternalId.useMutation({
     onSuccess: () => {
-      toast({
-        title: t`Success`,
-        description: t`Template fields saved successfully`,
-      });
-      postMessage('template-completed', null);
+      if (isAutoSavingRef.current) {
+        toast({
+          title: t`Auto-saved`,
+          description: t`Your changes were saved automatically.`,
+        });
+
+        postMessage('template-auto-saved', null);
+      } else {
+        toast({
+          title: t`Success`,
+          description: t`Template fields saved successfully`,
+        });
+        postMessage('template-completed', null);
+      }
     },
     onError: (error) => {
       const appError = AppError.parseError(error);
@@ -200,34 +220,55 @@ function ClientInner({ envelopeId, externalId, initialEnvelope }: ClientInnerPro
     }
   };
 
-  const onAddTemplateFields = async () => {
-    try {
-      const fields = editorFields.localFields.map((field) => {
-        // Ensure all numeric values are valid numbers
-        const safeNumber = (value: number) => {
-          if (typeof value !== 'number' || isNaN(value) || !isFinite(value)) {
-            return 0;
-          }
-          return value;
-        };
+  const onAddTemplateFields = useCallback(
+    async ({ isAutoSave = false }: { isAutoSave?: boolean } = {}) => {
+      try {
+        isAutoSavingRef.current = isAutoSave;
+        if (!isAutoSave) isManualSavingRef.current = true;
 
-        return {
-          ...field,
-          positionX: safeNumber(field.positionX),
-          positionY: safeNumber(field.positionY),
-          width: safeNumber(field.width),
-          height: safeNumber(field.height),
-        };
-      });
+        const fields = editorFields.localFields.map((field) => {
+          const safeNumber = (value: number) => {
+            if (typeof value !== 'number' || isNaN(value) || !isFinite(value)) {
+              return 0;
+            }
+            return value;
+          };
 
-      await setEnvelopeFields({
-        externalId,
-        fields: fields,
-      });
-    } catch (error) {
-      console.error('Error saving template fields:', error);
-    }
-  };
+          return {
+            ...field,
+            positionX: safeNumber(field.positionX),
+            positionY: safeNumber(field.positionY),
+            width: safeNumber(field.width),
+            height: safeNumber(field.height),
+          };
+        });
+
+        await setEnvelopeFields({
+          externalId,
+          fields,
+        });
+      } catch (error) {
+        console.error('Error saving template fields:', error);
+      } finally {
+        isAutoSavingRef.current = false;
+      }
+    },
+    [editorFields.localFields, externalId, setEnvelopeFields],
+  );
+
+  const handleAutoSave = useCallback(async () => {
+    if (currentStepRef.current !== 2) return;
+    if (editorFields.localFields.length === 0) return;
+    if (isManualSavingRef.current) return;
+
+    await onAddTemplateFields({ isAutoSave: true });
+  }, [editorFields.localFields.length, onAddTemplateFields]);
+
+  useIntervalSave({
+    onSave: handleAutoSave,
+    intervalMs: AUTO_SAVE_INTERVAL_MS,
+    enabled: currentStep === 2,
+  });
 
   const handleStepChange = (step: number) => {
     setCurrentStep(step);
