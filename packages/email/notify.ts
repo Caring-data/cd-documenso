@@ -1,40 +1,33 @@
 import { LogCategory, LogLevel } from '@prisma/client';
+import { Resend } from 'resend';
 
 import { env } from '@documenso/lib/utils/env';
 
 import { createLog } from '../lib/utils/createLog';
 
-const NOTIFY_ENDPOINT = env('NEXT_PRIVATE_NOTIFY_ENDPOINT');
-const NOTIFY_EMAIL = env('NEXT_PRIVATE_NOTIFY_EMAIL');
-const NOTIFY_PASSWORD = env('NEXT_PRIVATE_NOTIFY_PASSWORD');
+const RESEND_API_KEY = env('RESEND_EMAIL_API_KEY');
+const RESEND_FROM_EMAIL = env('RESEND_EMAIL_FROM');
 
 export interface EmailRecipient {
   name?: string;
   email: string;
 }
 
-interface EmailRequestBody {
-  mailTo: string;
-  subject: string;
-  richContent: string;
-}
-
 const validateNotifyConfig = async () => {
-  if (!NOTIFY_ENDPOINT || !NOTIFY_EMAIL || !NOTIFY_PASSWORD) {
+  if (!RESEND_API_KEY || !RESEND_FROM_EMAIL) {
     await createLog({
       level: LogLevel.INFO,
       category: LogCategory.EMAIL,
       action: 'notify_config_missing',
-      message: 'Notify configuration is missing',
+      message: 'Resend configuration is missing',
       data: {
-        hasEndpoint: !!NOTIFY_ENDPOINT,
-        hasEmail: !!NOTIFY_EMAIL,
-        hasPassword: !!NOTIFY_PASSWORD,
+        hasApiKey: !!RESEND_API_KEY,
+        hasFromEmail: !!RESEND_FROM_EMAIL,
       },
     });
 
     throw new Error(
-      'Notify is not properly configured. Please set NEXT_PRIVATE_NOTIFY_ENDPOINT, NEXT_PRIVATE_NOTIFY_EMAIL and NEXT_PRIVATE_NOTIFY_PASSWORD',
+      'Resend is not properly configured. Please set RESEND_EMAIL_API_KEY and RESEND_EMAIL_FROM',
     );
   }
 };
@@ -42,40 +35,30 @@ const validateNotifyConfig = async () => {
 export const sendEmailWithNotify = async (to: EmailRecipient, subject: string, html: string) => {
   await validateNotifyConfig();
 
-  const url = `${NOTIFY_ENDPOINT}sendImmediateEmailNotification?login=${NOTIFY_EMAIL}&password=${NOTIFY_PASSWORD}`;
+  const resend = new Resend(RESEND_API_KEY!);
 
-  const body: EmailRequestBody = {
-    mailTo: to.email,
+  const { data, error } = await resend.emails.send({
+    from: RESEND_FROM_EMAIL!,
+    to: to.name ? `${to.name} <${to.email}>` : to.email,
     subject,
-    richContent: html,
-  };
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(body),
+    html,
   });
 
-  if (!response.ok) {
-    const text = await response.text();
-
+  if (error) {
     await createLog({
       level: LogLevel.ERROR,
       category: LogCategory.EMAIL,
       action: 'notify_email_failed',
-      message: 'Notify service returned an error',
+      message: 'Resend service returned an error',
       data: {
-        status: response.status,
-        response: text,
-        mailTo: body.mailTo,
-        subject: body.subject,
+        error,
+        mailTo: to.email,
+        subject,
       },
     });
 
-    throw new Error(`Notify error: ${response.status} - ${text}`);
+    throw new Error(`Resend error: ${error.message}`);
   }
 
-  return { success: true };
+  return { success: true, id: data?.id };
 };
