@@ -74,5 +74,8 @@ declare namespace NodeJS {
     SEED_ADMIN_PASSWORD?: string;
 
     AZURE_DNS_URL?: string;
+
+    RESEND_EMAIL_API_KEY?: string;
+    RESEND_EMAIL_FROM?: string;
   }
 }
