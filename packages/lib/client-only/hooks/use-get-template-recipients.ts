@@ -13,13 +13,17 @@ export type TemplateRecipient = {
 
 const getFormsSegment = (isSystem?: boolean) => (isSystem === true ? 'system-forms' : 'forms');
 
-export const useGetTemplateRecipients = (templateKey?: string, isSystem?: boolean) => {
+export const useGetTemplateRecipients = (
+  templateKey?: string,
+  documensoTemplateId?: number | null,
+  isSystem?: boolean,
+) => {
   const segment = getFormsSegment(isSystem);
 
   return useQuery<TemplateRecipient[]>({
-    enabled: !!templateKey,
+    enabled: !!templateKey && !!documensoTemplateId,
 
-    queryKey: ['template-recipients', templateKey, isSystem],
+    queryKey: ['template-recipients', templateKey, documensoTemplateId, isSystem],
 
     queryFn: async () => {
       const baseUrl = env('NEXT_PUBLIC_CD_SERVICE_URL');
@@ -34,7 +38,7 @@ export const useGetTemplateRecipients = (templateKey?: string, isSystem?: boolea
       }
 
       const response = await fetch(
-        `${baseUrl}/v1/${segment}/templates/${templateKey}/signers/basic`,
+        `${baseUrl}/v1/${segment}/templates/${templateKey}/${documensoTemplateId}/signers/basic`,
         {
           headers: {
             'x-api-key': apiKey,
