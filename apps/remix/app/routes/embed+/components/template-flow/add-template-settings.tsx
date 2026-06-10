@@ -70,6 +70,12 @@ export type AddTemplateSettingsFormProps = {
   }) => void | Promise<void>;
 };
 
+const getDocumensoTemplateIdFromSecondaryId = (secondaryId?: string | null) => {
+  if (!secondaryId?.startsWith('template_')) return undefined;
+
+  return Number(secondaryId.replace('template_', ''));
+};
+
 export const AddTemplateSettingsFormPartial = ({
   flowStep,
   envelope,
@@ -79,8 +85,12 @@ export const AddTemplateSettingsFormPartial = ({
   const { t } = useLingui();
 
   const { data: categories } = useGetContactCategories(isSystem);
+
+  const documensoTemplateId = getDocumensoTemplateIdFromSecondaryId(envelope.secondaryId);
+
   const { data: recipientsFromApi } = useGetTemplateRecipients(
     envelope.formKey ?? undefined,
+    documensoTemplateId,
     isSystem,
   );
 
@@ -140,17 +150,18 @@ export const AddTemplateSettingsFormPartial = ({
   useEffect(() => {
     if (!recipientsFromApi) return;
 
-    recipientsFromApi.forEach((apiRecipient, index) => {
+    recipientsFromApi.slice(0, fields.length).forEach((apiRecipient, index) => {
       form.setValue(
         `recipients.${index}.contactCategoryKey`,
         apiRecipient.contactCategoryKey ?? undefined,
       );
     });
-  }, [recipientsFromApi]);
+  }, [recipientsFromApi, fields.length, form]);
 
   const handleAddRecipient = () => {
-    const nextIndex = fields.length + 1;
+    const nextIndex = form.getValues('recipients').length + 1;
     const placeholder = generateRecipientPlaceholder(nextIndex);
+
     append({
       formId: `recipient-new-${nextIndex}`,
       name: `Recipient ${nextIndex}`,
@@ -158,6 +169,18 @@ export const AddTemplateSettingsFormPartial = ({
       role: RecipientRole.SIGNER,
       signingOrder: nextIndex,
     });
+  };
+
+  const handleRemoveRecipient = (index: number) => {
+    remove(index);
+
+    setTimeout(() => {
+      const recipients = form.getValues('recipients');
+      form.setValue('recipients', normalizeRecipientsOrder(recipients), {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }, 0);
   };
 
   const normalizeRecipientForComparison = (
@@ -211,6 +234,22 @@ export const AddTemplateSettingsFormPartial = ({
     return false;
   };
 
+  const normalizeRecipientsOrder = (recipients: TAddTemplateSettingsFormSchema['recipients']) => {
+    return recipients.map((recipient, index) => {
+      const order = index + 1;
+      const placeholder = generateRecipientPlaceholder(order);
+
+      return {
+        ...recipient,
+        formId: recipient.id ? recipient.formId : `recipient-new-${order}`,
+        name: `Recipient ${order}`,
+        email: placeholder.email,
+        signingOrder: order,
+        role: recipient.role ?? RecipientRole.SIGNER,
+      };
+    });
+  };
+
   const handleSubmit = async (data: TAddTemplateSettingsFormSchema) => {
     const shouldSave =
       hadNoRecipientsInitiallyRef.current || hasValuesChanged(data, initialValuesRef.current);
@@ -253,7 +292,10 @@ export const AddTemplateSettingsFormPartial = ({
       };
     });
 
-    await onSubmit({ title: data.title, recipients: fixedRecipients });
+    await onSubmit({
+      title: data.title,
+      recipients: normalizeRecipientsOrder(fixedRecipients),
+    });
   };
 
   return (
@@ -362,7 +404,7 @@ export const AddTemplateSettingsFormPartial = ({
                       type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={() => remove(index)}
+                      onClick={() => handleRemoveRecipient(index)}
                       className="h-10 w-10 p-0"
                     >
                       <Trash className="h-4 w-4" />
