@@ -345,7 +345,7 @@ export const AddTemplateSettingsFormPartial = ({
                       )?.name;
 
                       return (
-                        <FormItem className="relative flex-1">
+                        <FormItem className="flex-1">
                           <FormControl>
                             <Select
                               value={selectField.value || ''}
@@ -376,18 +376,6 @@ export const AddTemplateSettingsFormPartial = ({
                               </SelectContent>
                             </Select>
                           </FormControl>
-                          {selectField.value && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => selectField.onChange(undefined)}
-                              className="absolute right-9 top-1/2 h-6 w-6 -translate-y-1/2 p-0"
-                              aria-label={t`Clear category`}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          )}
                           <FormMessage />
                         </FormItem>
                       );
@@ -411,6 +399,22 @@ export const AddTemplateSettingsFormPartial = ({
                       </FormItem>
                     )}
                   />
+                  {form.watch(`recipients.${index}.contactCategoryKey`) && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        form.setValue(`recipients.${index}.contactCategoryKey`, undefined, {
+                          shouldDirty: true,
+                        })
+                      }
+                      className="h-10 w-10 p-0"
+                      aria-label={t`Clear category`}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
                   {fields.length > 1 && (
                     <Button
                       type="button"
