@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Trans, useLingui } from '@lingui/react/macro';
 import { RecipientRole } from '@prisma/client';
-import { Plus, Trash } from 'lucide-react';
+import { Plus, Trash, X } from 'lucide-react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -345,7 +345,7 @@ export const AddTemplateSettingsFormPartial = ({
                       )?.name;
 
                       return (
-                        <FormItem className="flex-1">
+                        <FormItem className="relative flex-1">
                           <FormControl>
                             <Select
                               value={selectField.value || ''}
@@ -376,6 +376,18 @@ export const AddTemplateSettingsFormPartial = ({
                               </SelectContent>
                             </Select>
                           </FormControl>
+                          {selectField.value && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => selectField.onChange(undefined)}
+                              className="absolute right-9 top-1/2 h-6 w-6 -translate-y-1/2 p-0"
+                              aria-label={t`Clear category`}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          )}
                           <FormMessage />
                         </FormItem>
                       );
