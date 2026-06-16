@@ -147,16 +147,34 @@ export const AddTemplateSettingsFormPartial = ({
 
   const { stepIndex, currentStep, totalSteps, previousStep, nextStep } = useStep();
 
+  // Tracks recipient indexes whose category the user cleared manually,
+  // so the API effect below doesn't repopulate them.
+  const clearedCategoriesRef = useRef<Set<number>>(new Set());
+
   useEffect(() => {
     if (!recipientsFromApi) return;
 
     recipientsFromApi.slice(0, fields.length).forEach((apiRecipient, index) => {
-      form.setValue(
-        `recipients.${index}.contactCategoryKey`,
-        apiRecipient.contactCategoryKey ?? undefined,
-      );
+      if (clearedCategoriesRef.current.has(index)) return;
+
+      const categoryKey = apiRecipient.contactCategoryKey ?? undefined;
+
+      form.setValue(`recipients.${index}.contactCategoryKey`, categoryKey);
+
+      // Keep the baseline in sync with the categories loaded from the API,
+      // so clearing a category is correctly detected as a change on submit.
+      if (initialValuesRef.current.recipients[index]) {
+        initialValuesRef.current.recipients[index].contactCategoryKey = categoryKey;
+      }
     });
   }, [recipientsFromApi, fields.length, form]);
+
+  const handleClearCategory = (index: number) => {
+    clearedCategoriesRef.current.add(index);
+    form.setValue(`recipients.${index}.contactCategoryKey`, undefined, {
+      shouldDirty: true,
+    });
+  };
 
   const handleAddRecipient = () => {
     const nextIndex = form.getValues('recipients').length + 1;
@@ -252,7 +270,9 @@ export const AddTemplateSettingsFormPartial = ({
 
   const handleSubmit = async (data: TAddTemplateSettingsFormSchema) => {
     const shouldSave =
-      hadNoRecipientsInitiallyRef.current || hasValuesChanged(data, initialValuesRef.current);
+      hadNoRecipientsInitiallyRef.current ||
+      clearedCategoriesRef.current.size > 0 ||
+      hasValuesChanged(data, initialValuesRef.current);
 
     if (!shouldSave) {
       nextStep();
@@ -384,7 +404,7 @@ export const AddTemplateSettingsFormPartial = ({
                               type="button"
                               variant="ghost"
                               size="sm"
-                              onClick={() => selectField.onChange(undefined)}
+                              onClick={() => handleClearCategory(index)}
                               className="h-10 w-10 p-0"
                               aria-label={t`Clear category`}
                             >
