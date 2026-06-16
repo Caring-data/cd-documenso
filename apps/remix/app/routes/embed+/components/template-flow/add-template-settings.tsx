@@ -345,39 +345,53 @@ export const AddTemplateSettingsFormPartial = ({
                       )?.name;
 
                       return (
-                        <FormItem className="flex-1">
-                          <FormControl>
-                            <Select
-                              value={selectField.value || ''}
-                              onValueChange={(value) => {
-                                selectField.onChange(value === '' ? undefined : value);
-                              }}
+                        <>
+                          <FormItem className="flex-1">
+                            <FormControl>
+                              <Select
+                                value={selectField.value || ''}
+                                onValueChange={(value) => {
+                                  selectField.onChange(value === '' ? undefined : value);
+                                }}
+                              >
+                                <SelectTrigger className="truncate bg-white">
+                                  <SelectValue placeholder={`Recipient ${index + 1} - Select`}>
+                                    {selectField.value && categoryName
+                                      ? `Recipient ${index + 1} - ${categoryName}`
+                                      : undefined}
+                                  </SelectValue>
+                                </SelectTrigger>
+
+                                <SelectContent>
+                                  <SelectGroup>
+                                    <SelectLabel>
+                                      <Trans>Category</Trans>
+                                    </SelectLabel>
+
+                                    {categories?.map((category) => (
+                                      <SelectItem key={category.key} value={category.key}>
+                                        {category.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectGroup>
+                                </SelectContent>
+                              </Select>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                          {selectField.value && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => selectField.onChange(undefined)}
+                              className="h-10 w-10 p-0"
+                              aria-label={t`Clear category`}
                             >
-                              <SelectTrigger className="truncate bg-white">
-                                <SelectValue placeholder={`Recipient ${index + 1} - Select`}>
-                                  {selectField.value && categoryName
-                                    ? `Recipient ${index + 1} - ${categoryName}`
-                                    : undefined}
-                                </SelectValue>
-                              </SelectTrigger>
-
-                              <SelectContent>
-                                <SelectGroup>
-                                  <SelectLabel>
-                                    <Trans>Category</Trans>
-                                  </SelectLabel>
-
-                                  {categories?.map((category) => (
-                                    <SelectItem key={category.key} value={category.key}>
-                                      {category.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectGroup>
-                              </SelectContent>
-                            </Select>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
+                              <X className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </>
                       );
                     }}
                   />
@@ -399,22 +413,6 @@ export const AddTemplateSettingsFormPartial = ({
                       </FormItem>
                     )}
                   />
-                  {form.watch(`recipients.${index}.contactCategoryKey`) && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() =>
-                        form.setValue(`recipients.${index}.contactCategoryKey`, undefined, {
-                          shouldDirty: true,
-                        })
-                      }
-                      className="h-10 w-10 p-0"
-                      aria-label={t`Clear category`}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  )}
                   {fields.length > 1 && (
                     <Button
                       type="button"
