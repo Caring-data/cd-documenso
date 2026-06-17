@@ -37,6 +37,7 @@ import {
   SelectGroup,
   SelectItem,
   SelectLabel,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from '@documenso/ui/primitives/select';
@@ -59,6 +60,8 @@ const ZAddTemplateSettingsFormSchema = z.object({
 });
 
 type TAddTemplateSettingsFormSchema = z.infer<typeof ZAddTemplateSettingsFormSchema>;
+
+const CLEAR_CONTACT_CATEGORY_VALUE = '__clear_contact_category__';
 
 export type AddTemplateSettingsFormProps = {
   flowStep: DocumentFlowStep;
@@ -149,6 +152,18 @@ export const AddTemplateSettingsFormPartial = ({
 
   useEffect(() => {
     if (!recipientsFromApi) return;
+
+    const recipientsWithContactCategories = initialValuesRef.current.recipients.map(
+      (recipient, index) => ({
+        ...recipient,
+        contactCategoryKey: recipientsFromApi[index]?.contactCategoryKey ?? undefined,
+      }),
+    );
+
+    initialValuesRef.current = {
+      ...initialValuesRef.current,
+      recipients: recipientsWithContactCategories,
+    };
 
     recipientsFromApi.slice(0, fields.length).forEach((apiRecipient, index) => {
       form.setValue(
@@ -350,7 +365,9 @@ export const AddTemplateSettingsFormPartial = ({
                             <Select
                               value={selectField.value || ''}
                               onValueChange={(value) => {
-                                selectField.onChange(value === '' ? undefined : value);
+                                selectField.onChange(
+                                  value === CLEAR_CONTACT_CATEGORY_VALUE ? undefined : value,
+                                );
                               }}
                             >
                               <SelectTrigger className="truncate bg-white">
@@ -362,6 +379,12 @@ export const AddTemplateSettingsFormPartial = ({
                               </SelectTrigger>
 
                               <SelectContent>
+                                <SelectItem value={CLEAR_CONTACT_CATEGORY_VALUE}>
+                                  <Trans>None</Trans>
+                                </SelectItem>
+
+                                <SelectSeparator />
+
                                 <SelectGroup>
                                   <SelectLabel>
                                     <Trans>Category</Trans>
