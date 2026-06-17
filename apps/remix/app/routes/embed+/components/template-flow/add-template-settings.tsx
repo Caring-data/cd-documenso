@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Trans, useLingui } from '@lingui/react/macro';
 import { RecipientRole } from '@prisma/client';
-import { Plus, Trash, X } from 'lucide-react';
+import { Plus, Trash } from 'lucide-react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -147,34 +147,16 @@ export const AddTemplateSettingsFormPartial = ({
 
   const { stepIndex, currentStep, totalSteps, previousStep, nextStep } = useStep();
 
-  // Tracks recipient indexes whose category the user cleared manually,
-  // so the API effect below doesn't repopulate them.
-  const clearedCategoriesRef = useRef<Set<number>>(new Set());
-
   useEffect(() => {
     if (!recipientsFromApi) return;
 
     recipientsFromApi.slice(0, fields.length).forEach((apiRecipient, index) => {
-      if (clearedCategoriesRef.current.has(index)) return;
-
-      const categoryKey = apiRecipient.contactCategoryKey ?? undefined;
-
-      form.setValue(`recipients.${index}.contactCategoryKey`, categoryKey);
-
-      // Keep the baseline in sync with the categories loaded from the API,
-      // so clearing a category is correctly detected as a change on submit.
-      if (initialValuesRef.current.recipients[index]) {
-        initialValuesRef.current.recipients[index].contactCategoryKey = categoryKey;
-      }
+      form.setValue(
+        `recipients.${index}.contactCategoryKey`,
+        apiRecipient.contactCategoryKey ?? undefined,
+      );
     });
   }, [recipientsFromApi, fields.length, form]);
-
-  const handleClearCategory = (index: number) => {
-    clearedCategoriesRef.current.add(index);
-    form.setValue(`recipients.${index}.contactCategoryKey`, undefined, {
-      shouldDirty: true,
-    });
-  };
 
   const handleAddRecipient = () => {
     const nextIndex = form.getValues('recipients').length + 1;
@@ -270,9 +252,7 @@ export const AddTemplateSettingsFormPartial = ({
 
   const handleSubmit = async (data: TAddTemplateSettingsFormSchema) => {
     const shouldSave =
-      hadNoRecipientsInitiallyRef.current ||
-      clearedCategoriesRef.current.size > 0 ||
-      hasValuesChanged(data, initialValuesRef.current);
+      hadNoRecipientsInitiallyRef.current || hasValuesChanged(data, initialValuesRef.current);
 
     if (!shouldSave) {
       nextStep();
@@ -365,53 +345,39 @@ export const AddTemplateSettingsFormPartial = ({
                       )?.name;
 
                       return (
-                        <>
-                          <FormItem className="flex-1">
-                            <FormControl>
-                              <Select
-                                value={selectField.value || ''}
-                                onValueChange={(value) => {
-                                  selectField.onChange(value === '' ? undefined : value);
-                                }}
-                              >
-                                <SelectTrigger className="truncate bg-white">
-                                  <SelectValue placeholder={`Recipient ${index + 1} - Select`}>
-                                    {selectField.value && categoryName
-                                      ? `Recipient ${index + 1} - ${categoryName}`
-                                      : undefined}
-                                  </SelectValue>
-                                </SelectTrigger>
-
-                                <SelectContent>
-                                  <SelectGroup>
-                                    <SelectLabel>
-                                      <Trans>Category</Trans>
-                                    </SelectLabel>
-
-                                    {categories?.map((category) => (
-                                      <SelectItem key={category.key} value={category.key}>
-                                        {category.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectGroup>
-                                </SelectContent>
-                              </Select>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                          {selectField.value && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleClearCategory(index)}
-                              className="h-10 w-10 p-0"
-                              aria-label={t`Clear category`}
+                        <FormItem className="flex-1">
+                          <FormControl>
+                            <Select
+                              value={selectField.value || ''}
+                              onValueChange={(value) => {
+                                selectField.onChange(value === '' ? undefined : value);
+                              }}
                             >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </>
+                              <SelectTrigger className="truncate bg-white">
+                                <SelectValue placeholder={`Recipient ${index + 1} - Select`}>
+                                  {selectField.value && categoryName
+                                    ? `Recipient ${index + 1} - ${categoryName}`
+                                    : undefined}
+                                </SelectValue>
+                              </SelectTrigger>
+
+                              <SelectContent>
+                                <SelectGroup>
+                                  <SelectLabel>
+                                    <Trans>Category</Trans>
+                                  </SelectLabel>
+
+                                  {categories?.map((category) => (
+                                    <SelectItem key={category.key} value={category.key}>
+                                      {category.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectGroup>
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
                       );
                     }}
                   />
