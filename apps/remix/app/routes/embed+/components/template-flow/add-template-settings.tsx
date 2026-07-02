@@ -73,7 +73,7 @@ export type AddTemplateSettingsFormProps = {
   }) => void | Promise<void>;
 };
 
-const getDocumensoTemplateIdFromSecondaryId = (secondaryId?: string | null) => {
+export const getDocumensoTemplateIdFromSecondaryId = (secondaryId?: string | null) => {
   if (!secondaryId?.startsWith('template_')) return undefined;
 
   return Number(secondaryId.replace('template_', ''));

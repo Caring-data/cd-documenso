@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useLingui } from '@lingui/react/macro';
-import { Trans } from '@lingui/react/macro';
-import type { FieldType, Recipient } from '@prisma/client';
+import type { FieldType } from '@prisma/client';
 import { RecipientRole } from '@prisma/client';
 import Konva from 'konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
@@ -10,6 +9,8 @@ import type { Transformer } from 'konva/lib/shapes/Transformer';
 import { CopyPlusIcon, SquareStackIcon, TrashIcon, UserCircleIcon } from 'lucide-react';
 
 import type { TLocalField } from '@documenso/lib/client-only/hooks/use-editor-fields';
+import { useGetContactCategories } from '@documenso/lib/client-only/hooks/use-get-contact-categories';
+import { useGetTemplateRecipients } from '@documenso/lib/client-only/hooks/use-get-template-recipients';
 import { usePageRenderer } from '@documenso/lib/client-only/hooks/use-page-renderer';
 import { useCurrentEnvelopeRender } from '@documenso/lib/client-only/providers/envelope-render-provider';
 import { FIELD_META_DEFAULT_VALUES } from '@documenso/lib/types/field-meta';
@@ -20,17 +21,26 @@ import {
 } from '@documenso/lib/universal/field-renderer/field-renderer';
 import { renderField } from '@documenso/lib/universal/field-renderer/render-field';
 import { getClientSideFieldTranslations } from '@documenso/lib/utils/fields';
-import { cn } from '@documenso/ui/lib/utils';
 import { CommandDialog } from '@documenso/ui/primitives/command';
 
-import { useCurrentEmbedTemplateEditor } from '../providers/embed-template-editor-provider';
 import { fieldButtonList } from '~/components/general/envelope-editor/envelope-editor-fields-drag-drop';
+
+import { useCurrentEmbedTemplateEditor } from '../providers/embed-template-editor-provider';
+import { getDocumensoTemplateIdFromSecondaryId } from './add-template-settings';
 import { EmbedRecipientSelectorCommand } from './embed-recipient-selector';
 
 export default function EmbedFieldsPageRenderer() {
   const { t, i18n } = useLingui();
   const { envelope, editorFields, getRecipientColorKey } = useCurrentEmbedTemplateEditor();
   const { currentEnvelopeItem, setRenderError } = useCurrentEnvelopeRender();
+
+  const documensoTemplateId = getDocumensoTemplateIdFromSecondaryId(envelope.secondaryId);
+
+  const { data: categories } = useGetContactCategories();
+  const { data: recipientsFromApi } = useGetTemplateRecipients(
+    envelope.formKey ?? undefined,
+    documensoTemplateId,
+  );
 
   const interactiveTransformer = useRef<Transformer | null>(null);
 
@@ -48,6 +58,43 @@ export default function EmbedFieldsPageRenderer() {
     scaledViewport,
     unscaledViewport,
   } = usePageRenderer(({ stage, pageLayer }) => createPageCanvas(stage, pageLayer));
+
+  const getCategoryName = useCallback(
+    (key?: string | null) => {
+      if (!key) return null;
+      return categories?.find((c) => c.key === key)?.name ?? key;
+    },
+    [categories],
+  );
+
+  const mergedRecipients = useMemo(() => {
+    if (!recipientsFromApi?.length) return envelope.recipients;
+
+    const apiByEmail = new Map(recipientsFromApi.map((r) => [r.email?.toLowerCase(), r]));
+
+    return envelope.recipients.map((r) => {
+      const api = apiByEmail.get(r.email?.toLowerCase());
+
+      return {
+        ...r,
+        contactCategoryKey: api?.contactCategoryKey ?? (r as any).contactCategoryKey ?? null,
+      };
+    });
+  }, [envelope.recipients, recipientsFromApi]);
+
+  const selectableRecipients = useMemo(() => {
+    return mergedRecipients
+      .filter((r) => r.role !== RecipientRole.CC && r.role !== RecipientRole.ASSISTANT)
+      .map((r, index) => {
+        const categoryName = getCategoryName((r as any).contactCategoryKey);
+
+        return {
+          ...r,
+          name: r.name?.trim() || `Recipient ${index + 1}`,
+          email: categoryName ?? r.email,
+        };
+      });
+  }, [mergedRecipients, getCategoryName]);
 
   const { _className, scale } = pageContext;
 
@@ -527,6 +574,7 @@ export default function EmbedFieldsPageRenderer() {
               pointerEvents: 'auto',
               zIndex: 50,
             }}
+            selectableRecipients={selectableRecipients}
           />
         )}
 
@@ -578,6 +626,7 @@ type FieldActionButtonsProps = React.HTMLAttributes<HTMLDivElement> & {
   handleDeleteSelectedFields: () => void;
   handleChangeRecipient: (recipientId: number) => void;
   selectedFieldFormId: string[];
+  selectableRecipients: any[];
 };
 
 const FieldActionButtons = ({
@@ -586,6 +635,7 @@ const FieldActionButtons = ({
   handleDeleteSelectedFields,
   handleChangeRecipient,
   selectedFieldFormId,
+  selectableRecipients,
   ...props
 }: FieldActionButtonsProps) => {
   const { t } = useLingui();
@@ -603,9 +653,9 @@ const FieldActionButtons = ({
       selectedFieldFormId.includes(field.formId),
     );
 
-    const recipient = envelope.recipients.find(
-      (recipient) => recipient.id === fields[0].recipientId,
-    );
+    const firstRecipientId = fields[0]?.recipientId;
+
+    const recipient = selectableRecipients.find((recipient) => recipient.id === firstRecipientId);
 
     if (!recipient) {
       return null;
@@ -613,18 +663,8 @@ const FieldActionButtons = ({
 
     const isRecipientsSame = fields.every((field) => field.recipientId === recipient.id);
 
-    if (isRecipientsSame) {
-      return recipient;
-    }
-
-    return null;
-  }, [editorFields.localFields, selectedFieldFormId, envelope.recipients]);
-
-  const selectableRecipients = useMemo(() => {
-    return envelope.recipients.filter(
-      (r) => r.role !== RecipientRole.CC && r.role !== RecipientRole.ASSISTANT,
-    );
-  }, [envelope.recipients]);
+    return isRecipientsSame ? recipient : null;
+  }, [editorFields.localFields, selectedFieldFormId, selectableRecipients]);
 
   return (
     <div className="flex flex-col items-center" {...props}>
