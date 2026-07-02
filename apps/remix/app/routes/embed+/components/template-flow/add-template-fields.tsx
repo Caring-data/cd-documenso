@@ -86,6 +86,7 @@ import { EmbedEditorFieldResidentTextForm } from '~/components/forms/embed/embed
 import { EmbedEditorFieldTextForm } from '~/components/forms/embed/embed-editor-field-text-form';
 
 import { useCurrentEmbedTemplateEditor } from '../providers/embed-template-editor-provider';
+import { getDocumensoTemplateIdFromSecondaryId } from './add-template-settings';
 
 const MIN_HEIGHT_PX = 12;
 const MIN_WIDTH_PX = 36;
@@ -136,8 +137,13 @@ export const EmbedAddTemplateFieldsFormPartial = ({
   const { envelope, editorFields, getRecipientColorKey } = useCurrentEmbedTemplateEditor();
   const { currentEnvelopeItem } = useCurrentEnvelopeRender();
 
+  const documensoTemplateId = getDocumensoTemplateIdFromSecondaryId(envelope.secondaryId);
+
   const { data: categories } = useGetContactCategories();
-  const { data: recipientsFromApi } = useGetTemplateRecipients(envelope.formKey ?? undefined);
+  const { data: recipientsFromApi } = useGetTemplateRecipients(
+    envelope.formKey ?? undefined,
+    documensoTemplateId,
+  );
 
   const recipients = envelope.recipients;
   const { stepIndex, currentStep, totalSteps, previousStep, nextStep } = useStep();
