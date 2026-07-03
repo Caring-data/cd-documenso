@@ -183,7 +183,7 @@ function ClientInner({ envelopeId, externalId, initialEnvelope }: ClientInnerPro
       email: string;
       role: RecipientRole;
       signingOrder?: number;
-      contactCategoryKey?: string;
+      contactCategoryKey?: string | null;
       actionAuth?: TRecipientActionAuthTypes[];
     }>;
   }) => {

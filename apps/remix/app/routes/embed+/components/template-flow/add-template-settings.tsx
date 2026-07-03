@@ -51,7 +51,7 @@ const ZAddTemplateSettingsFormSchema = z.object({
       id: z.number().optional(),
       formId: z.string().min(1),
       name: z.string().min(1, { message: 'Name is required' }),
-      contactCategoryKey: z.string().optional(),
+      contactCategoryKey: z.string().nullable().optional(),
       email: ZRecipientEmailSchema,
       role: z.nativeEnum(RecipientRole),
       signingOrder: z.number().optional(),
@@ -150,28 +150,30 @@ export const AddTemplateSettingsFormPartial = ({
 
   const { stepIndex, currentStep, totalSteps, previousStep, nextStep } = useStep();
 
-  useEffect(() => {
-    if (!recipientsFromApi) return;
+  const hasLoadedContactCategoriesRef = useRef(false);
 
-    const recipientsWithContactCategories = initialValuesRef.current.recipients.map(
-      (recipient, index) => ({
-        ...recipient,
-        contactCategoryKey: recipientsFromApi[index]?.contactCategoryKey ?? undefined,
-      }),
-    );
+  useEffect(() => {
+    if (!recipientsFromApi || hasLoadedContactCategoriesRef.current) return;
+
+    hasLoadedContactCategoriesRef.current = true;
+
+    const currentRecipients = form.getValues('recipients');
+
+    const recipientsWithContactCategories = currentRecipients.map((recipient, index) => ({
+      ...recipient,
+      contactCategoryKey: recipientsFromApi[index]?.contactCategoryKey ?? undefined,
+    }));
+
+    form.setValue('recipients', recipientsWithContactCategories, {
+      shouldDirty: false,
+      shouldValidate: true,
+    });
 
     initialValuesRef.current = {
       ...initialValuesRef.current,
       recipients: recipientsWithContactCategories,
     };
-
-    recipientsFromApi.slice(0, fields.length).forEach((apiRecipient, index) => {
-      form.setValue(
-        `recipients.${index}.contactCategoryKey`,
-        apiRecipient.contactCategoryKey ?? undefined,
-      );
-    });
-  }, [recipientsFromApi, fields.length, form]);
+  }, [recipientsFromApi, form]);
 
   const handleAddRecipient = () => {
     const nextIndex = form.getValues('recipients').length + 1;
@@ -191,6 +193,7 @@ export const AddTemplateSettingsFormPartial = ({
 
     setTimeout(() => {
       const recipients = form.getValues('recipients');
+
       form.setValue('recipients', normalizeRecipientsOrder(recipients), {
         shouldDirty: true,
         shouldValidate: true,
@@ -363,10 +366,10 @@ export const AddTemplateSettingsFormPartial = ({
                         <FormItem className="flex-1">
                           <FormControl>
                             <Select
-                              value={selectField.value || ''}
+                              value={selectField.value ?? CLEAR_CONTACT_CATEGORY_VALUE}
                               onValueChange={(value) => {
                                 selectField.onChange(
-                                  value === CLEAR_CONTACT_CATEGORY_VALUE ? undefined : value,
+                                  value === CLEAR_CONTACT_CATEGORY_VALUE ? null : value,
                                 );
                               }}
                             >
@@ -374,7 +377,7 @@ export const AddTemplateSettingsFormPartial = ({
                                 <SelectValue placeholder={`Recipient ${index + 1} - Select`}>
                                   {selectField.value && categoryName
                                     ? `Recipient ${index + 1} - ${categoryName}`
-                                    : undefined}
+                                    : `Recipient ${index + 1} - Select`}
                                 </SelectValue>
                               </SelectTrigger>
 
