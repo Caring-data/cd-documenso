@@ -189,6 +189,8 @@ export const resendDocument = async ({
         'document.name': envelope.title,
       };
 
+      const newExpirationDate = DateTime.now().plus({ days: 7 }).toJSDate();
+
       const assetBaseUrl = NEXT_PUBLIC_WEBAPP_URL() || 'http://localhost:3002';
       const signDocumentLink = `${NEXT_PUBLIC_WEBAPP_URL()}/sign/${recipient.token}`;
 
@@ -204,7 +206,7 @@ export const resendDocument = async ({
         role: recipient.role,
         recipientName: recipient.name,
         signingContext: envelope.signingContext || {},
-        tokenExpiration: recipient.expired ? recipient.expired.toISOString() : undefined,
+        tokenExpiration: newExpirationDate.toISOString(),
       });
 
       const [html] = await Promise.all([
@@ -224,7 +226,7 @@ export const resendDocument = async ({
           await tx.recipient.update({
             where: { id: recipient.id },
             data: {
-              expired: DateTime.now().plus({ days: 7 }).toJSDate(),
+              expired: newExpirationDate,
             },
           });
 
