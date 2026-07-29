@@ -8,8 +8,16 @@ import type { TSignEnvelopeFieldValue } from '@documenso/trpc/server/envelope-ro
 import { SignFieldTextDialog } from '~/components/dialogs/sign-field-text-dialog';
 import { isResidentFieldType } from '~/components/general/document-signing/document-signing-resident-helper';
 
+type TextFieldWithCurrentValue = {
+  type: FieldType;
+  inserted: boolean;
+  fieldMeta: unknown;
+  customText?: string | null;
+  required?: boolean;
+};
+
 type HandleTextFieldClickOptions = {
-  field: TFieldText | { type: FieldType; inserted: boolean; fieldMeta: unknown };
+  field: TFieldText | TextFieldWithCurrentValue;
   text: string | null;
 };
 
@@ -18,7 +26,6 @@ export const handleTextFieldClick = async (
 ): Promise<TSignEnvelopeFieldValue | null> => {
   const { field, text } = options;
 
-  // Accept TEXT and all resident field types
   const isValidType = field.type === FieldType.TEXT || isResidentFieldType(field.type);
 
   if (!isValidType) {
@@ -27,37 +34,37 @@ export const handleTextFieldClick = async (
     });
   }
 
-  if (field.inserted) {
-    return {
-      type: field.type,
-      value: null,
-    } as TSignEnvelopeFieldValue;
+  let parsedFieldMeta: ReturnType<typeof ZTextFieldMeta.safeParse>['data'] | undefined;
+
+  if (field.fieldMeta) {
+    const parseResult = ZTextFieldMeta.safeParse(field.fieldMeta);
+
+    if (parseResult.success) {
+      parsedFieldMeta = parseResult.data;
+    }
   }
 
-  let textToInsert = text;
+  if (field.inserted || text === null) {
+    const currentText = typeof field.customText === 'string' ? field.customText : '';
 
-  if (!textToInsert) {
-    // Parse fieldMeta to ensure it's the correct type for text fields
-    let parsedFieldMeta: ReturnType<typeof ZTextFieldMeta.safeParse>['data'] | undefined;
-    
-    if (field.fieldMeta) {
-      const parseResult = ZTextFieldMeta.safeParse(field.fieldMeta);
-      if (parseResult.success) {
-        parsedFieldMeta = parseResult.data;
-      }
+    const result = await SignFieldTextDialog.call({
+      fieldMeta: parsedFieldMeta,
+      initialText: currentText,
+      isRequired: parsedFieldMeta?.required ?? false,
+    });
+
+    if (result === null) {
+      return null;
     }
 
-    textToInsert = await SignFieldTextDialog.call({
-      fieldMeta: parsedFieldMeta,
-    });
-  }
-
-  if (!textToInsert) {
-    return null;
+    return {
+      type: field.type,
+      value: result.value,
+    } as TSignEnvelopeFieldValue;
   }
 
   return {
     type: field.type,
-    value: textToInsert,
+    value: text,
   } as TSignEnvelopeFieldValue;
 };
