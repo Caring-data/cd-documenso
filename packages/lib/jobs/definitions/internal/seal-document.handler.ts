@@ -184,12 +184,14 @@ export const run = async ({
     }
 
     const legacyDocumentId = mapSecondaryIdToDocumentId(envelope.secondaryId);
+    const certificateStartedAt = Date.now();
 
     await createLog({
       level: LogLevel.INFO,
       action: 'CERTIFICATE_FETCH_START',
       message: 'Fetching certificate and audit log data',
       data: {
+        envelopeId: envelope.id,
         legacyDocumentId,
         includeCertificate: settings.includeSigningCertificate,
         includeAuditLog: settings.includeAuditLog,
@@ -208,8 +210,11 @@ export const run = async ({
       action: 'CERTIFICATE_FETCH_RESULT',
       message: 'Certificate and audit log fetch result',
       data: {
-        hasCertificate: !!certificateData,
-        hasAuditLog: !!auditLogData,
+        envelopeId: envelope.id,
+        legacyDocumentId,
+        hasCertificate: Boolean(certificateData),
+        certificateSize: certificateData?.length ?? 0,
+        durationMs: Date.now() - certificateStartedAt,
       },
       metadata: requestMetadata,
     });
@@ -739,19 +744,19 @@ export const getCertificateAndAuditLogData = async ({
     ? getCertificatePdf({
         documentId: legacyDocumentId,
         language: documentMeta.language,
-      }).catch(async (e) => {
+      }).catch(async (error) => {
         await createLog({
           level: LogLevel.ERROR,
           action: 'CERTIFICATE_GENERATION_FAILED',
           message: 'Error generating certificate PDF',
           data: {
-            error: e instanceof Error ? e.message : String(e),
-            stack: e instanceof Error ? e.stack : undefined,
             legacyDocumentId,
+            error: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined,
           },
         });
 
-        return null;
+        throw error;
       })
     : null;
 

@@ -1,5 +1,6 @@
+import { LogLevel } from '@prisma/client';
 import { DateTime } from 'luxon';
-import type { Browser } from 'playwright';
+import type { Browser, BrowserContext, Page } from 'playwright';
 
 import {
   NEXT_PRIVATE_INTERNAL_WEBAPP_URL,
@@ -7,6 +8,7 @@ import {
   USE_INTERNAL_URL_BROWSERLESS,
 } from '../../constants/app';
 import { type SupportedLanguageCodes, isValidLanguageCode } from '../../constants/i18n';
+import { createLog } from '../../utils/createLog';
 import { env } from '../../utils/env';
 import { encryptSecondaryData } from '../crypto/encrypt';
 
@@ -17,78 +19,209 @@ export type GetCertificatePdfOptions = {
 };
 
 export const getCertificatePdf = async ({ documentId, language }: GetCertificatePdfOptions) => {
+  const startedAt = Date.now();
   const { chromium } = await import('playwright');
 
-  const encryptedId = encryptSecondaryData({
-    data: documentId.toString(),
-    expiresAt: DateTime.now().plus({ minutes: 5 }).toJSDate().valueOf(),
-  });
+  let browser: Browser | undefined;
+  let browserContext: BrowserContext | undefined;
+  let page: Page | undefined;
 
-  let browser: Browser;
-
-  const browserlessUrl = env('NEXT_PRIVATE_BROWSERLESS_URL');
-
-  if (browserlessUrl) {
-    // !: Use CDP rather than the default `connect` method to avoid coupling to the playwright version.
-    // !: Previously we would have to keep the playwright version in sync with the browserless version to avoid errors.
-    browser = await chromium.connectOverCDP(browserlessUrl);
-  } else {
-    browser = await chromium.launch({
-      executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || undefined,
+  const logStage = async (
+    action: string,
+    stage: string,
+    stageStartedAt: number,
+    data: Record<string, unknown> = {},
+  ) => {
+    await createLog({
+      level: LogLevel.INFO,
+      action,
+      message: `Certificate generation stage: ${stage}`,
+      data: {
+        documentId,
+        stage,
+        stageDurationMs: Date.now() - stageStartedAt,
+        totalDurationMs: Date.now() - startedAt,
+        ...data,
+      },
     });
-  }
+  };
 
-  if (!browser) {
-    throw new Error(
-      'Failed to establish a browser, please ensure you have either a Browserless.io url or chromium browser installed',
-    );
-  }
+  const withTimeout = async <T>(
+    promise: Promise<T>,
+    timeoutMs: number,
+    timeoutMessage: string,
+  ): Promise<T> => {
+    let timeoutId: ReturnType<typeof setTimeout>;
 
-  const browserContext = await browser.newContext();
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => {
+        reject(new Error(timeoutMessage));
+      }, timeoutMs);
+    });
 
-  const page = await browserContext.newPage();
+    try {
+      return await Promise.race([promise, timeoutPromise]);
+    } finally {
+      clearTimeout(timeoutId!);
+    }
+  };
 
-  const lang = isValidLanguageCode(language) ? language : 'en';
+  try {
+    const encryptedId = encryptSecondaryData({
+      data: documentId.toString(),
+      expiresAt: DateTime.now().plus({ minutes: 5 }).toJSDate().valueOf(),
+    });
 
-  await page.context().addCookies([
-    {
-      name: 'lang',
-      value: lang,
-      url: USE_INTERNAL_URL_BROWSERLESS()
-        ? NEXT_PUBLIC_WEBAPP_URL()
-        : NEXT_PRIVATE_INTERNAL_WEBAPP_URL(),
-    },
-  ]);
+    const browserlessUrl = env('NEXT_PRIVATE_BROWSERLESS_URL');
+    const browserMode = browserlessUrl ? 'browserless' : 'local';
 
-  await page.goto(
-    `${USE_INTERNAL_URL_BROWSERLESS() ? NEXT_PUBLIC_WEBAPP_URL() : NEXT_PRIVATE_INTERNAL_WEBAPP_URL()}/__htmltopdf/certificate?d=${encryptedId}`,
-    {
+    let stageStartedAt = Date.now();
+
+    await logStage('CERTIFICATE_BROWSER_CONNECTION_START', 'browser_connection', stageStartedAt, {
+      browserMode,
+    });
+
+    if (browserlessUrl) {
+      browser = await chromium.connectOverCDP(browserlessUrl, {
+        timeout: 15_000,
+      });
+    } else {
+      browser = await withTimeout(
+        chromium.launch({
+          executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || undefined,
+        }),
+        15_000,
+        `Local Chromium launch timed out for document ${documentId}`,
+      );
+    }
+
+    await logStage('CERTIFICATE_BROWSER_CONNECTION_SUCCESS', 'browser_connection', stageStartedAt, {
+      browserMode,
+    });
+
+    stageStartedAt = Date.now();
+
+    browserContext = await browser.newContext();
+    page = await browserContext.newPage();
+
+    await logStage('CERTIFICATE_PAGE_CREATED', 'page_creation', stageStartedAt);
+
+    const lang = isValidLanguageCode(language) ? language : 'en';
+
+    const webappUrl = USE_INTERNAL_URL_BROWSERLESS()
+      ? NEXT_PUBLIC_WEBAPP_URL()
+      : NEXT_PRIVATE_INTERNAL_WEBAPP_URL();
+
+    await page.context().addCookies([
+      {
+        name: 'lang',
+        value: lang,
+        url: webappUrl,
+      },
+    ]);
+
+    stageStartedAt = Date.now();
+
+    await logStage('CERTIFICATE_PAGE_NAVIGATION_START', 'page_navigation', stageStartedAt);
+
+    await page.goto(`${webappUrl}/__htmltopdf/certificate?d=${encryptedId}`, {
       waitUntil: 'networkidle',
       timeout: 10_000,
-    },
-  );
+    });
 
-  // !: This is a workaround to ensure the page is loaded correctly.
-  // !: It's not clear why but suddenly browserless cdp connections would
-  // !: cause the page to render blank until a reload is performed.
-  await page.reload({
-    waitUntil: 'networkidle',
-    timeout: 10_000,
-  });
+    await logStage('CERTIFICATE_PAGE_NAVIGATION_SUCCESS', 'page_navigation', stageStartedAt);
 
-  await page.waitForSelector('h1', {
-    state: 'visible',
-    timeout: 10_000,
-  });
+    stageStartedAt = Date.now();
 
-  const result = await page.pdf({
-    format: 'A4',
-    printBackground: true,
-  });
+    await page.reload({
+      waitUntil: 'networkidle',
+      timeout: 10_000,
+    });
 
-  await browserContext.close();
+    await logStage('CERTIFICATE_PAGE_RELOAD_SUCCESS', 'page_reload', stageStartedAt);
 
-  void browser.close();
+    stageStartedAt = Date.now();
 
-  return result;
+    await page.waitForSelector('h1', {
+      state: 'visible',
+      timeout: 10_000,
+    });
+
+    await logStage('CERTIFICATE_CONTENT_READY', 'content_ready', stageStartedAt);
+
+    stageStartedAt = Date.now();
+
+    await logStage('CERTIFICATE_PDF_GENERATION_START', 'pdf_generation', stageStartedAt);
+
+    const result = await withTimeout(
+      page.pdf({
+        format: 'A4',
+        printBackground: true,
+      }),
+      30_000,
+      `PDF generation timed out for document ${documentId}`,
+    );
+
+    await logStage('CERTIFICATE_PDF_GENERATION_SUCCESS', 'pdf_generation', stageStartedAt, {
+      pdfSize: result.length,
+    });
+
+    return result;
+  } catch (error) {
+    await createLog({
+      level: LogLevel.ERROR,
+      action: 'CERTIFICATE_PDF_GENERATION_ERROR',
+      message: 'Certificate PDF generation failed',
+      data: {
+        documentId,
+        totalDurationMs: Date.now() - startedAt,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      },
+    });
+
+    throw error;
+  } finally {
+    const CLEANUP_TIMEOUT_MS = 5_000;
+
+    if (browserContext) {
+      try {
+        await withTimeout(
+          browserContext.close(),
+          CLEANUP_TIMEOUT_MS,
+          `Browser context cleanup timed out for document ${documentId}`,
+        );
+      } catch (error) {
+        await createLog({
+          level: LogLevel.ERROR,
+          action: 'CERTIFICATE_BROWSER_CONTEXT_CLOSE_ERROR',
+          message: 'Failed to close certificate browser context',
+          data: {
+            documentId,
+            error: error instanceof Error ? error.message : String(error),
+          },
+        });
+      }
+    }
+
+    if (browser) {
+      try {
+        await withTimeout(
+          browser.close(),
+          CLEANUP_TIMEOUT_MS,
+          `Browser cleanup timed out for document ${documentId}`,
+        );
+      } catch (error) {
+        await createLog({
+          level: LogLevel.ERROR,
+          action: 'CERTIFICATE_BROWSER_CLOSE_ERROR',
+          message: 'Failed to close certificate browser',
+          data: {
+            documentId,
+            error: error instanceof Error ? error.message : String(error),
+          },
+        });
+      }
+    }
+  }
 };
