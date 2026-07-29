@@ -1,5 +1,4 @@
 import { LogCategory, LogLevel } from '@prisma/client';
-import { randomUUID } from 'node:crypto';
 import { Resend } from 'resend';
 
 import { env } from '@documenso/lib/utils/env';
@@ -17,41 +16,11 @@ export interface EmailRecipient {
   email: string;
 }
 
-interface NotifyEmailError {
+interface EmailErrorInfo {
   name: string;
   message: string;
   statusCode: number | null;
-  stack: string | null;
 }
-
-const wait = async (milliseconds: number) =>
-  new Promise<void>((resolve) => {
-    setTimeout(resolve, milliseconds);
-  });
-
-const normalizeUnexpectedError = (error: unknown): NotifyEmailError => {
-  if (error instanceof Error) {
-    return {
-      name: error.name,
-      message: error.message,
-      statusCode: null,
-      stack: error.stack ?? null,
-    };
-  }
-
-  return {
-    name: 'UnknownError',
-    message: String(error),
-    statusCode: null,
-    stack: null,
-  };
-};
-
-const isRetryableError = (error: NotifyEmailError) => {
-  const { statusCode } = error;
-
-  return statusCode === null || statusCode === 429 || (statusCode !== null && statusCode >= 500);
-};
 
 const validateNotifyConfig = async () => {
   if (!RESEND_API_KEY || !RESEND_FROM_EMAIL) {
@@ -77,11 +46,11 @@ export const sendEmailWithNotify = async (to: EmailRecipient, subject: string, h
 
   const resend = new Resend(RESEND_API_KEY!);
 
-  const idempotencyKey = `notify-email/${randomUUID()}`;
-
   const formattedRecipient = to.name ? `${to.name} <${to.email}>` : to.email;
 
-  let lastError: NotifyEmailError | null = null;
+  const idempotencyKey = `notify-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+  let lastError: EmailErrorInfo | null = null;
   let attemptsMade = 0;
 
   for (let attempt = 1; attempt <= MAX_SEND_ATTEMPTS; attempt += 1) {
@@ -112,8 +81,6 @@ export const sendEmailWithNotify = async (to: EmailRecipient, subject: string, h
               subject,
               resendEmailId: data?.id ?? null,
               attempt,
-              maxAttempts: MAX_SEND_ATTEMPTS,
-              idempotencyKey,
             },
           });
         }
@@ -128,17 +95,23 @@ export const sendEmailWithNotify = async (to: EmailRecipient, subject: string, h
         name: error.name,
         message: error.message,
         statusCode: error.statusCode,
-        stack: null,
       };
     } catch (error) {
-      lastError = normalizeUnexpectedError(error);
+      lastError = {
+        name: error instanceof Error ? error.name : 'UnknownError',
+        message: error instanceof Error ? error.message : String(error),
+        statusCode: null,
+      };
     }
 
-    const retryable = isRetryableError(lastError);
-    const hasAttemptsRemaining = attempt < MAX_SEND_ATTEMPTS;
-    const willRetry = retryable && hasAttemptsRemaining;
+    const statusCode = lastError.statusCode;
 
-    if (!willRetry) {
+    const shouldRetry =
+      statusCode === null || statusCode === 429 || (statusCode !== null && statusCode >= 500);
+
+    const hasAnotherAttempt = attempt < MAX_SEND_ATTEMPTS;
+
+    if (!shouldRetry || !hasAnotherAttempt) {
       break;
     }
 
@@ -146,25 +119,20 @@ export const sendEmailWithNotify = async (to: EmailRecipient, subject: string, h
       level: LogLevel.INFO,
       category: LogCategory.EMAIL,
       action: 'notify_email_retry_scheduled',
-      message: 'Transient email failure detected; retry scheduled',
+      message: 'Temporary email error detected; retry scheduled',
       data: {
         mailTo: to.email,
         subject,
-
-        errorName: lastError.name,
-        errorMessage: lastError.message,
-        errorStatusCode: lastError.statusCode,
-        errorStack: lastError.stack,
-
+        error: lastError,
         attempt,
         nextAttempt: attempt + 1,
-        maxAttempts: MAX_SEND_ATTEMPTS,
         retryDelayMs: RETRY_DELAY_MS,
-        idempotencyKey,
       },
     });
 
-    await wait(RETRY_DELAY_MS);
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, RETRY_DELAY_MS);
+    });
   }
 
   if (!lastError) {
@@ -172,33 +140,24 @@ export const sendEmailWithNotify = async (to: EmailRecipient, subject: string, h
       name: 'UnknownEmailError',
       message: 'Email sending failed without an identifiable error',
       statusCode: null,
-      stack: null,
     };
   }
 
   await createLog({
     level: LogLevel.ERROR,
     category: LogCategory.EMAIL,
-
     action: 'notify_email_failed',
     message:
       lastError.statusCode === null
         ? 'Unable to confirm whether Resend accepted the email after all attempts'
         : 'Resend service returned an error after all attempts',
     data: {
+      error: lastError,
       mailTo: to.email,
       subject,
-
-      errorName: lastError.name,
-      errorMessage: lastError.message,
-      errorStatusCode: lastError.statusCode,
-      errorStack: lastError.stack,
-
-      statusUnknown: lastError.statusCode === null,
-      retryable: isRetryableError(lastError),
       attemptsMade,
       maxAttempts: MAX_SEND_ATTEMPTS,
-      idempotencyKey,
+      statusUnknown: lastError.statusCode === null,
     },
   });
 
