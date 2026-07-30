@@ -77,5 +77,7 @@ declare namespace NodeJS {
 
     RESEND_EMAIL_API_KEY?: string;
     RESEND_EMAIL_FROM?: string;
+
+    NEXT_PRIVATE_USE_PLAYWRIGHT_CERTIFICATE: string;
   }
 }
