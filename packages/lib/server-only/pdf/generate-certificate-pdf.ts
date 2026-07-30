@@ -1,7 +1,7 @@
 import { PDFDocument } from '@cantoo/pdf-lib';
 import { i18n } from '@lingui/core';
 import { msg } from '@lingui/core/macro';
-import type { Field, Recipient, Signature } from '@prisma/client';
+import type { Envelope, Field, Recipient, Signature } from '@prisma/client';
 import { FieldType } from '@prisma/client';
 import { prop, sortBy } from 'remeda';
 import { match } from 'ts-pattern';
