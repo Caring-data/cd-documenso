@@ -7,7 +7,15 @@ import {
   rotateDegrees,
   translate,
 } from '@cantoo/pdf-lib';
-import type { DocumentData, DocumentMeta, Envelope, EnvelopeItem, Field } from '@prisma/client';
+import type {
+  DocumentData,
+  DocumentMeta,
+  Envelope,
+  EnvelopeItem,
+  Field,
+  Recipient,
+  Signature,
+} from '@prisma/client';
 import {
   DocumentDataType,
   DocumentStatus,
@@ -25,6 +33,7 @@ import { match } from 'ts-pattern';
 import { prisma } from '@documenso/prisma';
 import { signPdf } from '@documenso/signing';
 
+import { NEXT_PRIVATE_USE_PLAYWRIGHT_CERTIFICATE } from '../../../constants/app';
 import { AppError, AppErrorCode } from '../../../errors/app-error';
 import { sendCompletedEmail } from '../../../server-only/document/send-completed-email';
 import { getAuditLogsPdf } from '../../../server-only/htmltopdf/get-audit-logs-pdf';
@@ -33,6 +42,7 @@ import { storeSignedDocument } from '../../../server-only/laravel-auth/store-sig
 import { addRejectionStampToPdf } from '../../../server-only/pdf/add-rejection-stamp-to-pdf';
 import { flattenAnnotations } from '../../../server-only/pdf/flatten-annotations';
 import { flattenForm } from '../../../server-only/pdf/flatten-form';
+import { generateCertificatePdf } from '../../../server-only/pdf/generate-certificate-pdf';
 import { getPageSize } from '../../../server-only/pdf/get-page-size';
 import { insertFieldInPDFV1 } from '../../../server-only/pdf/insert-field-in-pdf-v1';
 import { insertFieldInPDFV2 } from '../../../server-only/pdf/insert-field-in-pdf-v2';
@@ -73,6 +83,12 @@ export const run = async ({
         secondaryId: mapDocumentIdToSecondaryId(documentId),
       },
       include: {
+        user: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
         documentMeta: true,
         recipients: true,
         envelopeItems: {
@@ -184,12 +200,14 @@ export const run = async ({
     }
 
     const legacyDocumentId = mapSecondaryIdToDocumentId(envelope.secondaryId);
+    const certificateStartedAt = Date.now();
 
     await createLog({
       level: LogLevel.INFO,
       action: 'CERTIFICATE_FETCH_START',
       message: 'Fetching certificate and audit log data',
       data: {
+        envelopeId: envelope.id,
         legacyDocumentId,
         includeCertificate: settings.includeSigningCertificate,
         includeAuditLog: settings.includeAuditLog,
@@ -201,6 +219,14 @@ export const run = async ({
       legacyDocumentId,
       documentMeta: envelope.documentMeta,
       settings,
+      envelopeId: envelope.id,
+      authOptions: envelope.authOptions,
+      envelopeOwner: {
+        name: envelope.user.name ?? '',
+        email: envelope.user.email,
+      },
+      recipients,
+      fields,
     });
 
     await createLog({
@@ -208,8 +234,11 @@ export const run = async ({
       action: 'CERTIFICATE_FETCH_RESULT',
       message: 'Certificate and audit log fetch result',
       data: {
-        hasCertificate: !!certificateData,
-        hasAuditLog: !!auditLogData,
+        envelopeId: envelope.id,
+        legacyDocumentId,
+        hasCertificate: Boolean(certificateData),
+        certificateSize: certificateData?.length ?? 0,
+        durationMs: Date.now() - certificateStartedAt,
       },
       metadata: requestMetadata,
     });
@@ -408,6 +437,7 @@ export const run = async ({
       }
 
       await createLog({
+        level: LogLevel.INFO,
         action: 'LARAVEL_FINAL_SUBMISSION_START',
         message: 'Starting final document submission to Laravel',
         data: {
@@ -730,28 +760,50 @@ export const getCertificateAndAuditLogData = async ({
   legacyDocumentId,
   documentMeta,
   settings,
+  envelopeId,
+  authOptions,
+  envelopeOwner,
+  recipients,
+  fields,
 }: {
   legacyDocumentId: number;
   documentMeta: DocumentMeta;
   settings: { includeSigningCertificate: boolean; includeAuditLog: boolean };
+  envelopeId: string;
+  authOptions: unknown;
+  envelopeOwner: { name: string; email: string };
+  recipients: Recipient[];
+  fields: (Pick<Field, 'id' | 'type' | 'secondaryId' | 'recipientId'> & {
+    signature?: Pick<
+      Signature,
+      'signatureImageAsBase64' | 'typedSignature' | 'typedSignatureSettings'
+    > | null;
+  })[];
 }) => {
   const getCertificateDataPromise = settings.includeSigningCertificate
-    ? getCertificatePdf({
-        documentId: legacyDocumentId,
-        language: documentMeta.language,
-      }).catch(async (e) => {
+    ? (NEXT_PRIVATE_USE_PLAYWRIGHT_CERTIFICATE()
+        ? getCertificatePdf({ documentId: legacyDocumentId, language: documentMeta.language })
+        : generateCertificatePdf({
+            envelopeId,
+            authOptions,
+            timezone: documentMeta.timezone,
+            language: documentMeta.language,
+            envelopeOwner,
+            recipients,
+            fields,
+          })
+      ).catch(async (error) => {
         await createLog({
           level: LogLevel.ERROR,
           action: 'CERTIFICATE_GENERATION_FAILED',
           message: 'Error generating certificate PDF',
           data: {
-            error: e instanceof Error ? e.message : String(e),
-            stack: e instanceof Error ? e.stack : undefined,
             legacyDocumentId,
+            error: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined,
           },
         });
-
-        return null;
+        throw error;
       })
     : null;
 
