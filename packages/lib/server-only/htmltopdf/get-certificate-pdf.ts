@@ -18,6 +18,45 @@ export type GetCertificatePdfOptions = {
   language?: SupportedLanguageCodes | (string & {});
 };
 
+type CertificateGenerationStage =
+  | 'initialization'
+  | 'browser_connection'
+  | 'context_creation'
+  | 'page_creation'
+  | 'cookie_configuration'
+  | 'page_navigation'
+  | 'page_reload'
+  | 'content_ready'
+  | 'pdf_generation';
+
+const BROWSER_CONNECTION_TIMEOUT_MS = 15_000;
+const CONTEXT_CREATION_TIMEOUT_MS = 10_000;
+const PAGE_CREATION_TIMEOUT_MS = 10_000;
+const PDF_GENERATION_TIMEOUT_MS = 30_000;
+const CLEANUP_TIMEOUT_MS = 5_000;
+
+const withTimeout = async <T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  timeoutMessage: string,
+): Promise<T> => {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new Error(timeoutMessage));
+    }, timeoutMs);
+  });
+
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  }
+};
+
 export const getCertificatePdf = async ({ documentId, language }: GetCertificatePdfOptions) => {
   const startedAt = Date.now();
   const { chromium } = await import('playwright');
@@ -26,45 +65,8 @@ export const getCertificatePdf = async ({ documentId, language }: GetCertificate
   let browserContext: BrowserContext | undefined;
   let page: Page | undefined;
 
-  const logStage = async (
-    action: string,
-    stage: string,
-    stageStartedAt: number,
-    data: Record<string, unknown> = {},
-  ) => {
-    await createLog({
-      level: LogLevel.INFO,
-      action,
-      message: `Certificate generation stage: ${stage}`,
-      data: {
-        documentId,
-        stage,
-        stageDurationMs: Date.now() - stageStartedAt,
-        totalDurationMs: Date.now() - startedAt,
-        ...data,
-      },
-    });
-  };
-
-  const withTimeout = async <T>(
-    promise: Promise<T>,
-    timeoutMs: number,
-    timeoutMessage: string,
-  ): Promise<T> => {
-    let timeoutId: ReturnType<typeof setTimeout>;
-
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      timeoutId = setTimeout(() => {
-        reject(new Error(timeoutMessage));
-      }, timeoutMs);
-    });
-
-    try {
-      return await Promise.race([promise, timeoutPromise]);
-    } finally {
-      clearTimeout(timeoutId!);
-    }
-  };
+  let currentStage: CertificateGenerationStage = 'initialization';
+  let browserMode: 'browserless' | 'local' = 'local';
 
   try {
     const encryptedId = encryptSecondaryData({
@@ -73,44 +75,47 @@ export const getCertificatePdf = async ({ documentId, language }: GetCertificate
     });
 
     const browserlessUrl = env('NEXT_PRIVATE_BROWSERLESS_URL');
-    const browserMode = browserlessUrl ? 'browserless' : 'local';
 
-    let stageStartedAt = Date.now();
-
-    await logStage('CERTIFICATE_BROWSER_CONNECTION_START', 'browser_connection', stageStartedAt, {
-      browserMode,
-    });
+    browserMode = browserlessUrl ? 'browserless' : 'local';
+    currentStage = 'browser_connection';
 
     if (browserlessUrl) {
       browser = await chromium.connectOverCDP(browserlessUrl, {
-        timeout: 15_000,
+        timeout: BROWSER_CONNECTION_TIMEOUT_MS,
       });
     } else {
       browser = await withTimeout(
         chromium.launch({
           executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || undefined,
         }),
-        15_000,
+        BROWSER_CONNECTION_TIMEOUT_MS,
         `Local Chromium launch timed out for document ${documentId}`,
       );
     }
 
-    await logStage('CERTIFICATE_BROWSER_CONNECTION_SUCCESS', 'browser_connection', stageStartedAt, {
-      browserMode,
-    });
+    currentStage = 'context_creation';
 
-    stageStartedAt = Date.now();
+    browserContext = await withTimeout(
+      browser.newContext(),
+      CONTEXT_CREATION_TIMEOUT_MS,
+      `Browser context creation timed out for document ${documentId}`,
+    );
 
-    browserContext = await browser.newContext();
-    page = await browserContext.newPage();
+    currentStage = 'page_creation';
 
-    await logStage('CERTIFICATE_PAGE_CREATED', 'page_creation', stageStartedAt);
+    page = await withTimeout(
+      browserContext.newPage(),
+      PAGE_CREATION_TIMEOUT_MS,
+      `Browser page creation timed out for document ${documentId}`,
+    );
 
     const lang = isValidLanguageCode(language) ? language : 'en';
 
     const webappUrl = USE_INTERNAL_URL_BROWSERLESS()
       ? NEXT_PUBLIC_WEBAPP_URL()
       : NEXT_PRIVATE_INTERNAL_WEBAPP_URL();
+
+    currentStage = 'cookie_configuration';
 
     await page.context().addCookies([
       {
@@ -120,51 +125,37 @@ export const getCertificatePdf = async ({ documentId, language }: GetCertificate
       },
     ]);
 
-    stageStartedAt = Date.now();
-
-    await logStage('CERTIFICATE_PAGE_NAVIGATION_START', 'page_navigation', stageStartedAt);
+    currentStage = 'page_navigation';
 
     await page.goto(`${webappUrl}/__htmltopdf/certificate?d=${encryptedId}`, {
       waitUntil: 'networkidle',
       timeout: 10_000,
     });
 
-    await logStage('CERTIFICATE_PAGE_NAVIGATION_SUCCESS', 'page_navigation', stageStartedAt);
-
-    stageStartedAt = Date.now();
+    currentStage = 'page_reload';
 
     await page.reload({
       waitUntil: 'networkidle',
       timeout: 10_000,
     });
 
-    await logStage('CERTIFICATE_PAGE_RELOAD_SUCCESS', 'page_reload', stageStartedAt);
-
-    stageStartedAt = Date.now();
+    currentStage = 'content_ready';
 
     await page.waitForSelector('h1', {
       state: 'visible',
       timeout: 10_000,
     });
 
-    await logStage('CERTIFICATE_CONTENT_READY', 'content_ready', stageStartedAt);
-
-    stageStartedAt = Date.now();
-
-    await logStage('CERTIFICATE_PDF_GENERATION_START', 'pdf_generation', stageStartedAt);
+    currentStage = 'pdf_generation';
 
     const result = await withTimeout(
       page.pdf({
         format: 'A4',
         printBackground: true,
       }),
-      30_000,
+      PDF_GENERATION_TIMEOUT_MS,
       `PDF generation timed out for document ${documentId}`,
     );
-
-    await logStage('CERTIFICATE_PDF_GENERATION_SUCCESS', 'pdf_generation', stageStartedAt, {
-      pdfSize: result.length,
-    });
 
     return result;
   } catch (error) {
@@ -174,7 +165,10 @@ export const getCertificatePdf = async ({ documentId, language }: GetCertificate
       message: 'Certificate PDF generation failed',
       data: {
         documentId,
+        browserMode,
+        failedStage: currentStage,
         totalDurationMs: Date.now() - startedAt,
+        errorName: error instanceof Error ? error.name : null,
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
       },
@@ -182,8 +176,6 @@ export const getCertificatePdf = async ({ documentId, language }: GetCertificate
 
     throw error;
   } finally {
-    const CLEANUP_TIMEOUT_MS = 5_000;
-
     if (browserContext) {
       try {
         await withTimeout(
@@ -198,13 +190,14 @@ export const getCertificatePdf = async ({ documentId, language }: GetCertificate
           message: 'Failed to close certificate browser context',
           data: {
             documentId,
+            browserMode,
             error: error instanceof Error ? error.message : String(error),
           },
         });
       }
     }
 
-    if (browser) {
+    if (browser?.isConnected()) {
       try {
         await withTimeout(
           browser.close(),
@@ -218,6 +211,7 @@ export const getCertificatePdf = async ({ documentId, language }: GetCertificate
           message: 'Failed to close certificate browser',
           data: {
             documentId,
+            browserMode,
             error: error instanceof Error ? error.message : String(error),
           },
         });
