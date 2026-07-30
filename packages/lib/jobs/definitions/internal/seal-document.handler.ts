@@ -770,7 +770,7 @@ export const getCertificateAndAuditLogData = async ({
   documentMeta: DocumentMeta;
   settings: { includeSigningCertificate: boolean; includeAuditLog: boolean };
   envelopeId: string;
-  authOptions: unknown;
+  authOptions: Envelope['authOptions'];
   envelopeOwner: { name: string; email: string };
   recipients: Recipient[];
   fields: (Pick<Field, 'id' | 'type' | 'secondaryId' | 'recipientId'> & {
