@@ -46,45 +46,50 @@ export const TemplateDocumentInvite = ({
               <Text className="self-stretch text-sm font-medium leading-5 text-zinc-600">
                 <Trans>Dear </Trans> {recipientName},
               </Text>
-              {customBody ? (
-                <>
-                  <Text className="text-sm font-medium leading-5 text-zinc-600">{customBody}</Text>
-                </>
-              ) : (
-                <>
-                  <Text className="text-sm font-medium leading-5 text-zinc-600">
-                    <Trans>
-                      <span className="font-semibold">{signingContext?.facilityAdministrator}</span>{' '}
-                      from <span className="font-semibold">{signingContext?.locationName}</span> has
-                      requested your electronic signature on the following document:
-                    </Trans>
+              <Text className="text-sm font-medium leading-5 text-zinc-600">
+                <Trans>
+                  <span className="font-semibold">{signingContext?.facilityAdministrator}</span>{' '}
+                  from <span className="font-semibold">{signingContext?.locationName}</span> has
+                  requested your electronic signature on the following document:
+                </Trans>
+              </Text>
+              <div className="flex items-center gap-6">
+                <Img
+                  src={getAssetUrl('/static/user-round.png')}
+                  alt="Document Icon"
+                  className="my-auto h-4 w-auto pr-2 align-middle"
+                />
+                <div className="flex flex-col text-sm font-medium leading-5 text-zinc-600">
+                  <Text>
+                    <Trans>Regarding: {signingContext?.ownerName}</Trans>
                   </Text>
-                  <div className="flex items-center gap-6">
-                    <Img
-                      src={getAssetUrl('/static/user-round.png')}
-                      alt="Document Icon"
-                      className="my-auto h-4 w-auto pr-2 align-middle"
-                    />
-                    <div className="flex flex-col text-sm font-medium leading-5 text-zinc-600">
-                      <Text>
-                        <Trans>Regarding: {signingContext?.ownerName}</Trans>
-                      </Text>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-6">
-                    <Img
-                      src={getAssetUrl('/static/file-text.png')}
-                      alt="Document Icon"
-                      className="my-auto h-4 w-auto pr-2 align-middle"
-                    />
-                    <div className="flex flex-col justify-center text-sm font-medium leading-5 text-zinc-600">
-                      <Text>
-                        <Trans>Document: {signingContext?.documentName}</Trans>
-                      </Text>
-                    </div>
-                  </div>
-                </>
+                </div>
+              </div>
+              <div className="flex items-center gap-6">
+                <Img
+                  src={getAssetUrl('/static/file-text.png')}
+                  alt="Document Icon"
+                  className="my-auto h-4 w-auto pr-2 align-middle"
+                />
+                <div className="flex flex-col justify-center text-sm font-medium leading-5 text-zinc-600">
+                  <Text>
+                    <Trans>Document: {signingContext?.documentName}</Trans>
+                  </Text>
+                </div>
+              </div>
+
+              {customBody && (
+                <div className="mb-4 rounded bg-zinc-50 p-2">
+                  <Text className="m-0 text-sm font-semibold leading-[22px] text-brand">
+                    <Trans>Comment:</Trans>
+                  </Text>
+
+                  <Text className="m-0 mt-1 whitespace-pre-wrap text-sm font-normal leading-[22px] text-zinc-700">
+                    {customBody}
+                  </Text>
+                </div>
               )}
+
               <Text className="text-xs font-medium leading-5 text-zinc-600">
                 <Trans>
                   Ready to get started?
