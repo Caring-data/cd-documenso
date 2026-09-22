@@ -50,6 +50,8 @@ declare namespace NodeJS {
     NEXT_PUBLIC_CD_SERVICE_URL?: string;
     NEXT_PUBLIC_CD_SERVICE_API_KEY?: string;
 
+    NEXT_PUBLIC_CARING_DATA_APP_URL?: string;
+
     POSTGRES_URL?: string;
     DATABASE_URL?: string;
     POSTGRES_PRISMA_URL?: string;
