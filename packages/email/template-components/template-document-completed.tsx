@@ -81,7 +81,7 @@ export const TemplateDocumentCompleted = ({
       <Hr className="mx-auto mt-6 max-w-xl border-zinc-200" />
 
       <Section>
-        <Text className="text-xs italic leading-[18px] text-zinc-600">
+        <Text className="text-xs italic leading-[18px] text-brand">
           <Trans>
             The received document contains Protected Health Information (PHI) in accordance with
             HIPAA. It is confidential and intended solely for the identified recipient. Access, use,
