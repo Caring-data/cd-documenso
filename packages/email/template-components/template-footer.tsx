@@ -32,7 +32,7 @@ export const TemplateFooter = ({ isDocument = true, companyName = '' }: Template
                 details, please review our{' '}
                 <Link
                   className="text-brand-accent underline decoration-solid decoration-auto underline-offset-auto"
-                  href="https://home.caringdata.com/index.php/privacy-policy/"
+                  href="https://caringdata.com/privacy-policy/"
                 >
                   Privacy Statement
                 </Link>

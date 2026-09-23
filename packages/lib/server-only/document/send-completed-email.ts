@@ -8,7 +8,7 @@ import { DocumentCompletedEmailTemplate } from '@documenso/email/templates/docum
 import { prisma } from '@documenso/prisma';
 
 import { getI18nInstance } from '../../client-only/providers/i18n-server';
-import { NEXT_PUBLIC_WEBAPP_URL } from '../../constants/app';
+import { NEXT_PUBLIC_CARING_DATA_APP_URL, NEXT_PUBLIC_WEBAPP_URL } from '../../constants/app';
 import type { TSigningContext } from '../../types/document';
 import { ZSigningContextSchema } from '../../types/document';
 import { DOCUMENT_AUDIT_LOG_TYPE } from '../../types/document-audit-logs';
@@ -175,8 +175,18 @@ export const sendCompletedEmail = async ({ id, requestMetadata }: SendDocumentOp
       };
 
       const downloadPageLink = `${NEXT_PUBLIC_WEBAPP_URL()}/sign/${recipient.token}/complete`;
-      const downloadLink = envelope?.finalDocumentUrl
-        ? envelope?.finalDocumentUrl
+
+      const documentVerificationLink = new URL(
+        `/public/documents/${recipient.token}`,
+        NEXT_PUBLIC_CARING_DATA_APP_URL(),
+      );
+
+      if (documentDetails?.module) {
+        documentVerificationLink.searchParams.set('module', documentDetails.module);
+      }
+
+      const downloadLink = documentDetails?.module
+        ? documentVerificationLink.toString()
         : downloadPageLink;
 
       const template = createElement(DocumentCompletedEmailTemplate, {
