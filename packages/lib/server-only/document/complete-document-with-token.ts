@@ -9,6 +9,7 @@ import {
   SigningStatus,
   WebhookTriggerEvents,
 } from '@prisma/client';
+import { DateTime } from 'luxon';
 
 import {
   DOCUMENT_AUDIT_LOG_TYPE,
@@ -440,6 +441,7 @@ export const completeDocumentWithToken = async ({
           where: { id: nextRecipient.id },
           data: {
             sendStatus: SendStatus.SENT,
+            expired: DateTime.now().plus({ days: 7 }).toJSDate(),
             ...(nextSigner && envelope.documentMeta?.allowDictateNextSigner
               ? {
                   name: nextSigner.name,
@@ -448,16 +450,16 @@ export const completeDocumentWithToken = async ({
               : {}),
           },
         });
+      });
 
-        await jobs.triggerJob({
-          name: 'send.signing.requested.email',
-          payload: {
-            userId: envelope.userId,
-            documentId: legacyDocumentId,
-            recipientId: nextRecipient.id,
-            requestMetadata,
-          },
-        });
+      await jobs.triggerJob({
+        name: 'send.signing.requested.email',
+        payload: {
+          userId: envelope.userId,
+          documentId: legacyDocumentId,
+          recipientId: nextRecipient.id,
+          requestMetadata,
+        },
       });
     }
   }
