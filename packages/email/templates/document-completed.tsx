@@ -59,7 +59,7 @@ export const DocumentCompletedEmailTemplate = ({
                       />
                     </div>
                     <p className="text-center text-lg font-medium text-white">
-                      <Trans>Final Document Available for Download</Trans>
+                      <Trans>Final Document Available</Trans>
                     </p>
                   </div>
                 )}

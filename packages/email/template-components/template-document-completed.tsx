@@ -1,6 +1,6 @@
 import { Trans } from '@lingui/react/macro';
 
-import { Button, Img, Section, Text } from '../components';
+import { Button, Hr, Img, Section, Text } from '../components';
 
 export interface TemplateDocumentCompletedProps {
   downloadLink: string;
@@ -33,22 +33,10 @@ export const TemplateDocumentCompleted = ({
         </Text>
         <Text className="text-sm font-medium leading-5 text-zinc-600">
           <Trans>
-            We are pleased to inform you that all required signatures have been completed. The
-            following document is now ready for download:
+            We are pleased to inform you that all required signatures have been completed and your
+            document is now ready for review.
           </Trans>
         </Text>
-        <div className="flex items-center gap-6">
-          <Img
-            src={getAssetUrl('/static/user-round.png')}
-            alt="Document Icon"
-            className="my-auto h-4 w-auto pr-2 align-middle"
-          />
-          <div className="flex flex-col text-sm font-medium leading-5 text-zinc-600">
-            <Text>
-              <Trans>Regarding: {signingContext?.ownerName}</Trans>
-            </Text>
-          </div>
-        </div>
         <div className="flex items-center gap-6">
           <Img
             src={getAssetUrl('/static/file-text.png')}
@@ -61,9 +49,23 @@ export const TemplateDocumentCompleted = ({
             </Text>
           </div>
         </div>
+        <div className="flex items-center gap-6">
+          <Img
+            src={getAssetUrl('/static/user-round.png')}
+            alt="Document Icon"
+            className="my-auto h-4 w-auto pr-2 align-middle"
+          />
+          <div className="flex flex-col text-sm font-medium leading-5 text-zinc-600">
+            <Text>
+              <Trans>Regarding: {signingContext?.ownerName}</Trans>
+            </Text>
+          </div>
+        </div>
 
         <Text className="text-sm font-medium leading-5 text-zinc-600">
-          <Trans>You can download the final copy by clicking the button below</Trans>
+          <Trans>
+            For security reasons, you'll need to verify your identity before accessing it.
+          </Trans>
         </Text>
       </Section>
 
@@ -72,8 +74,22 @@ export const TemplateDocumentCompleted = ({
           className="inline-flex items-center justify-center rounded-lg bg-brand px-6 py-3 text-center text-sm font-medium text-white no-underline"
           href={downloadLink}
         >
-          <Trans>Download</Trans>
+          <Trans>Access Document</Trans>
         </Button>
+      </Section>
+
+      <Hr className="mx-auto mt-6 max-w-xl border-zinc-200" />
+
+      <Section>
+        <Text className="text-xs italic leading-[18px] text-brand">
+          <Trans>
+            The received document contains Protected Health Information (PHI) in accordance with
+            HIPAA. It is confidential and intended solely for the identified recipient. Access, use,
+            and disclosure are strictly limited to authorized personnel in compliance with
+            applicable privacy and security regulations, and recipients are responsible for
+            safeguarding this information.
+          </Trans>
+        </Text>
       </Section>
     </Section>
   );

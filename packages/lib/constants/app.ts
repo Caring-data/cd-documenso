@@ -6,6 +6,9 @@ export const NEXT_PUBLIC_WEBAPP_URL = () =>
 export const NEXT_PRIVATE_INTERNAL_WEBAPP_URL = () =>
   env('NEXT_PRIVATE_INTERNAL_WEBAPP_URL') ?? NEXT_PUBLIC_WEBAPP_URL();
 
+export const NEXT_PUBLIC_CARING_DATA_APP_URL = () =>
+  env('NEXT_PUBLIC_CARING_DATA_APP_URL') ?? 'http://localhost:3000';
+
 export const API_V2_BETA_URL = '/api/v2-beta';
 export const API_V2_URL = '/api/v2';
 
