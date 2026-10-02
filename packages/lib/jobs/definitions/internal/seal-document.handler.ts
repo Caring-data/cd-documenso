@@ -280,47 +280,61 @@ export const run = async ({
       newDocumentData.push(result);
     }
 
-    await prisma.$transaction(async (tx) => {
-      for (const { oldDocumentDataId, newDocumentDataId } of newDocumentData) {
-        const newData = await tx.documentData.findFirstOrThrow({
+    // With the database upload transport the signed PDF is stored as base64, so reading it inside
+    // the transaction (plus copying it) can exceed Prisma's default 5s interactive transaction timeout.
+    const signedDocumentData = await Promise.all(
+      newDocumentData.map(async ({ oldDocumentDataId, newDocumentDataId }) => {
+        const newData = await prisma.documentData.findFirstOrThrow({
           where: {
             id: newDocumentDataId,
           },
         });
 
-        await tx.documentData.update({
+        return { oldDocumentDataId, data: newData.data };
+      }),
+    );
+
+    await prisma.$transaction(
+      async (tx) => {
+        for (const { oldDocumentDataId, data } of signedDocumentData) {
+          await tx.documentData.update({
+            where: {
+              id: oldDocumentDataId,
+            },
+            data: {
+              data,
+            },
+          });
+        }
+
+        await tx.envelope.update({
           where: {
-            id: oldDocumentDataId,
+            id: envelope.id,
           },
           data: {
-            data: newData.data,
+            status: isRejected ? DocumentStatus.REJECTED : DocumentStatus.COMPLETED,
+            completedAt: new Date(),
           },
         });
-      }
 
-      await tx.envelope.update({
-        where: {
-          id: envelope.id,
-        },
-        data: {
-          status: isRejected ? DocumentStatus.REJECTED : DocumentStatus.COMPLETED,
-          completedAt: new Date(),
-        },
-      });
-
-      await tx.documentAuditLog.create({
-        data: createDocumentAuditLogData({
-          type: DOCUMENT_AUDIT_LOG_TYPE.DOCUMENT_COMPLETED,
-          envelopeId: envelope.id,
-          requestMetadata,
-          user: null,
-          data: {
-            transactionId: nanoid(),
-            ...(isRejected ? { isRejected: true, rejectionReason: rejectionReason } : {}),
-          },
-        }),
-      });
-    });
+        await tx.documentAuditLog.create({
+          data: createDocumentAuditLogData({
+            type: DOCUMENT_AUDIT_LOG_TYPE.DOCUMENT_COMPLETED,
+            envelopeId: envelope.id,
+            requestMetadata,
+            user: null,
+            data: {
+              transactionId: nanoid(),
+              ...(isRejected ? { isRejected: true, rejectionReason: rejectionReason } : {}),
+            },
+          }),
+        });
+      },
+      {
+        maxWait: 10_000,
+        timeout: 60_000,
+      },
+    );
 
     return {
       envelopeId: envelope.id,
