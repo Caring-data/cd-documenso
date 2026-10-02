@@ -279,9 +279,11 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
           type: {
             in: [
               DOCUMENT_AUDIT_LOG_TYPE.DOCUMENT_CREATED,
+              DOCUMENT_AUDIT_LOG_TYPE.DOCUMENT_SENT,
               DOCUMENT_AUDIT_LOG_TYPE.EMAIL_SENT,
               DOCUMENT_AUDIT_LOG_TYPE.DOCUMENT_OPENED,
               DOCUMENT_AUDIT_LOG_TYPE.DOCUMENT_VIEWED,
+              DOCUMENT_AUDIT_LOG_TYPE.DOCUMENT_FIELD_INSERTED,
               DOCUMENT_AUDIT_LOG_TYPE.DOCUMENT_RECIPIENT_REJECTED,
               DOCUMENT_AUDIT_LOG_TYPE.DOCUMENT_RECIPIENT_COMPLETED,
               DOCUMENT_AUDIT_LOG_TYPE.DOCUMENT_COMPLETED,
@@ -365,6 +367,10 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
         name: string | null | undefined,
       ) => `${normalize(email)}|${normalize(name)}`;
 
+      const globalDocumentLogs = auditLogs.filter((log) =>
+        ['DOCUMENT_SENT', 'DOCUMENT_CREATED'].includes(log.type),
+      );
+
       auditLogs.forEach((log) => {
         const data = parseData(log.data);
         const isPreMigration = log.createdAt < MIGRATION_CUTOFF;
@@ -398,7 +404,7 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
         const emailNameKey = makeEmailNameKey(recipient.email, recipient.name);
         const logsByEmailName = groupedByEmailAndName.get(emailNameKey) ?? [];
 
-        const logs = [...logsById, ...logsByEmailName];
+        const logs = [...logsById, ...logsByEmailName, ...globalDocumentLogs];
 
         const documentSigned = logs.find((l) => l.type === 'DOCUMENT_RECIPIENT_COMPLETED');
 
@@ -410,9 +416,10 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
           (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
         );
 
-        const emailSent = relevantLogs
+        const realEmailSent = relevantLogs
           .filter((log) => {
             const data = parseData(log.data);
+
             return (
               log.type === 'EMAIL_SENT' &&
               data?.emailType === 'SIGNING_REQUEST' &&
@@ -420,6 +427,24 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
             );
           })
           .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())[0];
+
+        const shareFormsSent = relevantLogs
+          .filter((log) =>
+            ['DOCUMENT_SENT', 'DOCUMENT_CREATED', 'DOCUMENT_FIELDS_AUTO_INSERTED'].includes(
+              log.type,
+            ),
+          )
+          .sort((a, b) => {
+            const priority: Record<string, number> = {
+              DOCUMENT_SENT: 1,
+              DOCUMENT_CREATED: 2,
+              DOCUMENT_FIELDS_AUTO_INSERTED: 3,
+            };
+
+            return (priority[a.type] ?? 99) - (priority[b.type] ?? 99);
+          })[0];
+
+        const emailSent = realEmailSent ?? shareFormsSent;
 
         const resendEmailSent = relevantLogs
           .filter((log) => {
@@ -452,6 +477,8 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
             let label = log.type;
             if (log.type === 'EMAIL_SENT') {
               label = data?.isResending === true ? 'resendEmail' : 'emailSent';
+            } else if (!realEmailSent && log.type === shareFormsSent?.type) {
+              label = 'emailSent';
             } else {
               label = toCamelCase(log.type);
             }
