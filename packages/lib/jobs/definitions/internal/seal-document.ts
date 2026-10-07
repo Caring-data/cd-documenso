@@ -3,7 +3,20 @@ import { z } from 'zod';
 import { ZRequestMetadataSchema } from '../../../universal/extract-request-metadata';
 import { type JobDefinition } from '../../client/_internal/job';
 
-const SEAL_DOCUMENT_JOB_DEFINITION_ID = 'internal.seal-document';
+export const SEAL_DOCUMENT_JOB_DEFINITION_ID = 'internal.seal-document';
+
+export const SEAL_DOCUMENT_LARAVEL_TASK_NAME = 'send-final-document-to-laravel';
+
+/**
+ * Result persisted on the Laravel submission task so the signing status route can tell
+ * the recipient when the final document could not be stored.
+ */
+export const ZSealDocumentLaravelTaskResultSchema = z.object({
+  isStored: z.boolean(),
+  errorMessage: z.string().optional(),
+});
+
+export type TSealDocumentLaravelTaskResult = z.infer<typeof ZSealDocumentLaravelTaskResultSchema>;
 
 const SEAL_DOCUMENT_JOB_DEFINITION_SCHEMA = z.object({
   documentId: z.number(),

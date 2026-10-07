@@ -3508,6 +3508,14 @@ msgstr "El documento ya está cargado"
 msgid "Document is preparing..."
 msgstr "El documento se está preparando..."
 
+#: apps/remix/app/routes/_recipient+/sign.$token+/complete.tsx
+msgid "The document could not be processed"
+msgstr "No se pudo procesar el documento"
+
+#: apps/remix/app/routes/_recipient+/sign.$token+/complete.tsx
+msgid "Your signature was saved, but something went wrong while finalizing the document. Please contact the sender so they can resolve it."
+msgstr "Tu firma se guardó, pero ocurrió un error al finalizar el documento. Por favor contacta al remitente para que lo resuelva."
+
 #: apps/remix/app/components/general/legacy-field-warning-popover.tsx
 msgid "Document is using legacy field insertion"
 msgstr "El documento utiliza inserción de campos heredada"
