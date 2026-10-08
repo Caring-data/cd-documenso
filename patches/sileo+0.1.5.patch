@@ -1,0 +1,38 @@
+diff --git a/node_modules/sileo/dist/index.js b/node_modules/sileo/dist/index.js
+index 253c3ea..291eb78 100644
+--- a/node_modules/sileo/dist/index.js
++++ b/node_modules/sileo/dist/index.js
+@@ -26,7 +26,13 @@ const DEFAULT_TOAST_DURATION = 6000;
+ const EXIT_DURATION = DEFAULT_TOAST_DURATION * 0.1;
+ const AUTO_EXPAND_DELAY = DEFAULT_TOAST_DURATION * 0.025;
+ const AUTO_COLLAPSE_DELAY = DEFAULT_TOAST_DURATION - 2000;
+-const SPRING = {
++// Pulse patch (calm motion): on Windows the goo rects are animated by CSS
++// (pulse.css) on the same clock as the toast height, so Motion must apply the
++// values instantly ({type:false}) to avoid the two engines drifting apart and
++// the toast "trembling" at fractional DPR. Other platforms keep the spring.
++const SPRING = (typeof navigator !== "undefined" && /Windows/i.test(navigator.userAgent)) ? {
++    type: false
++} : {
+     type: "spring",
+     bounce: 0.25,
+     duration: DURATION_S
+diff --git a/node_modules/sileo/dist/index.mjs b/node_modules/sileo/dist/index.mjs
+index 275118b..ab5b31d 100644
+--- a/node_modules/sileo/dist/index.mjs
++++ b/node_modules/sileo/dist/index.mjs
+@@ -24,7 +24,13 @@ const DEFAULT_TOAST_DURATION = 6000;
+ const EXIT_DURATION = DEFAULT_TOAST_DURATION * 0.1;
+ const AUTO_EXPAND_DELAY = DEFAULT_TOAST_DURATION * 0.025;
+ const AUTO_COLLAPSE_DELAY = DEFAULT_TOAST_DURATION - 2000;
+-const SPRING = {
++// Pulse patch (calm motion): on Windows the goo rects are animated by CSS
++// (pulse.css) on the same clock as the toast height, so Motion must apply the
++// values instantly ({type:false}) to avoid the two engines drifting apart and
++// the toast "trembling" at fractional DPR. Other platforms keep the spring.
++const SPRING = (typeof navigator !== "undefined" && /Windows/i.test(navigator.userAgent)) ? {
++    type: false
++} : {
+     type: "spring",
+     bounce: 0.25,
+     duration: DURATION_S
