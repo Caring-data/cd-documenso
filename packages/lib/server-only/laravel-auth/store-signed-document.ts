@@ -61,7 +61,9 @@ export const storeSignedDocument = async (
       signal: AbortSignal.timeout(60000),
     });
 
-    const data = await response.json();
+    // Laravel may answer with an HTML error page (e.g. 500/502), so don't assume JSON.
+    const rawBody = await response.text();
+    const data = parseJsonSafely(rawBody) ?? { message: rawBody.slice(0, 500) };
 
     const EXPECTED_SUCCESS_MESSAGE = 'Signed document stored successfully';
 
@@ -80,7 +82,7 @@ export const storeSignedDocument = async (
       });
 
       throw new AppError(AppErrorCode.NOT_FOUND, {
-        message: `Laravel API returned error: ${data?.message || response.statusText}`,
+        message: `Laravel API returned error (${response.status}): ${data?.message || response.statusText}`,
       });
     }
 
@@ -118,5 +120,13 @@ export const storeSignedDocument = async (
     }
 
     throw error;
+  }
+};
+
+const parseJsonSafely = (value: string): { message?: string; fileUrl?: string } | null => {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
   }
 };
