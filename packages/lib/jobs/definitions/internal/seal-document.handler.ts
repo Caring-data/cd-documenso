@@ -65,7 +65,11 @@ import { isDocumentCompleted } from '../../../utils/document';
 import { createDocumentAuditLogData } from '../../../utils/document-audit-logs';
 import { mapDocumentIdToSecondaryId, mapSecondaryIdToDocumentId } from '../../../utils/envelope';
 import type { JobRunIO } from '../../client/_internal/job';
-import type { TSealDocumentJobDefinition } from './seal-document';
+import {
+  SEAL_DOCUMENT_LARAVEL_TASK_NAME,
+  type TSealDocumentJobDefinition,
+  type TSealDocumentLaravelTaskResult,
+} from './seal-document';
 
 export const run = async ({
   payload,
@@ -362,7 +366,7 @@ export const run = async ({
     teamId: updatedEnvelope.teamId ?? undefined,
   });
 
-  await io.runTask('send-final-document-to-laravel', async () => {
+  await io.runTask(SEAL_DOCUMENT_LARAVEL_TASK_NAME, async () => {
     try {
       const finalEnvelope = await prisma.envelope.findFirstOrThrow({
         where: { id: envelopeId },
@@ -398,7 +402,8 @@ export const run = async ({
           metadata: requestMetadata,
         });
 
-        return;
+        // Not a Laravel originated document, so there is nothing to store.
+        return { isStored: true } satisfies TSealDocumentLaravelTaskResult;
       }
 
       const finalEnvelopeItem = finalEnvelope.envelopeItems[0];
@@ -415,7 +420,10 @@ export const run = async ({
           metadata: requestMetadata,
         });
 
-        return;
+        return {
+          isStored: false,
+          errorMessage: 'No PDF data available',
+        } satisfies TSealDocumentLaravelTaskResult;
       }
 
       let base64FinalPdf: string;
@@ -447,7 +455,10 @@ export const run = async ({
           metadata: requestMetadata,
         });
 
-        return;
+        return {
+          isStored: false,
+          errorMessage: 'No main recipient found',
+        } satisfies TSealDocumentLaravelTaskResult;
       }
 
       await createLog({
@@ -502,6 +513,8 @@ export const run = async ({
           fileUrl: result.fileUrl,
         },
       });
+
+      return { isStored: true } satisfies TSealDocumentLaravelTaskResult;
     } catch (error) {
       await createLog({
         level: LogLevel.ERROR,
@@ -516,6 +529,11 @@ export const run = async ({
       });
 
       console.error('Error submitting final document to Laravel:', error);
+
+      return {
+        isStored: false,
+        errorMessage: error instanceof Error ? error.message : String(error),
+      } satisfies TSealDocumentLaravelTaskResult;
     }
   });
 
