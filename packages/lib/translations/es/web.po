@@ -8377,6 +8377,22 @@ msgstr "Configuración de plantillas"
 msgid "Template settings updated successfully"
 msgstr "Configuración de la plantilla actualizada exitosamente"
 
+#: apps/remix/app/routes/embed+/components/client.tsx
+msgid "Failed to update template settings"
+msgstr "No se pudo actualizar la configuración de la plantilla"
+
+#: apps/remix/app/routes/embed+/components/client.tsx
+msgid "Failed to save template fields"
+msgstr "No se pudieron guardar los campos de la plantilla"
+
+#: apps/remix/app/routes/embed+/components/client.tsx
+msgid "Auto-saved"
+msgstr "Guardado automático"
+
+#: apps/remix/app/routes/embed+/components/client.tsx
+msgid "Your changes were saved automatically."
+msgstr "Tus cambios se guardaron automáticamente."
+
 #: packages/ui/primitives/template-flow/add-template-settings.tsx
 msgid "Template title"
 msgstr "Título de plantilla"
