@@ -1,0 +1,334 @@
+/**
+ * Pulse overrides on top of Sileo's defaults.
+ * Loaded AFTER 'sileo/styles.css' so these win. Owned by @caringdata/ui — tweak
+ * sizing/look here, not in the package.
+ *
+ * Copied verbatim from caring_data_react (src/caringdata-ui/Pulse/pulse.css).
+ * Keep both copies in sync. In this repo the Sileo patch referenced below lives
+ * in patches/sileo+0.1.5.patch (applied by patch-package on postinstall).
+ */
+/* IMPORTANT: do NOT override --sileo-width / --sileo-height.
+   Sileo hardcodes HEIGHT=40 and WIDTH=350 in its JS and computes the whole
+   gooey geometry (pill x/width, header transform --_ht, expanded height)
+   against those constants — it never reads these CSS vars back. Bumping them
+   desyncs the box from the morph math, which detaches the header from the
+   body when the toast expands for a description (the "text drifts up-left"
+   bug). When we vendor Sileo we'll change the JS constants; until then we
+   keep 350 × 40 and only scale leaf content below, which is geometry-safe. */
+
+/* Variant accent overrides. Declared on the VIEWPORT, not :root: Sileo
+   injects its own `:root { --sileo-state-* }` defaults at runtime, and in a
+   production build that <style> lands AFTER our extracted css <link>, beating
+   an equal-specificity :root rule (dev import order hides it — the classic
+   "info is suddenly Sileo-blue on the server" bug). Toasts live inside the
+   viewport, so a value declared here always wins by inheritance proximity,
+   regardless of stylesheet order. */
+[data-sileo-viewport] {
+  /* Brand the `info` variant with the app's primary color (icon, title, badge,
+     button) instead of Sileo's default blue. --primary is the shadcn HSL
+     triplet; it resolves at this element, so runtime client branding set on
+     <html> flows through. */
+  --sileo-state-info: hsl(var(--primary));
+
+  /* Tailwind 700-scale accents for the status variants (icon, title, badge,
+     button), overriding Sileo's default oklch tones. 700, not 600: the title
+     is 14px text on the white card, and the 600 green/amber/blue measured
+     3.2–3.7:1 — below WCAG AA's 4.5:1. The 700s land at 5.0–6.7:1. */
+  --sileo-state-success: #15803d; /* green-700 */
+  --sileo-state-error: #b91c1c; /* red-700 */
+  --sileo-state-warning: #b45309; /* amber-700 */
+  --sileo-state-action: #1d4ed8; /* blue-700 */
+}
+
+/* Sileo ships the viewport at z-index: 50, which sits UNDER this app's modal
+   ladder (dialog/drawer z-[99999], alert-dialog z-[100000]) and the inline
+   tooltip layer (z-[999999]): a toast fired from inside a modal — e.g. the
+   error toast in useFetchHandler — rendered and animated normally but was
+   painted beneath the overlay's bg-black/80, so it never reached the user.
+   A toast is a transient notification that must never be occluded, so it
+   sits above the whole ladder (sonner already defaults this way).
+   Doubled attribute selector (0,2,0) so it beats Sileo's own (0,1,0)
+   regardless of stylesheet order in the production bundle — see the note
+   above about Sileo styles landing after our extracted CSS. */
+[data-sileo-viewport][data-position] {
+  z-index: 1000000;
+}
+
+/* Title: sentence case, one line that always fits the card.
+   - Scoped under the viewport (0,2,0) so it beats Sileo's runtime-injected
+     [data-sileo-title] rule in production, where that <style> lands after our
+     extracted CSS. A bare [data-sileo-title] here only won in dev: prod titles
+     have always rendered at Sileo's 0.825rem (13.2px), so that is the size
+     pinned here — dev/Storybook now match what users see. (0.875rem would
+     push 5 real titles that fit today into the ellipsis.)
+   - Sileo ships text-transform: capitalize, which Title Cases every word ("No
+     Se Pudo Guardar") — wrong in Spanish and unnatural in English. Only the
+     first letter is uppercased, so titles that start lowercase still look
+     right.
+   - Sileo sizes the goo pill from the header's content (title + 58px: badge,
+     gap, header padding, PILL_PADDING) and never caps it, so a title wider
+     than 292px grew the pill past the 350px card and spilled the header
+     outside it. Capping at exactly 292px leaves every title that fit
+     untouched; only the ones that overflowed end in an ellipsis — put the
+     detail in the description. */
+[data-sileo-viewport] [data-sileo-title] {
+  font-size: 0.825rem;
+  text-transform: none;
+  min-width: 0;
+  max-width: calc(var(--sileo-width) - 58px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+[data-sileo-viewport] [data-sileo-title]::first-letter {
+  text-transform: uppercase;
+}
+
+/* Action button text: the button is tinted with its variant color at 15%/25%
+   (hover), which drops the variant-colored label below 4.5:1 even with the
+   700 accents. Darkening only the label 15% toward black keeps the hue and
+   clears AA in every variant, hover included (>= 5:1). Mixed from --_c, so it
+   also holds for the runtime brand color the info variant uses. */
+[data-sileo-viewport] [data-sileo-button][data-state] {
+  --sileo-btn-color: color-mix(in oklch, var(--_c), black 15%);
+}
+
+[data-sileo-description] {
+  font-size: 0.875rem; /* 14px */
+}
+
+/* Sileo injects its own CSS at runtime via JS (__insertCSS), and its default
+   description color is INVERTED (white text in light, black in dark). In a Vite
+   production build that injected <style> lands in <head> AFTER our extracted
+   pulse.css <link>, so with equal specificity Sileo's rule wins and the light
+   description renders white-on-white (invisible). Dev didn't show it because
+   there our import order holds. We add [data-sileo-toast] to outrank Sileo's
+   selector on specificity so our color wins regardless of load order.
+   The surface is white in BOTH themes (see THEME_FILL in Pulse.tsx), so the
+   description text is the same dark slate in both. */
+[data-sileo-viewport][data-theme] [data-sileo-toast] [data-sileo-description] {
+  color: rgba(15, 23, 42, 0.8);
+}
+
+/* Swipe-to-dismiss is pointer-driven; starting a NATIVE drag mid-swipe (an
+   avatar <img> in the description, or dragging a text selection) fires
+   pointercancel and used to leave the toast stuck at its dragged offset.
+   Kill the native-drag sources inside toasts (the pointercancel repair in
+   Pulse.tsx covers the remaining causes, e.g. touch scroll takeover). */
+[data-sileo-toast] {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+[data-sileo-toast] img {
+  -webkit-user-drag: none;
+}
+
+/* Sileo gives the action button margin-top .75rem to separate it from the
+   description text above it. In a title+action toast there is no description,
+   so that margin just stacks on the container's 1rem padding and the button
+   sits 28px from the top vs 16px from the bottom. Pulse tags the solo button
+   (see toSileo) and drops the margin; the expanded height adapts on its own
+   because Sileo measures the content's scrollHeight. The extra attribute keeps
+   specificity above Sileo's runtime-injected [data-sileo-button] rule. */
+[data-sileo-button].pulse-button--solo {
+  margin-top: 0;
+}
+
+[data-sileo-viewport][data-theme='light'] [data-sileo-toast] {
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+/* ------------------------------- Dark theme ------------------------------- */
+[data-sileo-viewport][data-theme='dark'] [data-sileo-toast] {
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.5));
+}
+
+/* ------------------------- Windows stability fixes ------------------------- */
+/* Scoped to [data-pulse-calm-motion], which PulseToaster sets on its wrapper on
+   Windows only (see isWindows in Pulse.tsx). QA: the toast "queda temblando"
+   on Windows; invisible on 2x-DPR Macs. The composition below reproduces the
+   approved look exactly — steady card/text, bouncy goo graphic — while fixing
+   the four artifacts that read as trembling at fractional DPR (125% => 1.25):
+
+   1. TWO ENGINES, ONE EDGE (the big one). Sileo draws the card's edges twice:
+      the toast box height/header via CSS transitions and the goo pill/body
+      rects via a Motion JS spring — same nominal curve, different clocks, so
+      the visible edge wanders by their drift until both land. Fix:
+      patches/sileo.patch makes Motion apply rect values instantly on Windows
+      ({type: false}) and the rect rule below animates their geometry by CSS —
+      one engine, glued edges.
+
+   2. SPRING BOUNCE ON TEXT/BOX. A spring easing on the box, margins and header
+      transform bounces composited TEXT by sub-pixel amounts (bilinear smear —
+      "temblor mínimo que rebota") and creeps layout at sub-device-pixel
+      speed. The box/header/margins therefore keep the no-overshoot ease-out
+      (--sileo-spring-easing below); the signature bounce lives ONLY in the
+      goo rects (--pulse-goo-easing), whose curve preserves the Motion
+      spring's attack and full bounce but lands by 59% of the duration with a
+      mathematically flat tail (the spring's last ~220ms crept back from the
+      overshoot at 0.05–0.2px/frame — below one device pixel per frame, which
+      flips pixels at irregular intervals instead of reading as motion).
+
+   3. HEADER BLUR + CLEARTYPE. The blur(6px→0) header materialization shimmers
+      subpixel-antialiased text on Windows; enter/exit re-point to
+      opacity-only keyframes (extra ancestor attribute outranks Sileo's
+      selector; animation-name can't be overridden per-scope alone).
+
+   4. LAYER DE-PROMOTION JUMPS. Header/header-inner/content get compositor
+      layers only WHILE their animation runs; when it ends Chromium drops the
+      layer and repaints them with different subpixel rounding (the header
+      sits at scale(0.9) when expanded — non-integral glyphs). Measured as a
+      one-frame full-header repaint right after settling. will-change pins
+      keep the layers (and the text's antialiasing mode) stable for the
+      toast's life.
+
+   (In Pulse.tsx, shared with all platforms: the autopilot no longer
+   auto-collapses under the cursor — the other historical "tremble" report.) */
+[data-pulse-calm-motion] [data-sileo-viewport] {
+  /* Box/header/margins: the spring's exact attack (the fast unveil that the
+     description reveal is choreographed against — a softer attack makes the
+     text fade into a still-opening card and "changes" the description feel),
+     but NO overshoot (a bouncing box bounces the text) and a flat tail from
+     37% (expo/spring tails creep the text sub-device-pixel = shimmer). */
+  --sileo-spring-easing: linear(
+    0,
+    0.002 0.6%,
+    0.007 1.2%,
+    0.015 1.8%,
+    0.026 2.4%,
+    0.041 3.1%,
+    0.06 3.8%,
+    0.108 5.3%,
+    0.157 6.6%,
+    0.214 8%,
+    0.467 13.7%,
+    0.577 16.3%,
+    0.631 17.7%,
+    0.682 19.1%,
+    0.73 20.5%,
+    0.771 21.8%,
+    0.808 23.1%,
+    0.844 24.5%,
+    0.874 25.8%,
+    0.903 27.2%,
+    0.928 28.6%,
+    0.952 30.1%,
+    0.972 31.6%,
+    0.988 33.1%,
+    1 37%,
+    1
+  );
+
+  --pulse-goo-easing: linear(
+    0,
+    0.002 0.6%,
+    0.007 1.2%,
+    0.015 1.8%,
+    0.026 2.4%,
+    0.041 3.1%,
+    0.06 3.8%,
+    0.108 5.3%,
+    0.157 6.6%,
+    0.214 8%,
+    0.467 13.7%,
+    0.577 16.3%,
+    0.631 17.7%,
+    0.682 19.1%,
+    0.73 20.5%,
+    0.771 21.8%,
+    0.808 23.1%,
+    0.844 24.5%,
+    0.874 25.8%,
+    0.903 27.2%,
+    0.928 28.6%,
+    0.952 30.1%,
+    0.972 31.6%,
+    0.988 33.1%,
+    1.01 35.7%,
+    1.025 38.5%,
+    1.033 41.6%,
+    1.035 45%,
+    1.022 50%,
+    1.008 55%,
+    1 59%,
+    1
+  );
+}
+
+/* Entry/exit keep the 6px rise but drop the scale(0.95): scaling an ancestor
+   of the goo filter re-samples the whole rasterized card (text included)
+   every frame — a full-card sub-pixel breathe that reads as trembling at
+   fractional DPR. The rise is a monotonic compositor translate: smooth. */
+[data-pulse-calm-motion] [data-sileo-viewport][data-position^='top'] [data-sileo-toast]:not([data-ready='true']),
+[data-pulse-calm-motion] [data-sileo-viewport][data-position^='top'] [data-sileo-toast][data-ready='true'][data-exiting='true'] {
+  transform: translateY(-6px) translateZ(0);
+}
+
+[data-pulse-calm-motion] [data-sileo-viewport][data-position^='bottom'] [data-sileo-toast]:not([data-ready='true']),
+[data-pulse-calm-motion] [data-sileo-viewport][data-position^='bottom'] [data-sileo-toast][data-ready='true'][data-exiting='true'] {
+  transform: translateY(6px) translateZ(0);
+}
+
+[data-pulse-calm-motion] [data-sileo-toast][data-ready='true'] [data-sileo-pill],
+[data-pulse-calm-motion] [data-sileo-toast][data-ready='true'] [data-sileo-body] {
+  transition:
+    x var(--sileo-duration) var(--pulse-goo-easing),
+    y var(--sileo-duration) var(--pulse-goo-easing),
+    width var(--sileo-duration) var(--pulse-goo-easing),
+    height var(--sileo-duration) var(--pulse-goo-easing),
+    transform var(--sileo-duration) var(--pulse-goo-easing),
+    opacity var(--sileo-duration) var(--pulse-goo-easing);
+}
+
+[data-pulse-calm-motion] [data-sileo-header-inner][data-layer='current'] {
+  animation-name: pulse-header-enter-calm;
+}
+
+[data-pulse-calm-motion] [data-sileo-header-inner][data-exiting='true'] {
+  animation-name: pulse-header-exit-calm;
+}
+
+@keyframes pulse-header-enter-calm {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes pulse-header-exit-calm {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+[data-pulse-calm-motion] [data-sileo-header-inner],
+[data-pulse-calm-motion] [data-sileo-content] {
+  will-change: opacity;
+}
+
+[data-pulse-calm-motion] [data-sileo-header] {
+  will-change: transform;
+}
+
+/* ------------------------------- Safari shadow ---------------------------- */
+/* Shipping Safari discards a CSS drop-shadow() on any ancestor of a
+   `filter: url(#…)` element (the gooey canvas): the subtree's shadow raster
+   comes back empty, so the drop-shadows above never paint and the white card
+   melts into light backgrounds. (Blink/Gecko — and even current WebKit trunk —
+   paint them fine; an earlier `contain: none` fix here was a red herring.)
+   In Safari the shadow instead lives INSIDE the gooey filter as an
+   feDropShadow primitive (see useGooeyFilterRepairForSafari in Pulse.tsx).
+   This WebKit-only block turns the CSS shadow off so newer WebKit builds that
+   DO render it don't paint both. Keep selector specificity >= the theme rules
+   above ([viewport][theme] + [toast] = 3 attributes) so this wins in-file. */
+@supports (-webkit-hyphens: none) {
+  [data-sileo-viewport][data-theme] [data-sileo-toast] {
+    filter: none;
+  }
+}
