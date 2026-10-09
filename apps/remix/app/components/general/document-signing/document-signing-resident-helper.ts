@@ -40,7 +40,7 @@ export const getResidentValue = (
     case FieldType.RESIDENT_LOCATION_ZIP_CODE:
       return toStr(location?.zip);
     case FieldType.RESIDENT_LOCATION_COUNTRY:
-      return toStr(location?.country);
+      return toStr(location?.country?.name);
     case FieldType.RESIDENT_LOCATION_FAX:
       return toStr(location?.location_fax);
     case FieldType.RESIDENT_LOCATION_LICENSING:

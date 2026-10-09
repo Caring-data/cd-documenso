@@ -13,6 +13,12 @@ type LocationState = {
   code: string;
 };
 
+type LocationCountry = {
+  id: string;
+  name: string;
+  code: string;
+};
+
 type LocationContext = {
   id: string;
   name?: string | null;
@@ -20,7 +26,7 @@ type LocationContext = {
   address?: string | null;
   city?: string | null;
   zip?: string | null;
-  country?: string | null;
+  country?: LocationCountry | null;
   location_fax?: string | null;
   licensing?: string | null;
   licensing_name?: string | null;
