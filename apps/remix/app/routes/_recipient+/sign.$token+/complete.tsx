@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { useLingui } from '@lingui/react/macro';
 import { Trans } from '@lingui/react/macro';
 import { DocumentStatus, FieldType, RecipientRole } from '@prisma/client';
-import { CheckCircle2, Clock8, Loader2 } from 'lucide-react';
+import { AlertTriangleIcon, CheckCircle2, Clock8, Loader2 } from 'lucide-react';
 import { useRevalidator } from 'react-router';
 import { match } from 'ts-pattern';
 
@@ -124,7 +124,15 @@ export default function CompletedSigningPage({ loaderData }: Route.ComponentProp
       token: recipient?.token || '',
     },
     {
-      refetchInterval: 3000,
+      refetchInterval: (query) => {
+        const status = query.state.data?.status;
+
+        if (status === 'COMPLETED' || status === 'REJECTED' || status === 'FAILED') {
+          return false;
+        }
+
+        return 3000;
+      },
       initialData: match(document?.status)
         .with(DocumentStatus.COMPLETED, () => ({ status: 'COMPLETED' }) as const)
         .with(DocumentStatus.REJECTED, () => ({ status: 'REJECTED' }) as const)
@@ -208,6 +216,14 @@ export default function CompletedSigningPage({ loaderData }: Route.ComponentProp
                 </span>
               </div>
             ))
+            .with({ status: 'FAILED' }, () => (
+              <div className="mt-4 flex items-center text-center text-red-600">
+                <AlertTriangleIcon className="mr-2 h-5 w-5" />
+                <span className="text-sm">
+                  <Trans>The document could not be processed</Trans>
+                </span>
+              </div>
+            ))
             .with({ deletedAt: null }, () => (
               <div className="mt-4 flex items-center text-center text-blue-600">
                 <Clock8 className="mr-2 h-5 w-5" />
@@ -238,6 +254,14 @@ export default function CompletedSigningPage({ loaderData }: Route.ComponentProp
               <p className="mt-2.5 max-w-[60ch] text-center text-sm font-medium text-muted-foreground/60 md:text-base">
                 <Trans>
                   The document is being prepared. You'll receive a copy once it's ready.
+                </Trans>
+              </p>
+            ))
+            .with({ status: 'FAILED' }, () => (
+              <p className="mt-2.5 max-w-[60ch] text-center text-sm font-medium text-muted-foreground/60 md:text-base">
+                <Trans>
+                  Your signature was saved, but something went wrong while finalizing the document.
+                  Please contact the sender so they can resolve it.
                 </Trans>
               </p>
             ))
