@@ -133,7 +133,7 @@ export const ZResendDocumentForSigningMutationSchema = z.object({
 
 export const ZResendDocumentByEmailSchema = z.object({
   recipientEmail: z.string().email(),
-  recipientId : z.number(),
+  recipientId: z.number(),
 });
 
 export type TResendDocumentForSigningMutationSchema = z.infer<
@@ -783,7 +783,7 @@ export const ZCreateEmbebedTemplateMutationSchema = z.object({
   data: z.string().min(1),
   key: z.string().min(1).trim(),
   externalId: z.string().nullish(),
-  timezone: z.string().optional(),
+  timezone: z.string().nullish(),
   meta: z.object({}).optional(),
 });
 
