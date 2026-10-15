@@ -12,10 +12,10 @@ import type { TEnvelope } from '@documenso/lib/types/envelope';
 import { generateRecipientPlaceholder } from '@documenso/lib/utils/templates';
 import { trpc } from '@documenso/trpc/react';
 import PDFViewerKonvaLazy from '@documenso/ui/components/pdf-viewer/pdf-viewer-konva-lazy';
+import { Pulse, PulseToaster } from '@documenso/ui/components/pulse';
 import { DocumentFlowFormContainer } from '@documenso/ui/primitives/document-flow/document-flow-root';
 import type { DocumentFlowStep } from '@documenso/ui/primitives/document-flow/types';
 import { Stepper } from '@documenso/ui/primitives/stepper';
-import { useToast } from '@documenso/ui/primitives/use-toast';
 
 import { useIntervalSave } from '../hooks/use-interval-save';
 import { getEmbedOptions } from '../utils/get-embed-options';
@@ -34,6 +34,9 @@ const EmbedFieldsPageRenderer = lazy(
 const AUTO_SAVE_INTERVAL_MS = 10 * 60 * 1000;
 
 type TemplateStep = 'general' | 'fields';
+
+// Inside the iframe there's no floating chat widget to clear, unlike the React app.
+const PULSE_OFFSET = { right: 16, bottom: 16, top: 24, left: 24 };
 
 export type ClientProps = {
   envelopeId: string;
@@ -56,6 +59,8 @@ export function Client({ envelopeId, externalId, initialEnvelope }: ClientProps)
           externalId={externalId}
           initialEnvelope={initialEnvelope}
         />
+
+        <PulseToaster theme="light" offset={PULSE_OFFSET} />
       </EnvelopeRenderProvider>
     </EmbedTemplateEditorProvider>
   );
@@ -69,7 +74,6 @@ type ClientInnerProps = {
 
 function ClientInner({ envelopeId, externalId, initialEnvelope }: ClientInnerProps) {
   const { t } = useLingui();
-  const { toast } = useToast();
   const { revalidate } = useRevalidator();
   const [currentStep, setCurrentStep] = useState(1);
   const { isSystem } = useEmbedOptions();
@@ -118,18 +122,16 @@ function ClientInner({ envelopeId, externalId, initialEnvelope }: ClientInnerPro
           })),
         });
 
-        toast({
-          title: t`Success`,
-          description: t`Template settings updated successfully`,
+        Pulse.success({
+          title: t`Template settings updated successfully`,
         });
         setCurrentStep(2);
       },
       onError: (error) => {
         const appError = AppError.parseError(error);
-        toast({
-          title: t`Error`,
-          description: t`Failed to update template settings: ${appError.message}`,
-          variant: 'destructive',
+        Pulse.error({
+          title: t`Failed to update template settings`,
+          description: appError.message,
         });
       },
     });
@@ -137,26 +139,24 @@ function ClientInner({ envelopeId, externalId, initialEnvelope }: ClientInnerPro
   const { mutateAsync: setEnvelopeFields } = trpc.envelope.field.setByExternalId.useMutation({
     onSuccess: () => {
       if (isAutoSavingRef.current) {
-        toast({
+        Pulse.info({
           title: t`Auto-saved`,
           description: t`Your changes were saved automatically.`,
         });
 
         postMessage('template-auto-saved', null);
       } else {
-        toast({
-          title: t`Success`,
-          description: t`Template fields saved successfully`,
+        Pulse.success({
+          title: t`Template fields saved successfully`,
         });
         postMessage('template-completed', null);
       }
     },
     onError: (error) => {
       const appError = AppError.parseError(error);
-      toast({
-        title: t`Error`,
-        description: t`Failed to save template fields: ${appError.message}`,
-        variant: 'destructive',
+      Pulse.error({
+        title: t`Failed to save template fields`,
+        description: appError.message,
       });
     },
   });
