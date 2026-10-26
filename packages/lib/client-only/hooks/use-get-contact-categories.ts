@@ -4,10 +4,10 @@ import { env } from '../../utils/env';
 
 export type ContactCategoryKey =
   | 'administrator'
-  | 'physician'
-  | 'responsible_party'
-  | 'hospiceContact'
-  | 'homeHealthContact';
+  | 'primary_physician'
+  | 'responsible_person'
+  | 'hospice'
+  | 'home_health';
 
 export type ContactCategory = {
   key: ContactCategoryKey;
