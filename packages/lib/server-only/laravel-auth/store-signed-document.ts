@@ -40,6 +40,9 @@ export const storeSignedDocument = async (
     const formData = {
       clientName: String(signingContext?.companyName || ''),
       documensoId: String(legacyDocumentId),
+      // Laravel sends its signature request id as externalId, so it can find the request even
+      // when it never saved this documensoId.
+      externalId: envelope.externalId,
       documentKey: documentKey,
       ownerId: ownerId,
       fileUrl: pdfUrl,
