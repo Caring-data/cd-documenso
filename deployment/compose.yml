@@ -15,6 +15,7 @@ services:
     build:
       context: ..
       dockerfile: deployment/Dockerfile
+      pull: true
     restart: unless-stopped
     expose:
       - '3002'
@@ -35,6 +36,7 @@ services:
     build:
       context: ..
       dockerfile: deployment/Dockerfile
+      pull: true
     restart: unless-stopped
     expose:
       - '3002'
