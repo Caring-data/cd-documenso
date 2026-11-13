@@ -61,7 +61,9 @@ export const storeSignedDocument = async (
         Accept: 'application/json',
       },
       body: JSON.stringify(formData),
-      signal: AbortSignal.timeout(60000),
+      // Large documents can take Laravel ~80s to store. Kept below PHP-FPM's 120s limit
+      // (request_terminate_timeout), after which Laravel is killed and its transaction rolled back.
+      signal: AbortSignal.timeout(110000),
     });
 
     // Laravel may answer with an HTML error page (e.g. 500/502), so don't assume JSON.
