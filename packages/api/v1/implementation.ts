@@ -1,9 +1,11 @@
 import {
   DocumentDataType,
+  DocumentSigningOrder,
   EnvelopeType,
   FolderType,
   LogCategory,
   LogLevel,
+  RecipientRole,
   SigningStatus,
   TemplateType,
 } from '@prisma/client';
@@ -398,6 +400,19 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
         }
       });
 
+      const isSequential = envelope.documentMeta?.signingOrder === DocumentSigningOrder.SEQUENTIAL;
+
+      const [firstSigner] = envelope.recipients
+        .filter((recipient) => recipient.role !== RecipientRole.CC)
+        .sort(
+          (a, b) =>
+            (a.signingOrder ?? Number.MAX_SAFE_INTEGER) -
+              (b.signingOrder ?? Number.MAX_SAFE_INTEGER) || a.id - b.id,
+        );
+
+      const receivedDocumentWhenSent = (recipient: (typeof envelope.recipients)[number]) =>
+        !isSequential || recipient.role === RecipientRole.CC || recipient.id === firstSigner?.id;
+
       const result = envelope.recipients.map((recipient) => {
         const logsById = groupedByRecipientId.get(recipient.id) ?? [];
 
@@ -428,21 +443,23 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
           })
           .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())[0];
 
-        const shareFormsSent = relevantLogs
-          .filter((log) =>
-            ['DOCUMENT_SENT', 'DOCUMENT_CREATED', 'DOCUMENT_FIELDS_AUTO_INSERTED'].includes(
-              log.type,
-            ),
-          )
-          .sort((a, b) => {
-            const priority: Record<string, number> = {
-              DOCUMENT_SENT: 1,
-              DOCUMENT_CREATED: 2,
-              DOCUMENT_FIELDS_AUTO_INSERTED: 3,
-            };
+        const shareFormsSent = receivedDocumentWhenSent(recipient)
+          ? relevantLogs
+              .filter((log) =>
+                ['DOCUMENT_SENT', 'DOCUMENT_CREATED', 'DOCUMENT_FIELDS_AUTO_INSERTED'].includes(
+                  log.type,
+                ),
+              )
+              .sort((a, b) => {
+                const priority: Record<string, number> = {
+                  DOCUMENT_SENT: 1,
+                  DOCUMENT_CREATED: 2,
+                  DOCUMENT_FIELDS_AUTO_INSERTED: 3,
+                };
 
-            return (priority[a.type] ?? 99) - (priority[b.type] ?? 99);
-          })[0];
+                return (priority[a.type] ?? 99) - (priority[b.type] ?? 99);
+              })[0]
+          : undefined;
 
         const emailSent = realEmailSent ?? shareFormsSent;
 
@@ -507,6 +524,7 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
           signatureDate: documentSigned
             ? formatDateWithTimeZone(documentSigned.createdAt, timezone)
             : null,
+          signedAt: documentSigned ? documentSigned.createdAt.toISOString() : null,
           ipAddress: latestEvent?.ipAddress ?? null,
           signatureStatus,
           status: formatStatus(latestEvent?.type),

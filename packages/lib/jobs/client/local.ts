@@ -40,6 +40,16 @@ export class LocalJobProvider extends BaseJobProvider {
     };
   }
 
+  /**
+   * Ids of the jobs this server can run. The job endpoint looks definitions up by this id, so the
+   * worker uses the list to skip PENDING jobs that would only get a 404 back.
+   */
+  public getEnabledJobDefinitionIds(): string[] {
+    return Object.values(this._jobDefinitions)
+      .filter((definition) => definition.enabled)
+      .map((definition) => definition.id);
+  }
+
   public async triggerJob(options: SimpleTriggerJobOptions) {
     const eligibleJobs = Object.values(this._jobDefinitions).filter(
       (job) => job.trigger.name === options.name,
