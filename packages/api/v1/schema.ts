@@ -97,6 +97,7 @@ export const ZGetSignatureAuditResponseSchema = z.object({
       sendDate: z.string().nullable(),
       resendDate: z.string().nullable(),
       signatureDate: z.string().nullable(),
+      signedAt: z.string().nullable(),
       signatureStatus: z.enum(['signed', 'notSigned']),
       status: z.string().nullable(),
       history: z.array(
