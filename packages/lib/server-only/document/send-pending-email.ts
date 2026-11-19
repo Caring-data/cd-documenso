@@ -102,5 +102,8 @@ export const sendPendingEmail = async ({ id, recipientId }: SendPendingEmailOpti
     },
     i18n._(msg`Waiting for others to complete signing.`),
     html,
+    {
+      idempotencyKey: `document-pending-${envelope.id}-${recipient.id}`,
+    },
   );
 };
