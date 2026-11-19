@@ -524,8 +524,6 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
           signatureDate: documentSigned
             ? formatDateWithTimeZone(documentSigned.createdAt, timezone)
             : null,
-          // signatureDate is wall-clock time in the document's timezone; clients that need to measure
-          // elapsed time use this ISO (UTC) value instead.
           signedAt: documentSigned ? documentSigned.createdAt.toISOString() : null,
           ipAddress: latestEvent?.ipAddress ?? null,
           signatureStatus,
