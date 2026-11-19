@@ -3,8 +3,15 @@ import { BackgroundJobStatus } from '@prisma/client';
 import { prisma } from '@documenso/prisma';
 
 import { logger } from '../../utils/logger';
+import { ZSimpleTriggerJobOptionsSchema } from './_internal/job';
 import type { LocalJobProvider } from './local';
-import type { SimpleTriggerJobOptions } from './_internal/job';
+
+// Jobs younger than this were probably just submitted and are about to start.
+const MIN_PENDING_JOB_AGE_MS = 5_000;
+
+// Older PENDING jobs are left alone. Without this limit, the first run after a deploy would execute
+// every job that ever got stuck, sending emails and webhooks that are no longer relevant.
+const MAX_PENDING_JOB_AGE_MS = 60 * 60 * 1_000;
 
 export class LocalJobWorker {
   private _intervalId: NodeJS.Timeout | null = null;
@@ -52,15 +59,24 @@ export class LocalJobWorker {
 
   private async processPendingJobs() {
     try {
-      // Find jobs that are PENDING and have been submitted more than 5 seconds ago
-      // This avoids processing jobs that were just created
-      const fiveSecondsAgo = new Date(Date.now() - 5000);
+      const enabledJobIds = this._provider.getEnabledJobDefinitionIds();
+
+      if (enabledJobIds.length === 0) {
+        return;
+      }
+
+      const now = Date.now();
 
       const pendingJobs = await prisma.backgroundJob.findMany({
         where: {
           status: BackgroundJobStatus.PENDING,
           submittedAt: {
-            lte: fiveSecondsAgo,
+            lte: new Date(now - MIN_PENDING_JOB_AGE_MS),
+            gte: new Date(now - MAX_PENDING_JOB_AGE_MS),
+          },
+          // Jobs this server cannot run would get a 404 on every cycle and fill the batch.
+          jobId: {
+            in: enabledJobIds,
           },
         },
         take: 20, // Process max 20 jobs per cycle to avoid overload
@@ -78,13 +94,13 @@ export class LocalJobWorker {
       // Process jobs sequentially to avoid overload
       for (const job of pendingJobs) {
         try {
-          // Reconstruct the SimpleTriggerJobOptions from the stored job
-          const jobData: SimpleTriggerJobOptions = {
-            name: job.name,
-            payload: job.payload as unknown,
-            id: job.id,
-            timestamp: job.submittedAt.getTime(),
-          };
+          // The endpoint finds the definition by its id (job.jobId), not by job.name, which is the
+          // display name. The data goes through the same schema the endpoint parses before checking
+          // the signature: the schema reorders keys, and the signature covers the JSON text.
+          const jobData = ZSimpleTriggerJobOptionsSchema.parse({
+            name: job.jobId,
+            payload: job.payload,
+          });
 
           // Re-submit the job to the endpoint
           await this._provider.submitJobToEndpoint({
@@ -97,12 +113,12 @@ export class LocalJobWorker {
           logger.debug(`[JOBS WORKER]: Re-submitted job ${job.id} (${job.name})`);
         } catch (error) {
           // Log error but don't stop processing other jobs
-          logger.error(`[JOBS WORKER]: Failed to re-submit job ${job.id}:`, error);
+          logger.error({ err: error, jobId: job.id }, '[JOBS WORKER]: Failed to re-submit job');
         }
       }
     } catch (error) {
       // Log error but don't crash the worker
-      logger.error('[JOBS WORKER]: Error processing pending jobs:', error);
+      logger.error({ err: error }, '[JOBS WORKER]: Error processing pending jobs');
     }
   }
 }

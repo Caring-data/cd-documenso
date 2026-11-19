@@ -400,10 +400,6 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
         }
       });
 
-      // Shared forms are sent with sendEmail: false, so their first signer never gets an EMAIL_SENT and
-      // the document being sent counts as their send date. In sequential order only the signer whose
-      // turn it was at that moment received the document; the others count as sent only with a real
-      // email, otherwise they showed the first signer's send date although nothing reached them.
       const isSequential = envelope.documentMeta?.signingOrder === DocumentSigningOrder.SEQUENTIAL;
 
       const [firstSigner] = envelope.recipients
