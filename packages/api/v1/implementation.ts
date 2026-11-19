@@ -524,6 +524,7 @@ export const ApiContractV1Implementation = tsr.router(ApiContractV1, {
           signatureDate: documentSigned
             ? formatDateWithTimeZone(documentSigned.createdAt, timezone)
             : null,
+          signedAt: documentSigned ? documentSigned.createdAt.toISOString() : null,
           ipAddress: latestEvent?.ipAddress ?? null,
           signatureStatus,
           status: formatStatus(latestEvent?.type),
