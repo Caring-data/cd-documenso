@@ -365,6 +365,10 @@ export const AddTemplateSettingsFormPartial = ({
                         (c) => c.key === selectField.value,
                       )?.name;
 
+                      const recipientLabel = !selectField.value
+                        ? t`Other`
+                        : (categoryName ?? t`Select`);
+
                       return (
                         <FormItem className="flex-1">
                           <FormControl>
@@ -378,15 +382,13 @@ export const AddTemplateSettingsFormPartial = ({
                             >
                               <SelectTrigger className="truncate bg-white">
                                 <SelectValue placeholder={`Recipient ${index + 1} - Select`}>
-                                  {selectField.value && categoryName
-                                    ? `Recipient ${index + 1} - ${categoryName}`
-                                    : `Recipient ${index + 1} - Select`}
+                                  {`Recipient ${index + 1} - ${recipientLabel}`}
                                 </SelectValue>
                               </SelectTrigger>
 
                               <SelectContent>
                                 <SelectItem value={CLEAR_CONTACT_CATEGORY_VALUE}>
-                                  <Trans>None</Trans>
+                                  <Trans>Other</Trans>
                                 </SelectItem>
 
                                 <SelectSeparator />
