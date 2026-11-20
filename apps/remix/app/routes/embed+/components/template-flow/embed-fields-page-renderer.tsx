@@ -36,7 +36,10 @@ export default function EmbedFieldsPageRenderer() {
 
   const documensoTemplateId = getDocumensoTemplateIdFromSecondaryId(envelope.secondaryId);
 
-  const { data: categories } = useGetContactCategories();
+  const { data: categories } = useGetContactCategories(undefined, {
+    templateKey: envelope.formKey,
+    documensoTemplateId,
+  });
   const { data: recipientsFromApi } = useGetTemplateRecipients(
     envelope.formKey ?? undefined,
     documensoTemplateId,

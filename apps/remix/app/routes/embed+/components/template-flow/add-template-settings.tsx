@@ -87,9 +87,12 @@ export const AddTemplateSettingsFormPartial = ({
 }: AddTemplateSettingsFormProps) => {
   const { t } = useLingui();
 
-  const { data: categories } = useGetContactCategories(isSystem);
-
   const documensoTemplateId = getDocumensoTemplateIdFromSecondaryId(envelope.secondaryId);
+
+  const { data: categories } = useGetContactCategories(isSystem, {
+    templateKey: envelope.formKey,
+    documensoTemplateId,
+  });
 
   const { data: recipientsFromApi } = useGetTemplateRecipients(
     envelope.formKey ?? undefined,
